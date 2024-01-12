@@ -7,8 +7,9 @@ contract BicPermissionsEnumerable is AccessControlEnumerable{
     bytes32 public constant RECOVERY_ROLE = keccak256("RECOVERY_ROLE");
 
     constructor() {
-        // Default Admin
+        // Default Admin, Recovery role
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(RECOVERY_ROLE, msg.sender);
 
         // AdminRole of RECOVERY_ROLE, default is DEFAULT_ADMIN_ROLE
         _setRoleAdmin(RECOVERY_ROLE, DEFAULT_ADMIN_ROLE);
