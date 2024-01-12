@@ -18,26 +18,13 @@ const config: HardhatUserConfig = {
     arbitrum: {
       url: "https://arbitrum.llamarpc.com",
       chainId: 42161,
-      accounts: {
-        mnemonic: env.MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 20,
-        passphrase: env.MNEMONIC_PASSPHRASE,
-      },
+      accounts: [env.PRIVATE_KEY as string],
     },
     arbitrumSepolia: {
       url: "https://sepolia-rollup.arbitrum.io/rpc",
       chainId: 421614,
-      accounts: {
-        mnemonic: env.MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 20,
-        passphrase: env.MNEMONIC_PASSPHRASE,
-      },
+      accounts: [env.PRIVATE_KEY as string],
     },
-    
   },
   etherscan: {
     apiKey: env.API_KEY,

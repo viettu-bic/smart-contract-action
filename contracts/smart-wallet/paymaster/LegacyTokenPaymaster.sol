@@ -3,9 +3,10 @@ pragma solidity ^0.8.12;
 
 /* solhint-disable reason-string */
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "../core/BasePaymaster.sol";
 import "../core/UserOperationLib.sol";
+import "../oracle/IOracle.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
  * A sample paymaster that defines itself as a token to pay for gas.
@@ -19,14 +20,16 @@ import "../core/UserOperationLib.sol";
  * - Possible workarounds are either use a more complex paymaster scheme (e.g. the DepositPaymaster) or
  *   to whitelist the account and the called method ids.
  */
-contract LegacyTokenPaymaster is BasePaymaster, ERC20 {
+contract LegacyTokenPaymaster is BasePaymaster, ERC20Votes {
 
     //calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
 
     address public immutable theFactory;
 
-    constructor(address accountFactory, string memory _symbol, IEntryPoint _entryPoint) ERC20(_symbol, _symbol) BasePaymaster(_entryPoint) {
+    address public oracle;
+
+    constructor(address accountFactory, string memory _symbol, IEntryPoint _entryPoint) ERC20(_symbol, _symbol) BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         theFactory = accountFactory;
         //make it non-empty
         _mint(address(this), 1);
@@ -35,6 +38,9 @@ contract LegacyTokenPaymaster is BasePaymaster, ERC20 {
         _approve(address(this), msg.sender, type(uint).max);
     }
 
+    function setOracle(address _oracle) external onlyOwner {
+        oracle = _oracle;
+    }
 
     /**
      * helpers for owner, to mint and withdraw tokens.
@@ -61,6 +67,9 @@ contract LegacyTokenPaymaster is BasePaymaster, ERC20 {
     //Note: this method assumes a fixed ratio of token-to-eth. subclass should override to supply oracle
     // or a setter.
     function getTokenValueOfEth(uint256 valueEth) internal view virtual returns (uint256 valueToken) {
+        if (oracle != address(0)) {
+            return IOracle(oracle).getTokenValueOfEth(valueEth);
+        }
         return valueEth / 100;
     }
 
