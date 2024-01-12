@@ -11,6 +11,8 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "./core/BaseAccount.sol";
 import "./callback/TokenCallbackHandler.sol";
+import "./../security/BicPermissionsEnumerable.sol";
+
 
 /**
   * minimal account.
@@ -21,9 +23,13 @@ import "./callback/TokenCallbackHandler.sol";
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     address public owner;
 
+    BicPermissionsEnumerable public permissions;
+
     IEntryPoint private immutable _entryPoint;
 
+
     event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
+    event NewOwner(address oldOwner, address newOwner);
 
     modifier onlyOwner() {
         _onlyOwner();
@@ -46,6 +52,22 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     function _onlyOwner() internal view {
         //directly from EOA owner, or through the account itself (which gets redirected through execute())
         require(msg.sender == owner || msg.sender == address(this), "only owner");
+    }
+
+    function _onlyOwnerOrHasRecoveryRole() internal view {
+        require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
+    }
+
+    /**
+     * Change owner or recovery the other owner (called directly from owner, or by entryPoint)
+     */
+    function changeOwner(address _newOwner) external {
+        // Require: ower or has recovery role
+        _onlyOwnerOrHasRecoveryRole();
+
+        address _oldOwner = owner;
+        owner = _newOwner;
+        emit NewOwner(_oldOwner, _newOwner);
     }
 
     /**
@@ -79,12 +101,13 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
       * the implementation by calling `upgradeTo()`
      */
-    function initialize(address anOwner) public virtual initializer {
-        _initialize(anOwner);
+    function initialize(address anOwner, BicPermissionsEnumerable _permissions) public virtual initializer {
+        _initialize(anOwner, _permissions);
     }
 
-    function _initialize(address anOwner) internal virtual {
+    function _initialize(address anOwner, BicPermissionsEnumerable _permissions) internal virtual {
         owner = anOwner;
+        permissions = _permissions;
         emit BicAccountInitialized(_entryPoint, owner);
     }
 
