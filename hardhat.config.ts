@@ -32,7 +32,7 @@ const config: HardhatUserConfig = {
       //   passphrase: env.MNEMONIC_PASSPHRASE,
       // },
     },
-    
+
   },
   etherscan: {
     apiKey: env.API_KEY,
