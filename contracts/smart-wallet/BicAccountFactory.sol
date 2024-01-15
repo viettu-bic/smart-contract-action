@@ -17,8 +17,9 @@ contract BicAccountFactory {
     BicAccount public immutable accountImplementation;
     BicPermissions public immutable permissions;
 
-    constructor(IEntryPoint _entryPoint) {
+    constructor(IEntryPoint _entryPoint, BicPermissions _permissions) {
         accountImplementation = new BicAccount(_entryPoint);
+        permissions = _permissions;
     }
 
     /**
