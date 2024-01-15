@@ -6,13 +6,12 @@ pragma solidity ^0.8.23;
 /* solhint-disable reason-string */
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-// import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "./core/BaseAccount.sol";
-import "./callback/TokenCallbackHandler.sol";
-import "./../security/BicPermissionsEnumerable.sol";
+import "@account-abstraction/contracts/core/BaseAccount.sol";
+import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol";
 
+import "./../security/BicPermissionsEnumerable.sol";
 
 /**
   * minimal account.
@@ -116,9 +115,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == address(entryPoint()) || msg.sender == owner, "account: not Owner or EntryPoint");
     }
 
-    /// implement template method of BaseAccount
-    /// TODO: Please double-check: UserOperation with PackedUserOperation
-    function _validateSignature(PackedUserOperation calldata userOp, bytes32 userOpHash)
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override virtual returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
         if (owner != ECDSA.recover(hash, userOp.signature))
