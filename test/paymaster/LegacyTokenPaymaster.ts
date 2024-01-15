@@ -22,7 +22,7 @@ describe("LegacyTokenPaymaster", () => {
         bicAccountFactory = await ethers.getContractFactory("BicAccount") as BicAccountFactory;
         beneficiary = ethers.Wallet.createRandom().address;
         [admin] = await ethers.getSigners();
-        const EntryPoint = await ethers.getContractFactory("EntryPoint");
+        const EntryPoint = await ethers.getContractFactory("EntryPointTest");
         entryPoint = await EntryPoint.deploy();
         await entryPoint.waitForDeployment();
         entryPointAddress = await entryPoint.getAddress();
@@ -127,7 +127,7 @@ describe("LegacyTokenPaymaster", () => {
         const balanceLeft1 = await legacyTokenPaymaster.balanceOf(smartWalletAddress1 as any);
 
         const TestOracle = await ethers.getContractFactory("TestOracle");
-        const testOracle = await TestOracle.deploy(0,0);
+        const testOracle = await TestOracle.deploy();
         await testOracle.waitForDeployment();
         const testOracleAddress = await testOracle.getAddress();
         await legacyTokenPaymaster.setOracle(testOracleAddress as any);
