@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "./BicAccount.sol";
-import "./../security/BicPermissionsEnumerable.sol";
+import "./../security/BicPermissions.sol";
 
 /**
  * A sample factory contract for BicAccount
@@ -15,7 +15,7 @@ import "./../security/BicPermissionsEnumerable.sol";
  */
 contract BicAccountFactory {
     BicAccount public immutable accountImplementation;
-    BicPermissionsEnumerable public immutable permissions;
+    BicPermissions public immutable permissions;
 
     constructor(IEntryPoint _entryPoint) {
         accountImplementation = new BicAccount(_entryPoint);
@@ -33,6 +33,7 @@ contract BicAccountFactory {
         if (codeSize > 0) {
             return BicAccount(payable(addr));
         }
+        // TODO: Add owner and BIC Admin to control the Account
         ret = BicAccount(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(accountImplementation),
                 abi.encodeCall(BicAccount.initialize, (owner, permissions))

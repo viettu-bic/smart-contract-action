@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol";
 
-import "./../security/BicPermissionsEnumerable.sol";
+import "./../security/BicPermissions.sol";
 
 /**
   * minimal account.
@@ -22,7 +22,7 @@ import "./../security/BicPermissionsEnumerable.sol";
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     address public owner;
 
-    BicPermissionsEnumerable public permissions;
+    BicPermissions public permissions;
 
     IEntryPoint private immutable _entryPoint;
 
@@ -100,11 +100,11 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
       * the implementation by calling `upgradeTo()`
      */
-    function initialize(address anOwner, BicPermissionsEnumerable _permissions) public virtual initializer {
+    function initialize(address anOwner, BicPermissions _permissions) public virtual initializer {
         _initialize(anOwner, _permissions);
     }
 
-    function _initialize(address anOwner, BicPermissionsEnumerable _permissions) internal virtual {
+    function _initialize(address anOwner, BicPermissions _permissions) internal virtual {
         owner = anOwner;
         permissions = _permissions;
         emit BicAccountInitialized(_entryPoint, owner);
@@ -118,6 +118,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override virtual returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
+        // TODO: Upgrade to use fully AcceccControl, remove Owable
         if (owner != ECDSA.recover(hash, userOp.signature))
             return SIG_VALIDATION_FAILED;
         return 0;
