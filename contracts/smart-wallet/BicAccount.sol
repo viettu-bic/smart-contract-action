@@ -53,8 +53,13 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == owner || msg.sender == address(this), "only owner");
     }
 
+    function _onlyOperator() internal view {
+        //directly from EOA owner, or through the account itself (which gets redirected through execute())
+        require(permissions.hasRole(permissions.ACCOUNT_OPERATOR_ROLE(), msg.sender), "only operator");
+    }
+
     function _onlyOwnerOrHasRecoveryRole() internal view {
-        require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
+        require(msg.sender == owner || permissions.hasRole(permissions.ACCOUNT_RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
 
     /**
@@ -158,6 +163,6 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
     function _authorizeUpgrade(address newImplementation) internal view override {
         (newImplementation);
-        _onlyOwner();
+        _onlyOperator();
     }
 }

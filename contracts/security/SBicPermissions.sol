@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity 0.8.23;
 import "./IBicPermissions.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 
 abstract contract SBicPermissions is IBicPermissions {
-    using EnumerableSet for EnumerableSet.AddressSet;
-    
     // Constants
-    bytes32 public constant RECOVERY_ROLE = keccak256("RECOVERY_ROLE");
+    bytes32 public constant ACCOUNT_RECOVERY_ROLE = keccak256("ACCOUNT_RECOVERY_ROLE");
+    bytes32 public constant ACCOUNT_OPERATOR_ROLE = keccak256("ACCOUNT_OPERATOR_ROLE");
 
     /* Storages */
     // Permissions for AA
