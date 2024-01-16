@@ -20,6 +20,7 @@ import "./../management/BicPermissions.sol";
   *  has a single signer that can send requests through the entryPoint.
   */
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
+ 
     address public owner;
 
     BicPermissions public permissions;
@@ -58,6 +59,10 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
     function _onlyOwnerOrHasRecoveryRole() internal view {
         require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
+    }
+
+    function _onlyOwnerOrOperator() internal view {
+        require(msg.sender == owner || permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only owner or operator role");
     }
 
     /**
@@ -161,6 +166,13 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
     function _authorizeUpgrade(address newImplementation) internal view override {
         (newImplementation);
-        _onlyOperator();
+        _onlyOwnerOrOperator();
+    }
+
+    /**
+    * Version for BicAccount
+    */
+    function version() external virtual pure returns (uint256) {
+        return 1;
     }
 }
