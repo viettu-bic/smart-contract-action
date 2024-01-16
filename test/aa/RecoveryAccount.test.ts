@@ -7,7 +7,6 @@ describe("RecoveryAccount", function () {
   let bicFactory: BicAccountFactory;
   let entryPoint: EntryPoint;
 
-  const salt = ethers.concat([ethers.ZeroHash, Buffer.from(Date.now().toString())]);
 
   // constants
 
@@ -33,8 +32,9 @@ describe("RecoveryAccount", function () {
 
   });
 
-  
+
   it("Should change owner successfully when has recovery role", async function () {
+    const salt = ethers.concat([ethers.ZeroHash, Buffer.from(Date.now().toString())]);
     const { deployer: recoverer, wallet1, wallet2 } = await getEOAAccounts();
 
     // Create Account for wallet1
@@ -59,6 +59,7 @@ describe("RecoveryAccount", function () {
   });
 
   it("Should change owner successfully when onlyOwner", async function () {
+    const salt = ethers.concat([ethers.ZeroHash, Buffer.from(Date.now().toString())]);
     const { wallet1, wallet2 } = await getEOAAccounts();
 
     // Create Account for wallet1
@@ -84,6 +85,7 @@ describe("RecoveryAccount", function () {
 
 
   it("Should change owner failed when has not role recovery or owner", async function () {
+    const salt = ethers.concat([ethers.ZeroHash, Buffer.from(Date.now().toString())]);
     const { wallet3: notRecoverer, wallet2 } = await getEOAAccounts();
 
     const accountAddress2 = await bicFactory.getFunction("getAddress")(wallet2.address, salt);
@@ -100,6 +102,11 @@ describe("RecoveryAccount", function () {
     const changeTx = account2.connect(notRecoverer).changeOwner(wallet2.address);
 
     await expect(changeTx).to.be.revertedWith("only owner or recovery role");
+  });
+ 
+
+  describe("", () => {
+
   });
 
 });
