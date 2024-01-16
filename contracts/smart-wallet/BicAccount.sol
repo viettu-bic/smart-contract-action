@@ -121,7 +121,6 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override virtual returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
-        // TODO: Upgrade to use fully AcceccControl, remove Owable
         if (owner != ECDSA.recover(hash, userOp.signature))
             return SIG_VALIDATION_FAILED;
         return 0;

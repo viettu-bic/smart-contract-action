@@ -103,10 +103,4 @@ describe("RecoveryAccount", function () {
 
     await expect(changeTx).to.be.revertedWith("only owner or recovery role");
   });
- 
-
-  describe("", () => {
-
-  });
-
 });

@@ -34,7 +34,6 @@ contract BicAccountFactory {
         if (codeSize > 0) {
             return BicAccount(payable(addr));
         }
-        // TODO: Add owner and BIC Admin to control the Account
         ret = BicAccount(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(accountImplementation),
                 abi.encodeCall(BicAccount.initialize, (owner, permissions))
