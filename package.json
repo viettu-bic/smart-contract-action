@@ -1,6 +1,6 @@
 {
   "name": "bic-smart-contract",
-  "author": "Ted Nguyen <vietkhiem@evol.vn>",
+  "author": "BIC Members",
   "scripts": {
     "commit": "git-cz"
   },
