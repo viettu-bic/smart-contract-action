@@ -4,12 +4,17 @@ import { ethers } from 'hardhat';
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
-    const { deploy } = deployments;
+    const { deploy, get } = deployments;
     const { deployer } = await getNamedAccounts();
-
-    await deploy("BicAccountFactory", {
+    const entryPoint = await get("EntryPoint");
+    const bicPermissions = await get("BicPermissions");
+    const bicAccountFactory = await deploy("BicAccountFactory", {
         from: deployer,
-        args: [ethers.ZeroAddress, ethers.ZeroAddress],
+        args: [entryPoint.address, bicPermissions.address],
     });
+    console.log("🚀 ~ bicAccountFactory:", bicAccountFactory.address)
+
 };
+func.tags = ["BicAccountFactory"];
+func.dependencies = ["EntryPoint", "BicPermissions"];
 export default func;
