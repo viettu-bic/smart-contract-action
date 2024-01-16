@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "hardhat-deploy";
 
 import env from "./env";
 
@@ -33,6 +34,9 @@ const config: HardhatUserConfig = {
       // },
     },
 
+  },
+  namedAccounts: {
+    deployer: 0,
   },
   etherscan: {
     apiKey: env.API_KEY,
