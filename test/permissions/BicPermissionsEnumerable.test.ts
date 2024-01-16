@@ -7,7 +7,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BicPermissions } from "../../typechain-types";
 
-describe("BicPermissionsEnumerable", function () {
+describe("BicPermissions", function () {
   let bicPermissionsEnumerable: BicPermissions;
 
   // constants
