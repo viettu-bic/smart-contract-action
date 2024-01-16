@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol";
 
-import "./../security/BicPermissions.sol";
+import "./../management/BicPermissions.sol";
 
 /**
   * minimal account.
@@ -49,17 +49,15 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     function _onlyOwner() internal view {
-        //directly from EOA owner, or through the account itself (which gets redirected through execute())
         require(msg.sender == owner || msg.sender == address(this), "only owner");
     }
 
     function _onlyOperator() internal view {
-        //directly from EOA owner, or through the account itself (which gets redirected through execute())
-        require(permissions.hasRole(permissions.ACCOUNT_OPERATOR_ROLE(), msg.sender), "only operator");
+        require(permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only operator");
     }
 
     function _onlyOwnerOrHasRecoveryRole() internal view {
-        require(msg.sender == owner || permissions.hasRole(permissions.ACCOUNT_RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
+        require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
 
     /**

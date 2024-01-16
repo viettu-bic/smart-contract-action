@@ -30,7 +30,7 @@ describe("BicPermissionsEnumerable", function () {
     const { deployer } = await getEOAAccounts();
 
     const DEFAULT_ADMIN_ROLE = await bicPermissionsEnumerable.DEFAULT_ADMIN_ROLE();
-    const RECOVERY_ROLE = await bicPermissionsEnumerable.ACCOUNT_RECOVERY_ROLE();
+    const RECOVERY_ROLE = await bicPermissionsEnumerable.RECOVERY_ROLE();
 
     const hasAdminRole = await bicPermissionsEnumerable.hasRole(DEFAULT_ADMIN_ROLE, deployer.address);
     const hasRecoveryRole = await bicPermissionsEnumerable.hasRole(RECOVERY_ROLE, deployer.address);
@@ -48,7 +48,7 @@ describe("BicPermissionsEnumerable", function () {
     it("Should grant role success", async function () {
       const { deployer, wallet1 } = await getEOAAccounts();
 
-      const RECOVERY_ROLE = await bicPermissionsEnumerable.ACCOUNT_RECOVERY_ROLE();
+      const RECOVERY_ROLE = await bicPermissionsEnumerable.RECOVERY_ROLE();
 
       const walletGranted = wallet1.address;
 
@@ -71,7 +71,7 @@ describe("BicPermissionsEnumerable", function () {
       const { wallet1, wallet2 } = await getEOAAccounts();
 
       const DEFAULT_ADMIN_ROLE = await bicPermissionsEnumerable.DEFAULT_ADMIN_ROLE();
-      const RECOVERY_ROLE = await bicPermissionsEnumerable.ACCOUNT_RECOVERY_ROLE();
+      const RECOVERY_ROLE = await bicPermissionsEnumerable.RECOVERY_ROLE();
 
       const walletGranted = wallet1.address;
       // Grant role with failed
@@ -85,7 +85,7 @@ describe("BicPermissionsEnumerable", function () {
     it("Should revoke role success", async function () {
       const { wallet1 } = await getEOAAccounts();
 
-      const RECOVERY_ROLE = await bicPermissionsEnumerable.ACCOUNT_RECOVERY_ROLE();
+      const RECOVERY_ROLE = await bicPermissionsEnumerable.RECOVERY_ROLE();
 
       const walletGranted = wallet1.address;
 
@@ -106,7 +106,7 @@ describe("BicPermissionsEnumerable", function () {
       const { wallet1, wallet2 } = await getEOAAccounts();
 
       const DEFAULT_ADMIN_ROLE = await bicPermissionsEnumerable.DEFAULT_ADMIN_ROLE();
-      const RECOVERY_ROLE = await bicPermissionsEnumerable.ACCOUNT_RECOVERY_ROLE();
+      const RECOVERY_ROLE = await bicPermissionsEnumerable.RECOVERY_ROLE();
 
       const walletGranted = wallet1.address;
       // Grant role with failed
