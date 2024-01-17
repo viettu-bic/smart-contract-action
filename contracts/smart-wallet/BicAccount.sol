@@ -14,17 +14,18 @@ import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol
 import "./../management/BicPermissions.sol";
 
 /**
- * minimal account.
- *  this is sample minimal account.
- *  has execute, eth handling methods
- *  has a single signer that can send requests through the entryPoint.
- */
+  * minimal account.
+  *  this is sample minimal account.
+  *  has execute, eth handling methods
+  *  has a single signer that can send requests through the entryPoint.
+  */
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
     address public owner;
 
     BicPermissions public permissions;
 
     IEntryPoint private immutable _entryPoint;
+
 
     event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
     event NewOwner(address oldOwner, address newOwner);
@@ -104,7 +105,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     /**
      * @dev The _entryPoint member is immutable, to reduce gas consumption.  To upgrade EntryPoint,
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
-     * the implementation by calling `upgradeTo()`
+      * the implementation by calling `upgradeTo()`
      */
     function initialize(address anOwner, BicPermissions _permissions) public virtual initializer {
         _initialize(anOwner, _permissions);
@@ -121,9 +122,11 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == address(entryPoint()) || msg.sender == owner, "account: not Owner or EntryPoint");
     }
 
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash) internal virtual override returns (uint256 validationData) {
+    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
+    internal override virtual returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
-        if (owner != ECDSA.recover(hash, userOp.signature)) return SIG_VALIDATION_FAILED;
+        if (owner != ECDSA.recover(hash, userOp.signature))
+            return SIG_VALIDATION_FAILED;
         return 0;
     }
 
@@ -163,7 +166,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         (newImplementation);
         _onlyOwnerOrHasOperatorRole();
     }
-
+    
     /**
      * Version for BicAccount
      */
