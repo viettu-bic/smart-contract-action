@@ -18,3 +18,4 @@ node_modules
 # Foramtting
 .prettierrc
 .vscode/
+.solhint.json
