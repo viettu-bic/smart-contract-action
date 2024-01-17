@@ -13,6 +13,8 @@ node_modules
 /coverage
 /coverage.json
 
-# formating
+/deployments/**/solcInputs
+
+# Foramtting
 .prettierrc
-.vscode/settings.json
+.vscode/
