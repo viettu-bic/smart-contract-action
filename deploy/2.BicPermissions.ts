@@ -7,11 +7,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deploy } = deployments;
     const { deployer } = await getNamedAccounts();
 
-    const test = await deploy("BicPermissions", {
+    const bicPermissions = await deploy("BicPermissions", {
         from: deployer,
         args: [],
     });
-    console.log("🚀 ~ BicPermissions:", test.address)
+    console.log("🚀 ~ BicPermissions:", bicPermissions.address)
+
+    await hre.run("verify:verify", {
+        contract: "contracts/management/BicPermissions.sol:BicPermissions",
+        address: bicPermissions.address,
+        constructorArguments: [],
+    });
 
 
 };

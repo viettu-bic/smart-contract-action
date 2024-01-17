@@ -12,7 +12,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         from: deployer,
         args: [entryPoint.address, bicPermissions.address],
     });
-    console.log("🚀 ~ bicAccountFactory:", bicAccountFactory.address)
+
+    await hre.run("verify:verify", {
+        contract: "contracts/smart-wallet/BicAccountFactory.sol:BicAccountFactory",
+        address: bicAccountFactory.address,
+        constructorArguments: [entryPoint.address, bicPermissions.address],
+    });
 
 };
 func.tags = ["BicAccountFactory"];
