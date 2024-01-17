@@ -1,6 +1,6 @@
 {
   "name": "bic-smart-contract",
-  "author": "Ted Nguyen <vietkhiem@evol.vn>",
+  "author": "BIC Members",
   "scripts": {
     "commit": "git-cz"
   },
@@ -15,6 +15,7 @@
     "@openzeppelin/hardhat-upgrades": "^3.0.2",
     "commitizen": "^4.3.0",
     "hardhat": "^2.19.4",
+    "hardhat-deploy": "^0.11.45",
     "husky": "^8.0.3",
     "inquirer": "^8.2.6"
   },
