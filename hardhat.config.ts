@@ -13,12 +13,12 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.23",
+        version: '0.8.23',
         settings: {
-          optimizer: { enabled: true, runs: 1000000 },
-        },
+          optimizer: { enabled: true, runs: 1000000 }
+        }
       },
-    ],
+    ]
   },
   networks: {
     hardhat: {
@@ -57,6 +57,7 @@ const config: HardhatUserConfig = {
       //   passphrase: env.MNEMONIC_PASSPHRASE,
       // },
     },
+
   },
   namedAccounts: {
     deployer: 0,
@@ -82,7 +83,7 @@ const config: HardhatUserConfig = {
     apiUrl: "https://sourcify.dev/server",
     // Optional: specify a different Sourcify repository
     browserUrl: "https://repo.sourcify.dev",
-  },
+  }
 };
 
 export default config;

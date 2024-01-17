@@ -15,7 +15,5 @@ node_modules
 
 /deployments/**/solcInputs
 
-# Foramtting
-.prettierrc
+# IDE
 .vscode/
-.solhint.json
