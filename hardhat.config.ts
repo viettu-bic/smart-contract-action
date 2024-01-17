@@ -5,6 +5,9 @@ import "hardhat-deploy";
 
 import env from "./env";
 
+// Extend hardhat env
+import "./configs";
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
