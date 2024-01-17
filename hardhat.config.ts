@@ -20,6 +20,13 @@ const config: HardhatUserConfig = {
     ]
   },
   networks: {
+    hardhat: {
+      saveDeployments: true,
+      // forking: {
+      //   url: `https://rpc.ankr.com/avalanche`,
+      //   blockNumber: 33963320,
+      // },
+    },
     arbitrum: {
       url: "https://arbitrum.llamarpc.com",
       chainId: 42161,

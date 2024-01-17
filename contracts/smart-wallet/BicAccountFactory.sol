@@ -16,6 +16,7 @@ import "./../management/BicPermissions.sol";
 contract BicAccountFactory {
     BicAccount public immutable accountImplementation;
     BicPermissions public immutable permissions;
+    string public tesString = "13";
 
     constructor(IEntryPoint _entryPoint, BicPermissions _permissions) {
         accountImplementation = new BicAccount(_entryPoint);
