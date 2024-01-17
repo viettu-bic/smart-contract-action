@@ -14,19 +14,17 @@ import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol
 import "./../management/BicPermissions.sol";
 
 /**
-  * minimal account.
-  *  this is sample minimal account.
-  *  has execute, eth handling methods
-  *  has a single signer that can send requests through the entryPoint.
-  */
+ * minimal account.
+ *  this is sample minimal account.
+ *  has execute, eth handling methods
+ *  has a single signer that can send requests through the entryPoint.
+ */
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
- 
     address public owner;
 
     BicPermissions public permissions;
 
     IEntryPoint private immutable _entryPoint;
-
 
     event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
     event NewOwner(address oldOwner, address newOwner);
@@ -61,7 +59,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
 
-    function _onlyOwnerOrOperator() internal view {
+    function _onlyOwnerOrHasOperatorRole() internal view {
         require(msg.sender == owner || permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only owner or operator role");
     }
 
@@ -106,7 +104,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     /**
      * @dev The _entryPoint member is immutable, to reduce gas consumption.  To upgrade EntryPoint,
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
-      * the implementation by calling `upgradeTo()`
+     * the implementation by calling `upgradeTo()`
      */
     function initialize(address anOwner, BicPermissions _permissions) public virtual initializer {
         _initialize(anOwner, _permissions);
@@ -123,17 +121,18 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == address(entryPoint()) || msg.sender == owner, "account: not Owner or EntryPoint");
     }
 
-    function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
-    internal override virtual returns (uint256 validationData) {
+    function _validateSignature(
+        UserOperation calldata userOp,
+        bytes32 userOpHash
+    ) internal virtual override returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
         // TODO: Upgrade to use fully AcceccControl, remove Owable
-        if (owner != ECDSA.recover(hash, userOp.signature))
-            return SIG_VALIDATION_FAILED;
+        if (owner != ECDSA.recover(hash, userOp.signature)) return SIG_VALIDATION_FAILED;
         return 0;
     }
 
     function _call(address target, uint256 value, bytes memory data) internal {
-        (bool success, bytes memory result) = target.call{value: value}(data);
+        (bool success, bytes memory result) = target.call{ value: value }(data);
         if (!success) {
             assembly {
                 revert(add(result, 32), mload(result))
@@ -152,7 +151,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * deposit more funds for this account in the entryPoint
      */
     function addDeposit() public payable {
-        entryPoint().depositTo{value: msg.value}(address(this));
+        entryPoint().depositTo{ value: msg.value }(address(this));
     }
 
     /**
@@ -166,13 +165,13 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
     function _authorizeUpgrade(address newImplementation) internal view override {
         (newImplementation);
-        _onlyOwnerOrOperator();
+        _onlyOwnerOrHasOperatorRole();
     }
 
     /**
-    * Version for BicAccount
-    */
-    function version() external virtual pure returns (uint256) {
+     * Version for BicAccount
+     */
+    function version() external pure virtual returns (uint256) {
         return 1;
     }
 }

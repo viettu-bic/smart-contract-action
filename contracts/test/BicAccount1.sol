@@ -6,7 +6,7 @@ import { IEntryPoint } from "@account-abstraction/contracts/interfaces/IEntryPoi
 
 import "./../management/BicPermissions.sol";
 
-contract BicAccount2 is BicAccount {
+contract BicAccount1 is BicAccount {
     // This is make sure the BicAccount constructor is call when deploy
     constructor(IEntryPoint anEntryPoint) BicAccount(anEntryPoint) {}
 

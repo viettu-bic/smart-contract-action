@@ -1,41 +1,65 @@
 import { ethers } from "hardhat";
 
 const contractFixture = async () => {
-    /**
-     * deployer: The account use for deploying the contract
-     * user1: EOA wallet for user1
-     * user2: EOA wallet for user2
-     * beneficiary: EOA wallet for all beneficiary
-     */
-    const [deployer, user1, user2, beneficiary] = await ethers.getSigners();
+  /**
+   * deployer: The account use for deploying the contract
+   * user1: EOA wallet for user1
+   * user2: EOA wallet for user2
+   * beneficiary: EOA wallet for all beneficiary
+   */
+  const [deploySigner, signer1, signer2, beneficiarySigner] = await ethers.getSigners();
 
-    /**
-     * EntryPoint
-     */
-    const entryPoint = await ethers.deployContract("EntryPoint");
-    await entryPoint.waitForDeployment();
+  /**
+   * ERC20
+   */
+  const testERC20Contract = await ethers.deployContract("TestERC20");
+  await testERC20Contract.waitForDeployment();
 
-    /**
-     * BicPermissionsEnumerable
-     */
-    const bicPermissionsEnumerable = await ethers.deployContract("BicPermissions");
-    await bicPermissionsEnumerable.waitForDeployment();
+  /**
+   * ERC721
+   */
+  const testERC721Contract = await ethers.deployContract("TestERC721");
+  await testERC721Contract.waitForDeployment();
 
-    /**
-     * BicAccountFactory
-     */
-    const bicAccountFactory = await ethers.deployContract("BicAccountFactory", [entryPoint.target, bicPermissionsEnumerable.target]);
-    await bicAccountFactory.waitForDeployment();
+  /**
+   * EntryPoint
+   */
+  const entryPointContract = await ethers.deployContract("EntryPoint");
+  await entryPointContract.waitForDeployment();
 
-    /**
-     * Implementation V2
-     */
-    const bicAccountV2 = await ethers.deployContract("BicAccount2", [entryPoint.target]);
-    await bicAccountV2.waitForDeployment();
+  /**
+   * BicPermissionsEnumerable
+   */
+  const bicPermissionsEnumerableContract = await ethers.deployContract("BicPermissions");
+  await bicPermissionsEnumerableContract.waitForDeployment();
 
-    return {
-        deployer, user1, user2, beneficiary, entryPoint, bicPermissionsEnumerable, bicAccountFactory, bicAccountV2
-    }
-}
+  /**
+   * BicAccountFactory
+   */
+  const bicAccountFactoryContract = await ethers.deployContract("BicAccountFactory", [
+    entryPointContract.target,
+    bicPermissionsEnumerableContract.target,
+  ]);
+  await bicAccountFactoryContract.waitForDeployment();
 
-export { contractFixture }
+  /**
+   * Implementation V2
+   */
+  const bicAccountV2Contract = await ethers.deployContract("BicAccount2", [entryPointContract.target]);
+  await bicAccountV2Contract.waitForDeployment();
+
+  return {
+    deploySigner,
+    signer1,
+    signer2,
+    beneficiarySigner,
+    entryPointContract,
+    bicPermissionsEnumerableContract,
+    bicAccountFactoryContract,
+    bicAccountV2Contract,
+    testERC20Contract,
+    testERC721Contract,
+  };
+};
+
+export { contractFixture };
