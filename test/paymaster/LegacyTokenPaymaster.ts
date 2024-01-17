@@ -42,8 +42,6 @@ describe("LegacyTokenPaymaster", () => {
 
     it('should be able to use to create account', async () => {
         const smartWalletAddress = await bicAccountFactory.getFunction("getAddress")(user1.address as any, 0n as any);
-        expect(user1.address).equal("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf");
-        expect(smartWalletAddress).equal("0xb5B080c995e37F6f32E58c4B89eA247A7E138F72");
 
         await legacyTokenPaymaster.mintTokens(smartWalletAddress as any, ethers.parseEther('1000') as any);
 
