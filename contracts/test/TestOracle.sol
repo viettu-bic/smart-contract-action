@@ -5,6 +5,6 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
 
 contract TestOracle is IOracle {
     function getTokenValueOfEth(uint256 ethOutput) external pure override returns (uint256 tokenInput) {
-        return ethOutput / 10000;
+        return ethOutput * 10000;
     }
 }

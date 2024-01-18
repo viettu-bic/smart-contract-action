@@ -72,7 +72,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
         if (oracle != address(0)) {
             return IOracle(oracle).getTokenValueOfEth(valueEth);
         }
-        return valueEth / 100;
+        return valueEth * 100;
     }
 
     /**
