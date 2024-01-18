@@ -161,7 +161,7 @@ describe("BicTokenPaymaster", () => {
         await entryPoint.handleOps([createWalletOp2, transferOp2] as any, admin.address);
         const balanceLeft2 = await bicTokenPaymaster.balanceOf(smartWalletAddress2 as any);
 
-        expect((ethers.parseEther('1000') - balanceLeft1)/(ethers.parseEther('1000') - balanceLeft2)).equal(99);
+        expect((ethers.parseEther('1000') - balanceLeft2)/(ethers.parseEther('1000') - balanceLeft1)).equal(100);
     });
 
     it('should be able to transfer ownership to beneficiary', async () => {
