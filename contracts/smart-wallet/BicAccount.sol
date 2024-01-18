@@ -60,6 +60,10 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
 
+    function _onlyOwnerOrHasOperatorRole() internal view {
+        require(msg.sender == owner || permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only owner or operator role");
+    }
+
     /**
      * Change owner or recovery the other owner (called directly from owner, or by entryPoint)
      */
@@ -160,6 +164,13 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
     function _authorizeUpgrade(address newImplementation) internal view override {
         (newImplementation);
-        _onlyOperator();
+        _onlyOwnerOrHasOperatorRole();
+    }
+    
+    /**
+     * Version for BicAccount
+     */
+    function version() external pure virtual returns (uint256) {
+        return 1;
     }
 }
