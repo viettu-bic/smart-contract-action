@@ -22,7 +22,7 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
  * - Possible workarounds are either use a more complex paymaster scheme (e.g. the DepositPaymaster) or
  *   to whitelist the account and the called method ids.
  */
-contract LegacyTokenPaymaster is BasePaymaster, ERC20Votes {
+contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
     //calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
@@ -31,7 +31,7 @@ contract LegacyTokenPaymaster is BasePaymaster, ERC20Votes {
 
     address public oracle;
 
-    constructor(address accountFactory, string memory _symbol, IEntryPoint _entryPoint) ERC20(_symbol, _symbol) BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
+    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         theFactory = accountFactory;
         //make it non-empty
         _mint(address(this), 1);
