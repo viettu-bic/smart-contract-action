@@ -26,7 +26,7 @@ import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
  */
 contract BaseHandles is ERC721, IBaseHandles {
     using Address for address;
-    address public immutable CONTROLLER;
+    address public CONTROLLER;
     IBicPermissions private immutable _bicPermissions;
 
     // We used 31 to fit the handle in a single slot, with `.name` that restricted localName to use 26 characters.
@@ -76,6 +76,10 @@ contract BaseHandles is ERC721, IBaseHandles {
 
     function totalSupply() external view virtual override returns (uint256) {
         return _totalSupply;
+    }
+
+    function setController(address controller) external onlyOperator {
+        CONTROLLER = controller;
     }
 
     function setHandleTokenURIContract(address handleTokenURIContract) external override onlyOperator {

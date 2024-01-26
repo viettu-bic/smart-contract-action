@@ -11,7 +11,7 @@ describe('Handlers', function () {
     let wallet2;
     let wallet3;
 
-    before(async () => {
+    beforeEach(async () => {
         const GintoNordFontSVG = await ethers.getContractFactory('GintoNordFontSVG');
         const gintoNordFontSVG = await GintoNordFontSVG.deploy();
         const HandleSVG = await ethers.getContractFactory('HandleSVG', {libraries: {GintoNordFontSVG: gintoNordFontSVG.target}});
@@ -34,8 +34,11 @@ describe('Handlers', function () {
     });
 
     it('should create nft successfully', async function () {
-        const createTx = await bicHandlers.connect(wallet1).mintHandle(wallet2.address, 'test');
-        const nftId = createTx
-        console.log('nftId', nftId);
+        const mintName = 'test'
+        await bicHandlers.connect(wallet1).mintHandle(wallet2.address, mintName);
+        const tokenId = await bicHandlers.getTokenId(mintName);
+        console.log('tokenId', tokenId.toString());
+        const uri = await bicHandlers.tokenURI(tokenId);
+        console.log('uri: ', uri)
     });
 })
