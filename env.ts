@@ -10,7 +10,6 @@ export type Environment = {
 
 const env = (): Environment => {
     const privateKeys = process.env.PRIVATE_KEYS?.split(",").filter(e => e);
-    console.log("🚀 ~ env ~ privateKeys:", privateKeys)
     return {
         API_KEY: process.env.API_KEY as string,
         MNEMONIC: process.env.MNEMONIC as string,

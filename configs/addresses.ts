@@ -21,7 +21,6 @@ const config: {
 
 export default async function (hre: HardhatRuntimeEnvironment): Promise<Addresses> {
   const addresses = config[hre.network.name];
-  console.log("🚀 ~ addresses:", addresses)
   return addresses || {};
   if (!addresses) {
     throw new Error(`Not found addresses at chain ${hre.network.name}`);
