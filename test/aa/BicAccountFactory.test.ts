@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../typechain-types";
 
 describe("BicAccountFactory", function () {
@@ -52,5 +53,18 @@ describe("BicAccountFactory", function () {
     const permissions = await bicFactory.permissions();
     expect((await bicAccount.permissions()).toLowerCase()).be.eq(permissions.toLowerCase());
   });
+
+  it("Should BIC Account return current account when tried to creatAccount more than one", async() => {
+    const salt = 123;
+    const { wallet1 } = await getEOAAccounts();
+
+    const createTx = await bicFactory.createAccount(wallet1.address, salt);
+    const createReceipt = await createTx.wait();
+
+    const secondCreateTx = await bicFactory.createAccount(wallet1.address, salt);
+    const secondCreateReceipt = await secondCreateTx.wait();
+
+    expect(createReceipt?.to?.toLowerCase()).be.eq(secondCreateReceipt?.to?.toLowerCase());
+  })
 
 });
