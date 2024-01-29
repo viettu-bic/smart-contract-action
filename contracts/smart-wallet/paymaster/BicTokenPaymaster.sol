@@ -31,7 +31,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
     address public oracle;
 
-    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
+    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Testing Beincom", "TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         theFactory = accountFactory;
         //make it non-empty
         _mint(address(this), 1);
