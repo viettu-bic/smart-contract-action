@@ -3,22 +3,31 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
+import "@nomicfoundation/hardhat-foundry";
 
 import env from "./env";
 
 // Extend hardhat env
 import "./configs";
+import fs from "fs";
+
+function getRemappings() {
+  return fs
+      .readFileSync("remappings.txt", "utf8")
+      .split("\n")
+      .filter(Boolean) // remove empty lines
+      .map((line) => line.trim().split("="));
+}
 
 const config: HardhatUserConfig = {
   solidity: {
-    compilers: [
-      {
-        version: '0.8.23',
-        settings: {
-          optimizer: { enabled: true, runs: 1000000 }
-        }
+    version: "0.8.23",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000000,
       },
-    ]
+    },
   },
   networks: {
     hardhat: {

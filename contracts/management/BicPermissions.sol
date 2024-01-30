@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
-pragma solidity 0.8.23;
+pragma solidity ^0.8.23;
 
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 
@@ -13,7 +13,7 @@ contract BicPermissions is AccessControlEnumerable {
         _setupRole(RECOVERY_ROLE, msg.sender);
         _setupRole(OPERATOR_ROLE, msg.sender);
     }
-    
+
     /* Implement more functions */
-    
+
 }
