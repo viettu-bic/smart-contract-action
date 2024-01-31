@@ -31,7 +31,6 @@ contract BaseHandles is ERC721, IBaseHandles {
 
     // We used 31 to fit the handle in a single slot, with `.name` that restricted localName to use 26 characters.
     // Can be extended later if needed.
-    uint256 internal constant MAX_LOCAL_NAME_LENGTH = 26;
     uint256 private _totalSupply;
 
 
@@ -102,13 +101,8 @@ contract BaseHandles is ERC721, IBaseHandles {
     function mintHandle(
         address to,
         string calldata localName
-    ) external onlyOperator returns (uint256) {
+    ) external onlyController returns (uint256) {
         _validateLocalName(localName);
-        return _mintHandle(to, localName);
-    }
-
-    function migrateHandle(address to, string calldata localName) external onlyController returns (uint256) {
-        _validateLocalNameMigration(localName);
         return _mintHandle(to, localName);
     }
 
@@ -150,9 +144,6 @@ contract BaseHandles is ERC721, IBaseHandles {
         return uint256(keccak256(bytes(localName)));
     }
 
-    /**
-     * @dev See {IERC165-supportsInterface}.
-     */
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override(ERC721, IERC165) returns (bool) {
@@ -172,64 +163,8 @@ contract BaseHandles is ERC721, IBaseHandles {
         return tokenId;
     }
 
-    /// @dev This function is used to validate the local name when migrating from V1 to V2.
-    ///      As in V1 we also allowed the Hyphen '-' character, we need to allow it here as well and use a separate
-    ///      validation function for migration VS newly created handles.
-    function _validateLocalNameMigration(string memory localName) internal pure {
-        bytes memory localNameAsBytes = bytes(localName);
-        uint256 localNameLength = localNameAsBytes.length;
-
-        if (localNameLength == 0 || localNameLength > MAX_LOCAL_NAME_LENGTH) {
-            revert HandlesErrors.HandleLengthInvalid();
-        }
-
-        bytes1 firstByte = localNameAsBytes[0];
-        if (firstByte == '-' || firstByte == '_') {
-            revert HandlesErrors.HandleFirstCharInvalid();
-        }
-
-        uint256 i;
-        while (i < localNameLength) {
-            if (!_isAlphaNumeric(localNameAsBytes[i]) && localNameAsBytes[i] != '-' && localNameAsBytes[i] != '_') {
-                revert HandlesErrors.HandleContainsInvalidCharacters();
-            }
-            unchecked {
-                ++i;
-            }
-        }
+    function _validateLocalName(string memory localName) internal virtual pure {
+        revert HandlesErrors.NotImplemented();
     }
-
-    /// @dev In V2 we only accept the following characters: [a-z0-9_] to be used in newly created handles.
-    ///      We also disallow the first character to be an underscore '_'.
-    function _validateLocalName(string memory localName) internal pure {
-        bytes memory localNameAsBytes = bytes(localName);
-        uint256 localNameLength = localNameAsBytes.length;
-
-        if (localNameLength == 0 || localNameLength > MAX_LOCAL_NAME_LENGTH) {
-            revert HandlesErrors.HandleLengthInvalid();
-        }
-
-        if (localNameAsBytes[0] == '_') {
-            revert HandlesErrors.HandleFirstCharInvalid();
-        }
-
-        uint256 i;
-        while (i < localNameLength) {
-            if (!_isAlphaNumeric(localNameAsBytes[i]) && localNameAsBytes[i] != '_') {
-                revert HandlesErrors.HandleContainsInvalidCharacters();
-            }
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    /// @dev We only accept lowercase characters to avoid confusion.
-    /// @param char The character to check.
-    /// @return True if the character is alphanumeric, false otherwise.
-    function _isAlphaNumeric(bytes1 char) internal pure returns (bool) {
-        return (char >= '0' && char <= '9') || (char >= 'a' && char <= 'z');
-    }
-
 }
 

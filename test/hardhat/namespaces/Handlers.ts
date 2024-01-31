@@ -18,7 +18,7 @@ describe('Handlers', function () {
         const handleSVG = await HandleSVG.deploy();
 
         const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        const Handlers = await ethers.getContractFactory('BicHandlers');
+        const Handlers = await ethers.getContractFactory('UsernameHandlers');
         const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
         bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
         await bicPermissionsEnumerable.waitForDeployment();
@@ -30,7 +30,7 @@ describe('Handlers', function () {
 
         ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
 
-        await bicPermissionsEnumerable.grantRole(await bicPermissionsEnumerable.OPERATOR_ROLE(), wallet1.address);
+        await bicHandlers.setController(wallet1.address);
     });
 
     it('should create nft successfully', async function () {
