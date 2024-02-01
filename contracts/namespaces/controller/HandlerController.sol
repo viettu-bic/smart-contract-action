@@ -67,7 +67,7 @@ contract HandlerController is ReentrancyGuard {
     }
 
     function _mintHandle(address handler, address to, string calldata name) private {
-        uint256 basePrice = price(name);
+        uint256 basePrice = getPrice(name);
         IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
         IBaseHandles(handler).mintHandle(to, name);
         // TODO emit event
@@ -86,19 +86,41 @@ contract HandlerController is ReentrancyGuard {
         }
     }
 
-    function price(
+    function getPrice(
         string calldata name
-    ) external view override returns (uint256 basePrice) {
-        uint256 len = name.strlen();
+    ) public view returns (uint256 basePrice) {
+        uint256 len = strlen(name);
         if (len >= priceLength) {
             basePrice = prices[priceLength - 1];
         } else {
             basePrice = prices[len - 1];
         }
-
     }
 
     function getRequestHandlerOp(address receiver, address handler, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction) public view returns (bytes32) {
         return keccak256(abi.encode(handler, name, beneficiaries, commitDuration, block.chainid));
+    }
+
+    function strlen(string memory s) internal pure returns (uint256) {
+        uint256 len;
+        uint256 i = 0;
+        uint256 bytelength = bytes(s).length;
+        for (len = 0; i < bytelength; len++) {
+            bytes1 b = bytes(s)[i];
+            if (b < 0x80) {
+                i += 1;
+            } else if (b < 0xE0) {
+                i += 2;
+            } else if (b < 0xF0) {
+                i += 3;
+            } else if (b < 0xF8) {
+                i += 4;
+            } else if (b < 0xFC) {
+                i += 5;
+            } else {
+                i += 6;
+            }
+        }
+        return len;
     }
 }
