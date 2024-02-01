@@ -45,13 +45,6 @@ contract BaseHandles is ERC721, IBaseHandles {
         _;
     }
 
-    modifier onlyEOA() {
-        if (msg.sender.isContract()) {
-            revert HandlesErrors.NotEOA();
-        }
-        _;
-    }
-
     modifier onlyController() {
         if (msg.sender != CONTROLLER) {
             revert HandlesErrors.NotController();

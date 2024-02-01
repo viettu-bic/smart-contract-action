@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {IEarning} from './interfaces/IEarning.sol';
+import {IEarning} from "../interfaces/IEarning.sol";
 
 contract Earning is IEarning {
     uint32 private _numerator;
