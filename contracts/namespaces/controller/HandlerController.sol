@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {IMarketplace} from "../../marketplace/interfaces/IMarketplace.sol";
-import {HandlesErrors} from '../constants/HandlesErrors.sol';
 import {IBaseHandles} from '../interfaces/IBaseHandles.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -18,25 +17,30 @@ contract HandlerController is ReentrancyGuard {
     IBicPermissions public immutable _bicPermissions;
     mapping(bytes32 => uint256) public commitments;
 
+    event MintHandle(address indexed handler, address indexed to, string name);
+    event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
+    event SetVerifier(address indexed verifier);
+    event SetPrices(uint256[] prices);
+
     constructor(IBicPermissions _bp, IERC20 _bic) {
         _bicPermissions = _bp;
         bic = _bic;
     }
 
     modifier onlyOperator() {
-        if (!_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender)) {
-            revert HandlesErrors.NotOperator();
-        }
+        require(_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender), "HandlerController: caller is not an operator");
         _;
     }
 
     function setVerifier(address _verifier) external onlyOperator {
         verifier = _verifier;
+        emit SetVerifier(_verifier);
     }
 
     function requestHandler(address receiver, address handler, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction, bytes calldata signature) external nonReentrant {
-        bytes32 dataHash = ECDSA.toEthSignedMessageHash(getRequestHandlerOp(receiver, handler, name, beneficiaries, commitDuration, isAuction));
-        address signer = ECDSA.recover(dataHash, signature);
+        bytes32 dataHash = getRequestHandlerOp(receiver, handler, name, beneficiaries, commitDuration, isAuction);
+        bytes32 dataHashSign = ECDSA.toEthSignedMessageHash(dataHash);
+        address signer = ECDSA.recover(dataHashSign, signature);
         require(signer == verifier, "HandlerController: invalid signature");
         if(commitDuration == 0) { // directly mint from handler
             _mintHandle(handler, receiver, name);
@@ -45,23 +49,22 @@ contract HandlerController is ReentrancyGuard {
                 // auction
             } else {
                 // commit
-                bool isCommit = _isCommit(dataHash, commitDuration);
-                if(isCommit) {
+                bool isCommitted = _isCommitted(dataHash, commitDuration);
+                if(!isCommitted) {
                     _mintHandle(handler, receiver, name);
-                } else {
-                    // TODO emit event commit
                 }
             }
         }
     }
 
-    function _isCommit(bytes32 commitment, uint256 commitDuration) private returns(bool) {
+    function _isCommitted(bytes32 commitment, uint256 commitDuration) private returns(bool) {
         if(commitments[commitment] != 0) {
             if(commitments[commitment] < block.timestamp) {
                 return false;
             }
         } else {
             commitments[commitment] = block.timestamp + commitDuration ;
+            emit Commitment(commitment, block.timestamp + commitDuration);
         }
         return true;
     }
@@ -70,12 +73,13 @@ contract HandlerController is ReentrancyGuard {
         uint256 basePrice = getPrice(name);
         IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
         IBaseHandles(handler).mintHandle(to, name);
-        // TODO emit event
+        emit MintHandle(handler, to, name);
     }
 
     function setPrices(uint256[] calldata _prices) external onlyOperator {
         prices = _prices;
         priceLength = _prices.length;
+        emit SetPrices(_prices);
     }
 
     function withdraw(address token, address to, uint256 amount) external onlyOperator {
@@ -98,7 +102,7 @@ contract HandlerController is ReentrancyGuard {
     }
 
     function getRequestHandlerOp(address receiver, address handler, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction) public view returns (bytes32) {
-        return keccak256(abi.encode(handler, name, beneficiaries, commitDuration, block.chainid));
+        return keccak256(abi.encode(receiver, handler, name, beneficiaries, commitDuration, isAuction, block.chainid));
     }
 
     function strlen(string memory s) internal pure returns (uint256) {
