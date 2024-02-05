@@ -18,7 +18,7 @@ contract EarningUsernameHandlers is UsernameHandlers, Earning {
     }
 
     function getNamespace() public pure override virtual returns (string memory) {
-        return 'ebic';
+        return 'ebun';
     }
 
     function setEarningRate(uint32 numerator, uint32 denominator) public override onlyOperator {

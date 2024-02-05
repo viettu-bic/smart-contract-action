@@ -24,7 +24,7 @@ import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
  *
  * @custom:upgradeable Transparent upgradeable proxy without initializer.
  */
-contract BaseHandles is ERC721, IBaseHandles {
+abstract contract BaseHandles is ERC721, IBaseHandles {
     using Address for address;
     address public CONTROLLER;
     IBicPermissions private immutable _bicPermissions;
@@ -56,14 +56,6 @@ contract BaseHandles is ERC721, IBaseHandles {
         IBicPermissions _bp
     ) ERC721('', '') {
     _bicPermissions = _bp;
-    }
-
-    function name() public pure virtual override returns (string memory) {
-        return 'Bic Basename';
-    }
-
-    function symbol() public pure virtual override returns (string memory) {
-        return 'BBN';
     }
 
     function totalSupply() external view virtual override returns (uint256) {
@@ -156,8 +148,6 @@ contract BaseHandles is ERC721, IBaseHandles {
         return tokenId;
     }
 
-    function _validateLocalName(string memory localName) internal virtual pure {
-        revert HandlesErrors.NotImplemented();
-    }
+    function _validateLocalName(string memory localName) internal virtual pure;
 }
 

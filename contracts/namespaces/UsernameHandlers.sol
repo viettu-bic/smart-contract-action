@@ -19,7 +19,7 @@ contract UsernameHandlers is BaseHandles {
     }
 
     function getNamespace() public pure override virtual returns (string memory) {
-        return 'obic';
+        return 'obun';
     }
 
     function _validateLocalName(string memory localName) internal virtual override pure {

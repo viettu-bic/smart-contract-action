@@ -1,5 +1,6 @@
 import {getEOAAccounts} from "../util/getEoaAccount";
 import {ethers} from "hardhat";
+import {expect} from "chai";
 
 describe('Handlers', function () {
     let bicPermissionsEnumerable;
@@ -33,12 +34,34 @@ describe('Handlers', function () {
         await bicHandlers.setController(wallet1.address);
     });
 
-    it('should create nft successfully', async function () {
+    it('Handlers: should create nft successfully', async function () {
         const mintName = 'test'
         await bicHandlers.connect(wallet1).mintHandle(wallet2.address, mintName);
         const tokenId = await bicHandlers.getTokenId(mintName);
-        console.log('tokenId', tokenId.toString());
+        const exists = await bicHandlers.exists(tokenId);
+        expect(exists).to.equal(true);
         const uri = await bicHandlers.tokenURI(tokenId);
-        console.log('uri: ', uri)
+        const owner = await bicHandlers.ownerOf(tokenId);
+        expect(owner).to.equal(wallet2.address);
+    });
+
+    describe('Burn', function () {
+       it('Handlers: should burn nft successfully', async function () {
+              const mintName = 'test'
+              await bicHandlers.connect(wallet1).mintHandle(wallet2.address, mintName);
+              const tokenId = await bicHandlers.getTokenId(mintName);
+               const existsBeforeBurn = await bicHandlers.exists(tokenId);
+               expect(existsBeforeBurn).to.equal(true);
+              await bicHandlers.connect(wallet2).burn(tokenId);
+              const existsAfterBurn = await bicHandlers.exists(tokenId);
+              expect(existsAfterBurn).to.equal(false);
+       });
+
+       it('Handlers: should not burn nft if not owner', async function () {
+              const mintName = 'test'
+              await bicHandlers.connect(wallet1).mintHandle(wallet2.address, mintName);
+              const tokenId = await bicHandlers.getTokenId(mintName);
+              await expect(bicHandlers.connect(wallet3).burn(tokenId)).to.be.reverted;
+       });
     });
 })

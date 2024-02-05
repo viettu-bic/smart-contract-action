@@ -18,7 +18,7 @@ contract EarningCommunityNameHandlers is CommunityNameHandlers, Earning {
     }
 
     function getNamespace() public pure override virtual returns (string memory) {
-        return 'ecom';
+        return 'ebcn';
     }
 
     function setEarningRate(uint32 numerator, uint32 denominator) public override onlyOperator {
