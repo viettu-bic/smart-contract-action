@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {UsernameHandlers} from "../UsernameHandlers.sol";
+import {UsernameHandles} from "../UsernameHandles.sol";
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {Earning} from "./Earning.sol";
 
-contract EarningUsernameHandlers is UsernameHandlers, Earning {
+contract EarningUsernameHandles is UsernameHandles, Earning {
 
-    constructor(IBicPermissions _bp) UsernameHandlers(_bp) {}
+    constructor(IBicPermissions _bp) UsernameHandles(_bp) {}
 
     function name() public pure override virtual returns (string memory) {
         return 'Earning BIC Username';

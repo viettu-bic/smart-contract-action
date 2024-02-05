@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {CommunityNameHandlers} from "../CommunityNameHandlers.sol";
+import {CommunityNameHandles} from "../CommunityNameHandles.sol";
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {Earning} from "./Earning.sol";
 
-contract EarningCommunityNameHandlers is CommunityNameHandlers, Earning {
+contract EarningCommunityNameHandles is CommunityNameHandles, Earning {
 
-    constructor(IBicPermissions _bp) CommunityNameHandlers(_bp) {}
+    constructor(IBicPermissions _bp) CommunityNameHandles(_bp) {}
 
     function name() public pure override virtual returns (string memory) {
         return 'Earning BIC Community Name';

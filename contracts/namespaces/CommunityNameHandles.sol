@@ -5,7 +5,7 @@ import {BaseHandles} from "./BaseHandles.sol";
 import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
 import {HandlesErrors} from './constants/HandlesErrors.sol';
 
-contract CommunityNameHandlers is BaseHandles {
+contract CommunityNameHandles is BaseHandles {
     uint256 internal constant MAX_LOCAL_NAME_LENGTH = 50;
 
     constructor(IBicPermissions _bp) BaseHandles(_bp) {}
