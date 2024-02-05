@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract HandlerController is ReentrancyGuard {
+contract HandlesController is ReentrancyGuard {
     address public verifier;
     // Rent in base price units by length
     uint256[] public prices;

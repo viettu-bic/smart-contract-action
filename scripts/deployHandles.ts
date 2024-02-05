@@ -21,7 +21,7 @@ async function main() {
 
 
     const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-    const Handlers = await ethers.getContractFactory('BicHandlers');
+    const Handles = await ethers.getContractFactory('BicHandles');
     const bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
     await bicPermissionsEnumerable.waitForDeployment();
 
@@ -31,15 +31,15 @@ async function main() {
     });
 
     await bicPermissionsEnumerable.waitForDeployment();
-    const bicHandlers = await Handlers.deploy(bicPermissionsEnumerable.target);
-    await bicHandlers.waitForDeployment();
+    const bicHandles = await Handles.deploy(bicPermissionsEnumerable.target);
+    await bicHandles.waitForDeployment();
 
     await run("verify:verify", {
-        address: bicHandlers.target,
+        address: bicHandles.target,
         constructorArguments: [bicPermissionsEnumerable.target],
     });
 
-    // const bicHandlers = await ethers.getContractAt('BicHandlers', '0xc36aC179Ce11A934bc44F94c0C0Efc1a14722569');
+    // const bicHandles = await ethers.getContractAt('BicHandles', '0xc36aC179Ce11A934bc44F94c0C0Efc1a14722569');
 
     const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
     // const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: '0x9a8a6c7b5aa96b717329679ec697f5f84ae92d91'}});
@@ -51,7 +51,7 @@ async function main() {
         constructorArguments: [],
     });
 
-    await bicHandlers.setHandleTokenURIContract(handleTokenURI.target as any);
+    await bicHandles.setHandleTokenURIContract(handleTokenURI.target as any);
 }
 
 main().catch((error) => {
