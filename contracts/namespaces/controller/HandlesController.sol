@@ -16,11 +16,14 @@ contract HandlesController is ReentrancyGuard {
     IERC20 public bic;
     IBicPermissions public immutable _bicPermissions;
     mapping(bytes32 => uint256) public commitments;
+    IMarketplace public marketplace;
 
-    event MintHandle(address indexed handler, address indexed to, string name);
+    event MintHandle(address indexed handle, address indexed to, string name);
     event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
     event SetVerifier(address indexed verifier);
     event SetPrices(uint256[] prices);
+    event SetMarketplace(address indexed marketplace);
+    event CreateAuction(uint256 auctionId);
 
     constructor(IBicPermissions _bp, IERC20 _bic) {
         _bicPermissions = _bp;
@@ -28,7 +31,7 @@ contract HandlesController is ReentrancyGuard {
     }
 
     modifier onlyOperator() {
-        require(_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender), "HandlerController: caller is not an operator");
+        require(_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender), "HandlesController: caller is not an operator");
         _;
     }
 
@@ -37,21 +40,42 @@ contract HandlesController is ReentrancyGuard {
         emit SetVerifier(_verifier);
     }
 
-    function requestHandler(address receiver, address handler, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction, bytes calldata signature) external nonReentrant {
-        bytes32 dataHash = getRequestHandlerOp(receiver, handler, name, beneficiaries, commitDuration, isAuction);
+    function setMarketplace(address _marketplace) external onlyOperator {
+        marketplace = IMarketplace(_marketplace);
+        emit SetMarketplace(_marketplace);
+    }
+
+    function requestHandles(address receiver, address handle, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction, bytes calldata signature) external nonReentrant {
+        bytes32 dataHash = getRequestHandlesOp(receiver, handle, name, beneficiaries, commitDuration, isAuction);
         bytes32 dataHashSign = ECDSA.toEthSignedMessageHash(dataHash);
         address signer = ECDSA.recover(dataHashSign, signature);
-        require(signer == verifier, "HandlerController: invalid signature");
-        if(commitDuration == 0) { // directly mint from handler
-            _mintHandle(handler, receiver, name);
+        require(signer == verifier, "HandlesController: invalid signature");
+        if(commitDuration == 0) { // directly mint from handle
+            _mintHandle(handle, receiver, name);
         } else { // auction or commit
             if(isAuction) {
                 // auction
+                _mintHandle(handle, address(this), name);
+                IBaseHandles(handle).approve(address(marketplace), IBaseHandles(handle).getTokenId(name));
+
+                IMarketplace.AuctionParameters memory auctionParams;
+                auctionParams.assetContract = handle;
+                auctionParams.currency = address(bic);
+                auctionParams.minimumBidAmount = getPrice(name);
+                auctionParams.buyoutBidAmount = 0;
+                auctionParams.startTimestamp = uint64(block.timestamp);
+                auctionParams.endTimestamp = uint64(block.timestamp + commitDuration);
+                auctionParams.timeBufferInSeconds = 900;
+                auctionParams.bidBufferBps = 500;
+                auctionParams.tokenId = IBaseHandles(handle).getTokenId(name);
+                auctionParams.quantity = 1;
+                uint256 auctionId = marketplace.createAuction(auctionParams);
+                emit CreateAuction(auctionId);
             } else {
                 // commit
                 bool isCommitted = _isCommitted(dataHash, commitDuration);
                 if(!isCommitted) {
-                    _mintHandle(handler, receiver, name);
+                    _mintHandle(handle, receiver, name);
                 }
             }
         }
@@ -69,11 +93,11 @@ contract HandlesController is ReentrancyGuard {
         return true;
     }
 
-    function _mintHandle(address handler, address to, string calldata name) private {
+    function _mintHandle(address handle, address to, string calldata name) private {
         uint256 basePrice = getPrice(name);
         IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
-        IBaseHandles(handler).mintHandle(to, name);
-        emit MintHandle(handler, to, name);
+        IBaseHandles(handle).mintHandle(to, name);
+        emit MintHandle(handle, to, name);
     }
 
     function setPrices(uint256[] calldata _prices) external onlyOperator {
@@ -101,8 +125,8 @@ contract HandlesController is ReentrancyGuard {
         }
     }
 
-    function getRequestHandlerOp(address receiver, address handler, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction) public view returns (bytes32) {
-        return keccak256(abi.encode(receiver, handler, name, beneficiaries, commitDuration, isAuction, block.chainid));
+    function getRequestHandlesOp(address receiver, address handle, string calldata name, address[] calldata beneficiaries, uint256 commitDuration, bool isAuction) public view returns (bytes32) {
+        return keccak256(abi.encode(receiver, handle, name, beneficiaries, commitDuration, isAuction, block.chainid));
     }
 
     function strlen(string memory s) internal pure returns (uint256) {
