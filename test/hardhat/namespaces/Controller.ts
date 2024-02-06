@@ -46,7 +46,7 @@ describe('Controller', function () {
     it('Controller: create nft directly', async function () {
         await bic.mintTokens(wallet1.address, ethers.parseEther('1000'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1000'));
-        const mintName = 'test'
+        const mintName = 'testt'
         const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 0, false);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
         await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 0, false, signature);
@@ -57,7 +57,7 @@ describe('Controller', function () {
     it('Controller: commit to mint nft', async function () {
         await bic.mintTokens(wallet1.address, ethers.parseEther('1000'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1000'));
-        const mintName = 'test'
+        const mintName = 'testt'
         const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 60*60*24*30, false);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
         await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 60*60*24*30, false, signature);
@@ -80,7 +80,7 @@ describe('Controller', function () {
         await handlesController.setMarketplace(testMarketplace.target as any);
         await bic.mintTokens(wallet1.address, ethers.parseEther('1000'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1000'));
-        const mintName = 'test'
+        const mintName = 'testt'
         const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 60*60*24*30, true);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
         await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address], 60*60*24*30, true, signature);

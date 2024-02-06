@@ -6,6 +6,7 @@ import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
 import {HandlesErrors} from './constants/HandlesErrors.sol';
 
 contract UsernameHandles is BaseHandles {
+    uint256 internal constant MIN_LOCAL_NAME_LENGTH = 5;
     uint256 internal constant MAX_LOCAL_NAME_LENGTH = 50;
 
     constructor(IBicPermissions _bp) BaseHandles(_bp) {}
@@ -25,8 +26,7 @@ contract UsernameHandles is BaseHandles {
     function _validateLocalName(string memory localName) internal virtual override pure {
         bytes memory localNameAsBytes = bytes(localName);
         uint256 localNameLength = localNameAsBytes.length;
-
-        if (localNameLength == 0 || localNameLength > MAX_LOCAL_NAME_LENGTH) {
+        if (localNameLength == 0 || localNameLength > MAX_LOCAL_NAME_LENGTH || localNameLength < MIN_LOCAL_NAME_LENGTH) {
             revert HandlesErrors.HandleLengthInvalid();
         }
 

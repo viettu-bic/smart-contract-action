@@ -35,7 +35,7 @@ describe('Handles', function () {
     });
 
     it('Handles: should create nft successfully', async function () {
-        const mintName = 'test'
+        const mintName = 'testt'
         await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
         const tokenId = await bicHandles.getTokenId(mintName);
         const exists = await bicHandles.exists(tokenId);
@@ -49,9 +49,35 @@ describe('Handles', function () {
         expect(handleNamespace).to.equal(namespace + '/@' + mintName);
     });
 
+    it('Handles: should not create nft if not controller', async function () {
+        const mintName = 'testt'
+        await expect(bicHandles.connect(wallet2).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'NotController');
+    });
+
+    it('Handles: should not create nft if exists', async function () {
+        const mintName = 'testt'
+        await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
+        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWith('ERC721: token already minted');
+    });
+
+    it('Handles: should not create nft if name too short', async function () {
+        const mintName = 't'
+        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
+    });
+
+    it('Handles: should not create nft if name too long', async function () {
+        const mintName = 'testasdadsdasdsadcxzcdasdsfcsascadsfdsfhajkschcdsancadsbdbsjvbadbksvjadsfdasfakdjlfkdajfldsjfkadjflakdjsfdsja'
+        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
+    });
+
+    it('Handles: should not create nft if name invalid', async function () {
+        const mintName = 'testt@'
+        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleContainsInvalidCharacters');
+    });
+
     describe('Burn', function () {
        it('Handles: should burn nft successfully', async function () {
-              const mintName = 'test'
+              const mintName = 'testt'
               await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
               const tokenId = await bicHandles.getTokenId(mintName);
                const existsBeforeBurn = await bicHandles.exists(tokenId);
@@ -63,7 +89,7 @@ describe('Handles', function () {
        });
 
        it('Handles: should not burn nft if not owner', async function () {
-              const mintName = 'test'
+              const mintName = 'testt'
               await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
               const tokenId = await bicHandles.getTokenId(mintName);
               await expect(bicHandles.connect(wallet3).burn(tokenId)).to.be.revertedWithCustomError(bicHandles,'NotOwner');
