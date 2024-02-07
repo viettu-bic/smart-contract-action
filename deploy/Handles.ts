@@ -3,7 +3,7 @@ import {HardhatRuntimeEnvironment} from "hardhat/types";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { deployments, getNamedAccounts } = hre;
-    const { deploy, get} = deployments;
+    const { deploy, get, execute } = deployments;
     const { deployer } = await getNamedAccounts();
 
     const bicPermissions = await get("BicPermissions");
@@ -33,7 +33,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     try {
         await hre.run("verify:verify", {
-            contract: "contracts/handles/UsernameHandles.sol:UsernameHandles",
+            contract: "contracts/namespaces/UsernameHandles.sol:UsernameHandles",
             address: usernameHandles.address,
             constructorArguments: [bicPermissions.address],
         });
@@ -43,7 +43,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     try {
         await hre.run("verify:verify", {
-            contract: "contracts/handles/CommunityNameHandles.sol:CommunityNameHandles",
+            contract: "contracts/namespaces/CommunityNameHandles.sol:CommunityNameHandles",
             address: communityNameHandles.address,
             constructorArguments: [bicPermissions.address],
         });
@@ -53,7 +53,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     try {
         await hre.run("verify:verify", {
-            contract: "contracts/handles/EarningUsernameHandles.sol:EarningUsernameHandles",
+            contract: "contracts/namespaces/earning/EarningUsernameHandles.sol:EarningUsernameHandles",
             address: earningUsernameHandles.address,
             constructorArguments: [bicPermissions.address],
         });
@@ -63,13 +63,21 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     try {
         await hre.run("verify:verify", {
-            contract: "contracts/handles/EarningCommunityNameHandles.sol:EarningCommunityNameHandles",
+            contract: "contracts/namespaces/earning/EarningCommunityNameHandles.sol:EarningCommunityNameHandles",
             address: earningCommunityNameHandles.address,
             constructorArguments: [bicPermissions.address],
         });
     } catch (error) {
         console.log("Verify EarningCommunityNameHandles error with %s", error?.message || "unknown");
     }
+
+    const handlesController = await get("HandlesController");
+    console.log('Starting to set controller for handles')
+    await execute("UsernameHandles", {from: deployer}, "setController", handlesController.address);
+    await execute("CommunityNameHandles", {from: deployer}, "setController", handlesController.address);
+    await execute("EarningUsernameHandles", {from: deployer}, "setController", handlesController.address);
+    await execute("EarningCommunityNameHandles", {from: deployer}, "setController", handlesController.address);
+    console.log('Finished setting controller for handles')
 }
 func.tags = ["Handles"];
 func.dependencies = ["HandlesController"];
