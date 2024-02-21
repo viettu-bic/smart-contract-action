@@ -51,11 +51,11 @@ contract HandlesController is ReentrancyGuard {
         address signer = ECDSA.recover(dataHashSign, signature);
         require(signer == verifier, "HandlesController: invalid signature");
         if(commitDuration == 0) { // directly mint from handle
-            _mintHandle(handle, receiver, name);
+            _mintHandle(handle, receiver, name, beneficiaries);
         } else { // auction or commit
             if(isAuction) {
                 // auction
-                _mintHandle(handle, address(this), name);
+                _mintHandle(handle, address(this), name, beneficiaries);
                 IBaseHandles(handle).approve(address(marketplace), IBaseHandles(handle).getTokenId(name));
 
                 IMarketplace.AuctionParameters memory auctionParams;
@@ -75,7 +75,7 @@ contract HandlesController is ReentrancyGuard {
                 // commit
                 bool isCommitted = _isCommitted(dataHash, commitDuration);
                 if(!isCommitted) {
-                    _mintHandle(handle, receiver, name);
+                    _mintHandle(handle, receiver, name, beneficiaries);
                 }
             }
         }
@@ -93,9 +93,11 @@ contract HandlesController is ReentrancyGuard {
         return true;
     }
 
-    function _mintHandle(address handle, address to, string calldata name) private {
+    function _mintHandle(address handle, address to, string calldata name, address[] calldata beneficiaries) private {
         uint256 basePrice = getPrice(name);
-        IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
+        if(to != address(this)) {
+            IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
+        }
         IBaseHandles(handle).mintHandle(to, name);
         emit MintHandle(handle, to, name);
     }

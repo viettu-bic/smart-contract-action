@@ -3,7 +3,7 @@ import {HardhatRuntimeEnvironment} from "hardhat/types";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const {deployments, getNamedAccounts, bic} = hre;
-    const {deploy, get} = deployments;
+    const {deploy, get, execute} = deployments;
     const {deployer} = await getNamedAccounts();
 
     const entryPointAddress = bic.addresses.EntryPoint;
@@ -26,6 +26,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
         // console.error(error);
     }
+
+    // TODO set stake if contract deployed
 }
 func.tags = ["BicTokenPaymaster"];
 func.dependencies = ["BicAccountFactory"];
