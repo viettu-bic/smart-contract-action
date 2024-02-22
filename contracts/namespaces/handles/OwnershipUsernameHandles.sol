@@ -2,10 +2,10 @@
 pragma solidity ^0.8.23;
 
 import {BaseHandles} from "./BaseHandles.sol";
-import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
-import {HandlesErrors} from './constants/HandlesErrors.sol';
+import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
+import {HandlesErrors} from '../constants/HandlesErrors.sol';
 
-contract UsernameHandles is BaseHandles {
+contract OwnershipUsernameHandles is BaseHandles {
     uint256 internal constant MIN_LOCAL_NAME_LENGTH = 5;
     uint256 internal constant MAX_LOCAL_NAME_LENGTH = 50;
 

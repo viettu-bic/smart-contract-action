@@ -1,12 +1,22 @@
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "../marketplace/interfaces/IMarketplace.sol";
+import {IMarketplace} from "../marketplace/interfaces/IMarketplace.sol";
 
-contract TestMarketplace is IMarketplace {
-    uint256 public currentAuctionId = 0;
+contract TestMarketplace {
+    uint256 public auctionId;
 
-    function createAuction(AuctionParameters calldata /* _params */) external override returns (uint256 auctionId) {
-        return currentAuctionId++;
+    function createAuction(IMarketplace.AuctionParameters memory _auctionParams) external returns (uint256 auctionId) {
+        return auctionId++;
+    }
+
+    function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external {
+        require(_bidAmount > 0, "Marketplace: Bid amount must be greater than 0");
+    }
+
+    function collectAuctionPayout(uint256 _auctionId) external {
+    }
+
+    function collectAuctionTokens(uint256 _auctionId) external {
     }
 }

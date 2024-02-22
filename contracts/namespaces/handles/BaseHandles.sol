@@ -3,14 +3,14 @@ pragma solidity ^0.8.23;
 
 
 import {ERC721} from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import {HandlesEvents} from './constants/HandlesEvents.sol';
-import {HandlesErrors} from './constants/HandlesErrors.sol';
-import {IHandleTokenURI} from './interfaces/IHandleTokenURI.sol';
+import {HandlesEvents} from '../constants/HandlesEvents.sol';
+import {HandlesErrors} from '../constants/HandlesErrors.sol';
+import {IHandleTokenURI} from '../interfaces/IHandleTokenURI.sol';
 import {Address} from '@openzeppelin/contracts/utils/Address.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import {IBaseHandles} from "./interfaces/IBaseHandles.sol";
-import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
+import {IBaseHandles} from "../interfaces/IBaseHandles.sol";
+import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 
 /**
  * A handle is defined as a local name inside a namespace context. A handle is represented as the local name with its
