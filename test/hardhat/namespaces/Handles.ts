@@ -19,7 +19,7 @@ describe('Handles', function () {
         const handleSVG = await HandleSVG.deploy();
 
         const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        const Handles = await ethers.getContractFactory('UsernameHandles');
+        const Handles = await ethers.getContractFactory('OwnershipUsernameHandles');
         const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
         bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
         await bicPermissionsEnumerable.waitForDeployment();

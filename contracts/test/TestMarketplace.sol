@@ -2,12 +2,13 @@
 pragma solidity ^0.8.23;
 
 import {IMarketplace} from "../marketplace/interfaces/IMarketplace.sol";
-
+import "hardhat/console.sol";
 contract TestMarketplace {
     uint256 public auctionId;
 
     function createAuction(IMarketplace.AuctionParameters memory _auctionParams) external returns (uint256 auctionId) {
-        return auctionId++;
+        auctionId = auctionId + 1;
+        return auctionId;
     }
 
     function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external {

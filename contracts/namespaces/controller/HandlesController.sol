@@ -158,7 +158,7 @@ contract HandlesController is ReentrancyGuard {
             totalCollects += collects[i];
         }
         require(totalCollects <= collectsDenominator, "HandlesController: invalid collects");
-        require((isAuction && commitDuration > 0) || (!isAuction && commitDuration == 0), "HandlesController: invalid isAuction and commitDuration");
+        require((isAuction && commitDuration > 0) || !isAuction, "HandlesController: invalid isAuction and commitDuration");
         return keccak256(abi.encode(receiver, handle, name, beneficiaries, collects, commitDuration, isAuction, block.chainid));
     }
 
