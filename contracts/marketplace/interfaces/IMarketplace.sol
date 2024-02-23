@@ -18,4 +18,35 @@ interface IMarketplace {
     }
 
     function createAuction(AuctionParameters calldata _params) external returns (uint256 auctionId);
+
+    enum Status {
+        UNSET,
+        CREATED,
+        COMPLETED,
+        CANCELLED
+    }
+
+    enum TokenType {
+        ERC721,
+        ERC1155
+    }
+
+    struct Auction {
+        uint256 auctionId;
+        uint256 tokenId;
+        uint256 quantity;
+        uint256 minimumBidAmount;
+        uint256 buyoutBidAmount;
+        uint64 timeBufferInSeconds;
+        uint64 bidBufferBps;
+        uint64 startTimestamp;
+        uint64 endTimestamp;
+        address auctionCreator;
+        address assetContract;
+        address currency;
+        TokenType tokenType;
+        Status status;
+    }
+
+
 }

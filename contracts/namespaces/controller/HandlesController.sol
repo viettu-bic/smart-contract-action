@@ -9,6 +9,12 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract HandlesController is ReentrancyGuard {
+    struct AuctionRequest {
+        bool canClaim;
+        address[] beneficiaries;
+        uint256[] collects;
+    }
+
     address public verifier;
     // Rent in base price units by length
     uint256[] public prices;
@@ -19,6 +25,8 @@ contract HandlesController is ReentrancyGuard {
     IMarketplace public marketplace;
     uint256 public collectsDenominator = 10000;
     address public collector;
+
+    mapping(string => AuctionRequest) public nameToAuctionRequest;
 
     event MintHandle(address indexed handle, address indexed to, string name);
     event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
@@ -79,6 +87,7 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.tokenId = IBaseHandles(handle).getTokenId(name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
+                nameToAuctionRequest[name] = AuctionRequest(true, beneficiaries, collects);
                 emit CreateAuction(auctionId);
             } else {
                 // commit
@@ -88,6 +97,14 @@ contract HandlesController is ReentrancyGuard {
                 }
             }
         }
+    }
+
+    function collectAuctionPayout(string calldata name, uint256 amount, bytes calldata signature) external nonReentrant {
+        require(nameToAuctionRequest[name].canClaim, "HandlesController: not an auction");
+        bytes32 dataHash = getCollectAuctionPayoutOp(name, amount);
+        require(_verifySignature(dataHash, signature), "HandlesController: invalid signature");
+        _payout(amount, nameToAuctionRequest[name].beneficiaries, nameToAuctionRequest[name].collects);
+        nameToAuctionRequest[name].canClaim = false;
     }
 
     function _verifySignature(bytes32 dataHash, bytes calldata signature) private view returns(bool) {
@@ -112,18 +129,22 @@ contract HandlesController is ReentrancyGuard {
         uint256 basePrice = getPrice(name);
         if(to != address(this)) {
             IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
-            uint256 totalCollects = 0;
-            for(uint256 i = 0; i < beneficiaries.length; i++) {
-                uint256 collect = basePrice * collects[i] / collectsDenominator;
-                IERC20(bic).transferFrom(msg.sender, beneficiaries[i], collect);
-                totalCollects += collect;
-            }
-            if(totalCollects < basePrice) {
-                IERC20(bic).transferFrom(msg.sender, collector, basePrice - totalCollects);
-            }
+            _payout(basePrice, beneficiaries, collects);
         }
         IBaseHandles(handle).mintHandle(to, name);
         emit MintHandle(handle, to, name);
+    }
+
+    function _payout(uint256 amount, address[] memory beneficiaries, uint256[] memory collects) private {
+        uint256 totalCollects = 0;
+        for(uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 collect = amount * collects[i] / collectsDenominator;
+            IERC20(bic).transfer(beneficiaries[i], collect);
+            totalCollects += collect;
+        }
+        if(totalCollects < amount) {
+            IERC20(bic).transfer(collector, amount - totalCollects);
+        }
     }
 
     function setPrices(uint256[] calldata _prices) external onlyOperator {
@@ -160,6 +181,10 @@ contract HandlesController is ReentrancyGuard {
         require(totalCollects <= collectsDenominator, "HandlesController: invalid collects");
         require((isAuction && commitDuration > 0) || !isAuction, "HandlesController: invalid isAuction and commitDuration");
         return keccak256(abi.encode(receiver, handle, name, beneficiaries, collects, commitDuration, isAuction, block.chainid));
+    }
+
+    function getCollectAuctionPayoutOp(string calldata name, uint256 amount) public view returns (bytes32) {
+        return keccak256(abi.encode(name, amount, block.chainid));
     }
 
     function strlen(string memory s) internal pure returns (uint256) {
