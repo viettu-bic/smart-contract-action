@@ -113,4 +113,12 @@ describe('Controller', function () {
         expect(await bic.balanceOf(wallet2.address)).to.equal(ethers.parseEther('1')/10n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1')*9n/10n);
     })
+
+    it('Controller: get price in special characters and another language', async function () {
+        expect('👨‍👩‍👧‍👦'.length).to.equal(11); // emoji equals 11 bytes
+        expect(await handlesController.getPrice('👨‍👩‍👧‍👦')).to.equal(ethers.parseEther('0.01')); // emoji equals 11 bytes
+        expect('王朝'.length).to.equal(2); // chinese equals 2 bytes
+        expect(await handlesController.getPrice('王朝')).to.equal(ethers.parseEther('0.5')); // chinese equals 2 bytes
+
+    });
 });
