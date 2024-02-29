@@ -2,6 +2,7 @@ import {ethers} from "hardhat";
 import {getEOAAccounts} from "../util/getEoaAccount";
 import {expect} from "chai";
 import {controller} from "../../../typechain-types/contracts/namespaces";
+import {parseEther} from "ethers";
 
 
 describe('Controller', function () {
@@ -41,7 +42,6 @@ describe('Controller', function () {
         ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
         await handlesController.setVerifier(wallet3.address);
 
-        await handlesController.setPrices([ethers.parseEther('1'), ethers.parseEther('0.5'), ethers.parseEther('0.1'), ethers.parseEther('0.05'), ethers.parseEther('0.01')]);
         randomWalletAddress = ethers.Wallet.createRandom().address;
         await handlesController.setCollector(randomWalletAddress as any);
     });
@@ -52,12 +52,33 @@ describe('Controller', function () {
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
         const mintName = 'testt'
-        const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address], [1000], 0, false);
+        const currentTime = Math.floor(Date.now() / 1000);
+        const nextHour = currentTime + 60*60;
+        const price = parseEther('1');
+        const dataHash = await handlesController.getRequestHandleOp({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 0,
+            isAuction: false
+        } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
-        await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address], [1000], 0, false, signature);
+        await handlesController.connect(wallet1).requestHandle({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 0,
+            isAuction: false
+        } as any, nextHour as any, currentTime as any, signature as any);
+
         const tokenId = await usernameHandles.getTokenId(mintName);
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
-        const price = await handlesController.getPrice(mintName);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
         expect(await bic.balanceOf(wallet2.address)).to.equal(price/10n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(price*9n/10n);
@@ -67,11 +88,31 @@ describe('Controller', function () {
         await bic.mintTokens(wallet1.address, ethers.parseEther('1'));
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
-
+        const currentTime = Math.floor(Date.now() / 1000);
+        const nextHour = currentTime + 60*60;
         const mintName = 'testt'
-        const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address,wallet3.address], [1000, 2000], 60*60*24*30, false);
+        const price = ethers.parseEther('1');
+        const dataHash = await handlesController.getRequestHandleOp({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address,wallet3.address],
+            collects: [1000, 2000],
+            commitDuration: 60*60*24*30,
+            isAuction: false
+        } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
-        await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address,wallet3.address], [1000, 2000], 60*60*24*30, false, signature);
+        await handlesController.connect(wallet1).requestHandle({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address,wallet3.address],
+            collects: [1000, 2000],
+            commitDuration: 60*60*24*30,
+            isAuction: false
+        } as any, nextHour as any, currentTime as any, signature as any);
         const commitTime = await handlesController.commitments(dataHash);
         const tokenId = await usernameHandles.getTokenId(mintName);
         try {
@@ -80,11 +121,33 @@ describe('Controller', function () {
         } catch (e) {
             expect(e.message).to.contain('ERC721: invalid token ID');
         }
-        await ethers.provider.send('evm_increaseTime', [Number(commitTime)]);
+        await ethers.provider.send('evm_increaseTime', [60*60*24*30]);
+        console.log('new')
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
-        await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address,wallet3.address], [1000, 2000], 60*60*24*30, false, signature);
+        const newCurrentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
+        const newNextHour = newCurrentTime + 60*60;
+        const newDataHash = await handlesController.getRequestHandleOp({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address,wallet3.address],
+            collects: [1000, 2000],
+            commitDuration: 60*60*24*30,
+            isAuction: false
+        } as any, newNextHour as any, newCurrentTime as any);
+        const newSignature = await wallet3.signMessage(ethers.getBytes(newDataHash));
+        await handlesController.connect(wallet1).requestHandle({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address,wallet3.address],
+            collects: [1000, 2000],
+            commitDuration: 60*60*24*30,
+            isAuction: false
+        } as any, newNextHour as any, newCurrentTime as any, newSignature as any);
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
-        const price = await handlesController.getPrice(mintName);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
         expect(await bic.balanceOf(wallet2.address)).to.equal(price/10n);
         expect(await bic.balanceOf(wallet3.address)).to.equal(price/5n);
@@ -96,9 +159,30 @@ describe('Controller', function () {
         const testMarketplace = await TestMarketplace.deploy();
         await handlesController.setMarketplace(testMarketplace.target as any);
         const mintName = 'testt'
-        const dataHash = await handlesController.getRequestHandlesOp(wallet1.address, usernameHandles.target, mintName, [wallet2.address], [1000], 60*60*24*30, true);
+        const price = ethers.parseEther('1');
+        const currentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
+        const nextHour = currentTime + 60*60;
+        const dataHash = await handlesController.getRequestHandleOp({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 60*60*24*30,
+            isAuction: true
+        } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
-        await handlesController.connect(wallet1).requestHandles(wallet1.address, usernameHandles.target, mintName, [wallet2.address], [1000], 60*60*24*30, true, signature);
+        await handlesController.connect(wallet1).requestHandle({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 60*60*24*30,
+            isAuction: true
+        } as any, nextHour as any, currentTime as any, signature as any);
         const tokenId = await usernameHandles.getTokenId(mintName);
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(testMarketplace.target);
         const auctionId = await testMarketplace.auctionId();
@@ -113,12 +197,4 @@ describe('Controller', function () {
         expect(await bic.balanceOf(wallet2.address)).to.equal(ethers.parseEther('1')/10n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1')*9n/10n);
     })
-
-    it('Controller: get price in special characters and another language', async function () {
-        expect('👨‍👩‍👧‍👦'.length).to.equal(11); // emoji equals 11 bytes
-        expect(await handlesController.getPrice('👨‍👩‍👧‍👦')).to.equal(ethers.parseEther('0.01')); // emoji equals 11 bytes
-        expect('王朝'.length).to.equal(2); // chinese equals 2 bytes
-        expect(await handlesController.getPrice('王朝')).to.equal(ethers.parseEther('0.5')); // chinese equals 2 bytes
-
-    });
 });

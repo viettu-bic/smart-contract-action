@@ -7,6 +7,7 @@ import {IBaseHandles} from '../interfaces/IBaseHandles.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 contract HandlesController is ReentrancyGuard {
     struct AuctionRequest {
@@ -15,10 +16,18 @@ contract HandlesController is ReentrancyGuard {
         uint256[] collects;
     }
 
+    struct HandleRequest {
+        address receiver;
+        address handle;
+        string name;
+        uint256 price;
+        address[] beneficiaries;
+        uint256[] collects;
+        uint256 commitDuration;
+        bool isAuction;
+    }
+
     address public verifier;
-    // Rent in base price units by length
-    uint256[] public prices;
-    uint256 public priceLength;
     IERC20 public bic;
     IBicPermissions public immutable _bicPermissions;
     mapping(bytes32 => uint256) public commitments;
@@ -31,7 +40,6 @@ contract HandlesController is ReentrancyGuard {
     event MintHandle(address indexed handle, address indexed to, string name);
     event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
     event SetVerifier(address indexed verifier);
-    event SetPrices(uint256[] prices);
     event SetMarketplace(address indexed marketplace);
     event CreateAuction(uint256 auctionId);
 
@@ -63,37 +71,37 @@ contract HandlesController is ReentrancyGuard {
         collector = _collector;
     }
 
-    function requestHandles(address receiver, address handle, string calldata name, address[] calldata beneficiaries, uint256[] calldata collects, uint256 commitDuration, bool isAuction, bytes calldata signature) external nonReentrant {
-        bytes32 dataHash = getRequestHandlesOp(receiver, handle, name, beneficiaries, collects, commitDuration, isAuction);
+    function requestHandle(HandleRequest calldata rq, uint256 validUntil, uint256 validAfter, bytes calldata signature) external nonReentrant {
+        bytes32 dataHash = getRequestHandleOp(rq, validUntil, validAfter);
         require(_verifySignature(dataHash, signature), "HandlesController: invalid signature");
 
-        if(commitDuration == 0) { // directly mint from handle
-            _mintHandle(handle, receiver, name, beneficiaries, collects);
+        if(rq.commitDuration == 0) { // directly mint from handle
+            _mintHandle(rq.handle, rq.receiver, rq.name, rq.price, rq.beneficiaries, rq.collects);
         } else { // auction or commit
-            if(isAuction) {
+            if(rq.isAuction) {
                 // auction
-                _mintHandle(handle, address(this), name, beneficiaries, collects);
-                IBaseHandles(handle).approve(address(marketplace), IBaseHandles(handle).getTokenId(name));
+                _mintHandle(rq.handle, address(this),  rq.name, rq.price, rq.beneficiaries, rq.collects);
+                IBaseHandles(rq.handle).approve(address(marketplace), IBaseHandles(rq.handle).getTokenId(rq.name));
 
                 IMarketplace.AuctionParameters memory auctionParams;
-                auctionParams.assetContract = handle;
+                auctionParams.assetContract = rq.handle;
                 auctionParams.currency = address(bic);
-                auctionParams.minimumBidAmount = getPrice(name);
+                auctionParams.minimumBidAmount = rq.price;
                 auctionParams.buyoutBidAmount = 0;
                 auctionParams.startTimestamp = uint64(block.timestamp);
-                auctionParams.endTimestamp = uint64(block.timestamp + commitDuration);
+                auctionParams.endTimestamp = uint64(block.timestamp + rq.commitDuration);
                 auctionParams.timeBufferInSeconds = 900;
                 auctionParams.bidBufferBps = 500;
-                auctionParams.tokenId = IBaseHandles(handle).getTokenId(name);
+                auctionParams.tokenId = IBaseHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
-                nameToAuctionRequest[name] = AuctionRequest(true, beneficiaries, collects);
+                nameToAuctionRequest[rq.name] = AuctionRequest(true, rq.beneficiaries, rq.collects);
                 emit CreateAuction(auctionId);
             } else {
                 // commit
-                bool isCommitted = _isCommitted(dataHash, commitDuration);
+                bool isCommitted = _isCommitted(dataHash, rq.commitDuration);
                 if(!isCommitted) {
-                    _mintHandle(handle, receiver, name, beneficiaries, collects);
+                    _mintHandle(rq.handle, rq.receiver, rq.name, rq.price, rq.beneficiaries, rq.collects);
                 }
             }
         }
@@ -125,11 +133,10 @@ contract HandlesController is ReentrancyGuard {
         return true;
     }
 
-    function _mintHandle(address handle, address to, string calldata name, address[] calldata beneficiaries, uint256[] calldata collects) private {
-        uint256 basePrice = getPrice(name);
+    function _mintHandle(address handle, address to, string calldata name, uint256 price, address[] calldata beneficiaries, uint256[] calldata collects) private {
         if(to != address(this)) {
-            IERC20(bic).transferFrom(msg.sender, address(this), basePrice);
-            _payout(basePrice, beneficiaries, collects);
+            IERC20(bic).transferFrom(msg.sender, address(this), price);
+            _payout(price, beneficiaries, collects);
         }
         IBaseHandles(handle).mintHandle(to, name);
         emit MintHandle(handle, to, name);
@@ -147,12 +154,6 @@ contract HandlesController is ReentrancyGuard {
         }
     }
 
-    function setPrices(uint256[] calldata _prices) external onlyOperator {
-        prices = _prices;
-        priceLength = _prices.length;
-        emit SetPrices(_prices);
-    }
-
     function withdraw(address token, address to, uint256 amount) external onlyOperator {
         if(token == address(0)) {
             payable(to).transfer(amount);
@@ -161,52 +162,51 @@ contract HandlesController is ReentrancyGuard {
         }
     }
 
-    function getPrice(
-        string calldata name
-    ) public view returns (uint256 basePrice) {
-        uint256 len = strlen(name);
-        if (len >= priceLength) {
-            basePrice = prices[priceLength - 1];
-        } else {
-            basePrice = prices[len - 1];
+    function getRequestHandleOp(HandleRequest calldata rq, uint256 validUntil, uint256 validAfter) public view returns (bytes32) {
+        {
+            console.log("block.timestamp: %s", block.timestamp);
+            console.log("validUntil: %s", validUntil);
+            require(block.timestamp <= validUntil, "HandlesController: invalid validUntil");
+            require(block.timestamp > validAfter, "HandlesController: invalid validAfter");
+            require(rq.beneficiaries.length == rq.collects.length, "HandlesController: invalid beneficiaries and collects");
+            uint256 totalCollects = 0;
+            for(uint256 i = 0; i < rq.collects.length; i++) {
+                totalCollects += rq.collects[i];
+            }
+            require(totalCollects <= collectsDenominator, "HandlesController: invalid collects");
+            require((rq.isAuction && rq.commitDuration > 0) || !rq.isAuction, "HandlesController: invalid isAuction and commitDuration");
         }
-    }
-
-    function getRequestHandlesOp(address receiver, address handle, string calldata name, address[] calldata beneficiaries, uint256[] calldata collects, uint256 commitDuration, bool isAuction) public view returns (bytes32) {
-        require(beneficiaries.length == collects.length, "HandlesController: invalid beneficiaries and collects");
-        uint256 totalCollects = 0;
-        for(uint256 i = 0; i < collects.length; i++) {
-            totalCollects += collects[i];
+        if (rq.commitDuration > 0 && !rq.isAuction) {
+            return keccak256(
+            abi.encode(
+                rq.receiver,
+                rq.handle,
+                rq.name,
+                rq.price,
+                rq.beneficiaries,
+                rq.collects,
+                rq.commitDuration,
+                rq.isAuction,
+                block.chainid
+                )
+            );
         }
-        require(totalCollects <= collectsDenominator, "HandlesController: invalid collects");
-        require((isAuction && commitDuration > 0) || !isAuction, "HandlesController: invalid isAuction and commitDuration");
-        return keccak256(abi.encode(receiver, handle, name, beneficiaries, collects, commitDuration, isAuction, block.chainid));
+        return keccak256(
+            abi.encode(
+                rq.receiver,
+                rq.handle,
+                rq.name,
+                rq.price,
+                rq.beneficiaries,
+                rq.collects,
+                block.chainid,
+                validUntil,
+                validAfter
+            )
+        );
     }
 
     function getCollectAuctionPayoutOp(string calldata name, uint256 amount) public view returns (bytes32) {
         return keccak256(abi.encode(name, amount, block.chainid));
-    }
-
-    function strlen(string memory s) internal pure returns (uint256) {
-        uint256 len;
-        uint256 i = 0;
-        uint256 bytelength = bytes(s).length;
-        for (len = 0; i < bytelength; len++) {
-            bytes1 b = bytes(s)[i];
-            if (b < 0x80) {
-                i += 1;
-            } else if (b < 0xE0) {
-                i += 2;
-            } else if (b < 0xF0) {
-                i += 3;
-            } else if (b < 0xF8) {
-                i += 4;
-            } else if (b < 0xFC) {
-                i += 5;
-            } else {
-                i += 6;
-            }
-        }
-        return len;
     }
 }
