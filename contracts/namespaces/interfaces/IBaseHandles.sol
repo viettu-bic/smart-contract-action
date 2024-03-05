@@ -10,9 +10,9 @@ interface IBaseHandles is IERC721 {
 
     function burn(uint256 tokenId) external;
 
-    function getNamespace() external pure returns (string memory);
+    function getNamespace() external view returns (string memory);
 
-    function getNamespaceHash() external pure returns (bytes32);
+    function getNamespaceHash() external view returns (bytes32);
 
     function exists(uint256 tokenId) external view returns (bool);
 

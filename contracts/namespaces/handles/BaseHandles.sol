@@ -24,10 +24,11 @@ import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
  *
  * @custom:upgradeable Transparent upgradeable proxy without initializer.
  */
-abstract contract BaseHandles is ERC721, IBaseHandles {
+contract BaseHandles is ERC721, IBaseHandles {
     using Address for address;
     address public CONTROLLER;
     IBicPermissions private immutable _bicPermissions;
+    string private _namespace;
 
     // We used 31 to fit the handle in a single slot, with `.name` that restricted localName to use 26 characters.
     // Can be extended later if needed.
@@ -53,9 +54,13 @@ abstract contract BaseHandles is ERC721, IBaseHandles {
     }
 
     constructor(
-        IBicPermissions _bp
-    ) ERC721('', '') {
-    _bicPermissions = _bp;
+        IBicPermissions _bp,
+        string memory name,
+        string memory symbol,
+        string memory namespace
+    ) ERC721(name, symbol) {
+        _bicPermissions = _bp;
+        _namespace = namespace;
     }
 
     function totalSupply() external view virtual override returns (uint256) {
@@ -80,14 +85,13 @@ abstract contract BaseHandles is ERC721, IBaseHandles {
      */
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         _requireMinted(tokenId);
-        return IHandleTokenURI(_handleTokenURIContract).getTokenURI(tokenId, _localNames[tokenId], getNamespace());
+        return IHandleTokenURI(_handleTokenURIContract).getTokenURI(tokenId, _localNames[tokenId], _namespace);
     }
 
     function mintHandle(
         address to,
         string calldata localName
     ) external onlyController returns (uint256) {
-        _validateLocalName(localName);
         return _mintHandle(to, localName);
     }
 
@@ -104,12 +108,12 @@ abstract contract BaseHandles is ERC721, IBaseHandles {
         return _exists(tokenId);
     }
 
-    function getNamespace() public pure virtual returns (string memory) {
-        return 'name';
+    function getNamespace() public view virtual returns (string memory) {
+        return _namespace;
     }
 
-    function getNamespaceHash() external pure returns (bytes32) {
-        return keccak256(bytes(getNamespace()));
+    function getNamespaceHash() external view returns (bytes32) {
+        return keccak256(bytes(_namespace));
     }
 
     function getLocalName(uint256 tokenId) public view returns (string memory) {
@@ -122,7 +126,7 @@ abstract contract BaseHandles is ERC721, IBaseHandles {
 
     function getHandle(uint256 tokenId) public view returns (string memory) {
         string memory localName = getLocalName(tokenId);
-        return string.concat(getNamespace(), '/@', localName);
+        return string.concat(_namespace, '/@', localName);
     }
 
     function getTokenId(string memory localName) public pure returns (uint256) {
@@ -144,10 +148,8 @@ abstract contract BaseHandles is ERC721, IBaseHandles {
         ++_totalSupply;
         _mint(to, tokenId);
         _localNames[tokenId] = localName;
-        emit HandlesEvents.HandleMinted(localName, getNamespace(), tokenId, to, block.timestamp);
+        emit HandlesEvents.HandleMinted(localName, _namespace, tokenId, to, block.timestamp);
         return tokenId;
     }
-
-    function _validateLocalName(string memory localName) internal virtual pure;
 }
 
