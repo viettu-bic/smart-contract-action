@@ -4,7 +4,7 @@ pragma solidity ^0.8.23;
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
 
-interface IBaseHandles is IERC721 {
+interface IHandles is IERC721 {
 
     function mintHandle(address to, string calldata localName) external returns (uint256);
 

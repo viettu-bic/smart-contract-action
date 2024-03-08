@@ -9,7 +9,7 @@ import {IHandleTokenURI} from '../interfaces/IHandleTokenURI.sol';
 import {Address} from '@openzeppelin/contracts/utils/Address.sol';
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
-import {IBaseHandles} from "../interfaces/IBaseHandles.sol";
+import {IHandles} from "../interfaces/IHandles.sol";
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 
 /**
@@ -24,7 +24,7 @@ import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
  *
  * @custom:upgradeable Transparent upgradeable proxy without initializer.
  */
-contract BaseHandles is ERC721, IBaseHandles {
+contract Handles is ERC721, IHandles {
     using Address for address;
     address public CONTROLLER;
     IBicPermissions private immutable _bicPermissions;

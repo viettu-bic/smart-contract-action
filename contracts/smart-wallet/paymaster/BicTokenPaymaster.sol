@@ -31,10 +31,10 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
     address public oracle;
 
-    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Staging Testing Beincom", "STG TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
+    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Testing Beincom", "TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         theFactory = accountFactory;
-        //make it non-empty
-        _mint(address(this), 1);
+        //pre-mint some tokens contract deployer
+        _mint(msg.sender, 6339777879 * 1e18);
 
         //owner is allowed to withdraw tokens from the paymaster's balance
         _approve(address(this), msg.sender, type(uint).max);
@@ -42,15 +42,6 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
-    }
-
-    /**
-     * helpers for owner, to mint and withdraw tokens.
-     * @param recipient - the address that will receive the minted tokens.
-     * @param amount - the amount it will receive.
-     */
-    function mintTokens(address recipient, uint256 amount) external onlyOwner {
-        _mint(recipient, amount);
     }
 
     /**

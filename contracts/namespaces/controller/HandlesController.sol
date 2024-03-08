@@ -3,11 +3,10 @@ pragma solidity ^0.8.23;
 
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {IMarketplace} from "../../marketplace/interfaces/IMarketplace.sol";
-import {IBaseHandles} from '../interfaces/IBaseHandles.sol';
+import {IHandles} from '../interfaces/IHandles.sol';
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 contract HandlesController is ReentrancyGuard {
     struct AuctionRequest {
@@ -81,7 +80,7 @@ contract HandlesController is ReentrancyGuard {
             if(rq.isAuction) {
                 // auction
                 _mintHandle(rq.handle, address(this),  rq.name, rq.price, rq.beneficiaries, rq.collects);
-                IBaseHandles(rq.handle).approve(address(marketplace), IBaseHandles(rq.handle).getTokenId(rq.name));
+                IHandles(rq.handle).approve(address(marketplace), IHandles(rq.handle).getTokenId(rq.name));
 
                 IMarketplace.AuctionParameters memory auctionParams;
                 auctionParams.assetContract = rq.handle;
@@ -92,7 +91,7 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.endTimestamp = uint64(block.timestamp + rq.commitDuration);
                 auctionParams.timeBufferInSeconds = 900;
                 auctionParams.bidBufferBps = 500;
-                auctionParams.tokenId = IBaseHandles(rq.handle).getTokenId(rq.name);
+                auctionParams.tokenId = IHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
                 nameToAuctionRequest[rq.name] = AuctionRequest(true, rq.beneficiaries, rq.collects);
@@ -138,7 +137,7 @@ contract HandlesController is ReentrancyGuard {
             IERC20(bic).transferFrom(msg.sender, address(this), price);
             _payout(price, beneficiaries, collects);
         }
-        IBaseHandles(handle).mintHandle(to, name);
+        IHandles(handle).mintHandle(to, name);
         emit MintHandle(handle, to, name);
     }
 
@@ -164,8 +163,6 @@ contract HandlesController is ReentrancyGuard {
 
     function getRequestHandleOp(HandleRequest calldata rq, uint256 validUntil, uint256 validAfter) public view returns (bytes32) {
         {
-            console.log("block.timestamp: %s", block.timestamp);
-            console.log("validUntil: %s", validUntil);
             require(block.timestamp <= validUntil, "HandlesController: invalid validUntil");
             require(block.timestamp > validAfter, "HandlesController: invalid validAfter");
             require(rq.beneficiaries.length == rq.collects.length, "HandlesController: invalid beneficiaries and collects");

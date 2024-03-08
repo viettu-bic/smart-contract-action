@@ -19,11 +19,11 @@ describe('Handles', function () {
         const handleSVG = await HandleSVG.deploy();
 
         const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        const Handles = await ethers.getContractFactory('OwnershipUsernameHandles');
+        const Handles = await ethers.getContractFactory('Handles');
         const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
         bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
         await bicPermissionsEnumerable.waitForDeployment();
-        bicHandles = await Handles.deploy(bicPermissionsEnumerable.target);
+        bicHandles = await Handles.deploy(bicPermissionsEnumerable.target, 'bic', 'bic', 'bic');
         await bicHandles.waitForDeployment();
         handleTokenURI = await HandleTokenURI.deploy();
         await handleTokenURI.waitForDeployment();
@@ -59,21 +59,21 @@ describe('Handles', function () {
         await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
         await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWith('ERC721: token already minted');
     });
-
-    it('Handles: should not create nft if name too short', async function () {
-        const mintName = 't'
-        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
-    });
-
-    it('Handles: should not create nft if name too long', async function () {
-        const mintName = 'testasdadsdasdsadcxzcdasdsfcsascadsfdsfhajkschcdsancadsbdbsjvbadbksvjadsfdasfakdjlfkdajfldsjfkadjflakdjsfdsja'
-        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
-    });
-
-    it('Handles: should not create nft if name invalid', async function () {
-        const mintName = 'testt@'
-        await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleContainsInvalidCharacters');
-    });
+    // Comment this because there are no rule to setup the length of the handle again
+    // it('Handles: should not create nft if name too short', async function () {
+    //     const mintName = 't'
+    //     await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
+    // });
+    //
+    // it('Handles: should not create nft if name too long', async function () {
+    //     const mintName = 'testasdadsdasdsadcxzcdasdsfcsascadsfdsfhajkschcdsancadsbdbsjvbadbksvjadsfdasfakdjlfkdajfldsjfkadjflakdjsfdsja'
+    //     await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleLengthInvalid');
+    // });
+    //
+    // it('Handles: should not create nft if name invalid', async function () {
+    //     const mintName = 'testt@'
+    //     await expect(bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName)).to.be.revertedWithCustomError(bicHandles,'HandleContainsInvalidCharacters');
+    // });
 
     describe('Burn', function () {
        it('Handles: should burn nft successfully', async function () {
