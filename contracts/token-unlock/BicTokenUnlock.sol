@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {MerkleProof} from "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import {ReentrancyGuard} from '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 // Internal
 import {BicPermissions} from "../management/BicPermissions.sol";
@@ -75,7 +75,10 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
 
     // Modifier
     function _onlyOperator() internal view {
-        require(permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender),"only operator");
+        require(
+            permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender),
+            "only operator"
+        );
     }
 
     modifier onlyOperator() {
@@ -107,19 +110,28 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
     }
 
     /**
-     * @notice only user can confirm unlock rate
+     * @notice @TODO, right now onlyOperator can submit this tx, or sign signature before confirm
      * @param unlockRate to token unlock
      */
-    function confirmUnlockRate(uint256 unlockRate) external {
-        UserData storage userData = usersData[msg.sender];
+    function confirmUnlockRate(
+        address user,
+        uint256 unlockRate
+    ) external onlyOperator {
+        UserData storage userData = usersData[user];
 
-        require(!userData.isConfirmed,"The unlock rate has already been confirmed");
-        require(unlockRate >= UNLOCK_RATE_MIN && unlockRate <= UNLOCK_RATE_MAX,"The unlock rate is over limited");
+        require(
+            !userData.isConfirmed,
+            "The unlock rate has already been confirmed"
+        );
+        require(
+            unlockRate >= UNLOCK_RATE_MIN && unlockRate <= UNLOCK_RATE_MAX,
+            "The unlock rate is over limited"
+        );
 
         userData.isConfirmed = true;
         userData.unlockRate = unlockRate;
 
-        emit UnlockRate(msg.sender, unlockRate);
+        emit UnlockRate(user, unlockRate);
     }
 
     /**
@@ -127,7 +139,6 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
      */
     function isValidClaim(
         uint256 cycle,
-        uint256 index,
         address user,
         string[] calldata claimIds,
         uint256[] calldata claimTimestamps,
@@ -138,32 +149,66 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
         if (claimIds.length != claimTimestamps.length) return false;
         if (claimIds.length != claimAmounts.length) return false;
 
-        bytes32 leaf = keccak256(bytes.concat(keccak256(abi.encode(cycle,index,user,claimIds,claimTimestamps,claimAmounts))));
+        bytes32 leaf = keccak256(
+            bytes.concat(
+                keccak256(
+                    abi.encode(
+                        cycle,
+                        user,
+                        claimIds,
+                        claimTimestamps,
+                        claimAmounts
+                    )
+                )
+            )
+        );
         return MerkleProof.verify(merkleProof, merkleData.root, leaf);
     }
-
 
     /**
      * @notice claim from week 1 to latest week
      */
-    function claim (
+    function claim(
         uint256 cycle,
-        uint256 index,
         address user,
         string[] calldata claimIds,
         uint256[] calldata claimTimestamps,
         uint256[] calldata claimAmounts,
         bytes32[] calldata merkleProof
-    ) external override nonReentrant () {
+    ) external override nonReentrant {
         // Verify proof first
-        require(isValidClaim(cycle, index, user, claimIds, claimTimestamps, claimAmounts, merkleProof),'Invalid claim data');
+        require(
+            isValidClaim(
+                cycle,
+                user,
+                claimIds,
+                claimTimestamps,
+                claimAmounts,
+                merkleProof
+            ),
+            "Invalid claim data"
+        );
 
-        // Verify unlock rate 
-        UserData storage userData = usersData[msg.sender];
-        require(!userData.isConfirmed, 'The unlock rate has not been confirmed yet');
+        // Verify unlock rate
+        UserData storage userData = usersData[user];
+        require(
+            userData.isConfirmed,
+            "The unlock rate has not been confirmed yet"
+        );
 
         for (uint256 i = 0; i < claimIds.length; i++) {
-            bytes32 claimleaf = keccak256(bytes.concat(keccak256(abi.encode(user,claimIds[i], claimTimestamps[i], claimAmounts[i]))));
+            bytes32 claimleaf = keccak256(
+                bytes.concat(
+                    keccak256(
+                        abi.encode(
+                            user,
+                            claimIds[i],
+                            claimTimestamps[i],
+                            claimAmounts[i]
+                        )
+                    )
+                )
+            );
 
             // If user already claim so just so continute to next entry
             if (claimedLeafs[claimleaf] == true) continue;
@@ -173,7 +218,10 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
 
             // Check valid of claiming
             require(!claimedLeafs[claimleaf], "Already claimed");
-            require(claimTimestamps[i] <= block.timestamp,'The claim has not been come yet');
+            require(
+                claimTimestamps[i] <= block.timestamp,
+                "The claim has not been come yet"
+            );
 
             // Everything ok, then update status to mapping
             claimedLeafs[claimleaf] = true;
@@ -185,20 +233,30 @@ contract BicTokenUnlock is IBicTokenUnlock, ReentrancyGuard {
             IERC20(bicToken).safeTransfer(user, claimAmounts[i]);
 
             // Emit event
-            emit Claimed(cycle, user,  claimIds[i], claimTimestamps[i], claimAmounts[i]);
+            emit Claimed(
+                0,
+                user,
+                claimIds[i],
+                claimTimestamps[i],
+                claimAmounts[i]
+            );
         }
     }
 
     /**
      * @notice get total claimedAmount
      */
-    function getClaimedAmount(address user) 
-        public 
-        override 
-        view 
-        returns (uint256) 
-    {
+    function getClaimedAmount(
+        address user
+    ) public view override returns (uint256) {
         UserData memory userData = usersData[user];
         return userData.claimedAmount;
+    }
+
+    /**
+     * Get merke data
+     */
+    function getMerkleData() external view returns (MerkleData memory) {
+        return merkleData;
     }
 }

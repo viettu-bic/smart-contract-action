@@ -4,8 +4,6 @@ pragma solidity ^0.8.23;
 interface IBicTokenUnlock {
     /**
      * @notice Claim fixed amount of token on arb chain
-     * @param cycle number for new root generated
-     * @param index user reward on array info during merkle tree generation
      * @param user address
      * @param claimIds array of claimId corresponding for weekly claim
      * @param claimTimestamps for claimable time
@@ -13,7 +11,6 @@ interface IBicTokenUnlock {
      */
     function claim(
         uint256 cycle,
-        uint256 index,
         address user,
         string[] calldata claimIds,
         uint256[] calldata claimTimestamps,
@@ -23,8 +20,6 @@ interface IBicTokenUnlock {
 
     /**
      * @notice Checks whether a claim is valid or not
-     * @param cycle number for new root generated
-     * @param index user reward on array info during merkle tree generation
      * @param user address
      * @param claimIds array of claimId corresponding for weekly claim
      * @param claimTimestamps for claimable time
@@ -32,7 +27,6 @@ interface IBicTokenUnlock {
      */
     function isValidClaim(
         uint256 cycle,
-        uint256 index,
         address user,
         string[] calldata claimIds,
         uint256[] calldata claimTimestamps,
