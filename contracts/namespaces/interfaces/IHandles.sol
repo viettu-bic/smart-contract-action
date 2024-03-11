@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
+import {IERC721Upgradeable} from '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
 
-
-interface IHandles is IERC721 {
+interface IHandles is IERC721Upgradeable {
 
     function mintHandle(address to, string calldata localName) external returns (uint256);
 

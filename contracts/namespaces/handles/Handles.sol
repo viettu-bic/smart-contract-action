@@ -2,15 +2,13 @@
 pragma solidity ^0.8.23;
 
 
-import {ERC721} from '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import {HandlesEvents} from '../constants/HandlesEvents.sol';
 import {HandlesErrors} from '../constants/HandlesErrors.sol';
 import {IHandleTokenURI} from '../interfaces/IHandleTokenURI.sol';
 import {Address} from '@openzeppelin/contracts/utils/Address.sol';
-import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
-import {IERC165} from '@openzeppelin/contracts/utils/introspection/IERC165.sol';
+import {IERC165Upgradeable} from '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
+import {ERC721Upgradeable} from '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {IHandles} from "../interfaces/IHandles.sol";
-import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 
 /**
  * A handle is defined as a local name inside a namespace context. A handle is represented as the local name with its
@@ -24,10 +22,10 @@ import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
  *
  * @custom:upgradeable Transparent upgradeable proxy without initializer.
  */
-contract Handles is ERC721, IHandles {
+contract Handles is ERC721Upgradeable, IHandles {
     using Address for address;
     address public CONTROLLER;
-    IBicPermissions private immutable _bicPermissions;
+    address public OPERATOR;
     string private _namespace;
 
     // We used 31 to fit the handle in a single slot, with `.name` that restricted localName to use 26 characters.
@@ -40,8 +38,8 @@ contract Handles is ERC721, IHandles {
     address internal _handleTokenURIContract;
 
     modifier onlyOperator() {
-        if (!_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender)) {
-            revert HandlesErrors.NotOperator();
+        if (msg.sender != OPERATOR) {
+            revert HandlesErrors.NotController();
         }
         _;
     }
@@ -53,14 +51,18 @@ contract Handles is ERC721, IHandles {
         _;
     }
 
-    constructor(
-        IBicPermissions _bp,
+    constructor() {}
+
+    function initialize(
+        string memory namespace,
         string memory name,
         string memory symbol,
-        string memory namespace
-    ) ERC721(name, symbol) {
-        _bicPermissions = _bp;
+        address operator
+    ) public initializer {
+        __ERC721_init(name, symbol);
         _namespace = namespace;
+        CONTROLLER = msg.sender;
+        OPERATOR = operator;
     }
 
     function totalSupply() external view virtual override returns (uint256) {
@@ -69,6 +71,10 @@ contract Handles is ERC721, IHandles {
 
     function setController(address controller) external onlyOperator {
         CONTROLLER = controller;
+    }
+
+    function setOperator(address operator) external onlyOperator {
+        OPERATOR = operator;
     }
 
     function setHandleTokenURIContract(address handleTokenURIContract) external override onlyOperator {
@@ -135,8 +141,8 @@ contract Handles is ERC721, IHandles {
 
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721, IERC165) returns (bool) {
-        return (ERC721.supportsInterface(interfaceId));
+    ) public view virtual override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
+        return (ERC721Upgradeable.supportsInterface(interfaceId));
     }
 
     //////////////////////////////////////

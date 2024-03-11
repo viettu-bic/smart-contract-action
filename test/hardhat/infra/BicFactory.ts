@@ -22,8 +22,14 @@ describe('BicFactory', function () {
         const clone = await ethers.getContractAt('TestErc20Constructor', cloneAddress);
         await clone.initialize('Token2','TK2')
 
+        const txClone2nd = await bicFactory.deployProxyByImplementation(token1.target, '0x', '0x' + '00'.repeat(31) + '01');
+        const txClone2ndReceipt = await txClone2nd.wait();
+        const clone2ndAddress = txClone2ndReceipt.logs[0].args[1];
+        const clone2nd = await ethers.getContractAt('TestErc20Constructor', clone2ndAddress);
+        await clone2nd.initialize('Token3','TK3');
         expect(await token1.name()).to.equal('Token1');
         expect(await clone.name()).to.equal('Token2');
+        expect(await clone2nd.name()).to.equal('Token3');
         expect(await token1.contractName()).to.equal(await clone.contractName());
     });
 

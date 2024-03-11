@@ -18,28 +18,43 @@ describe('Controller', function () {
     let bic;
 
     beforeEach(async () => {
+        ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
+
         const GintoNordFontSVG = await ethers.getContractFactory('GintoNordFontSVG');
         const gintoNordFontSVG = await GintoNordFontSVG.deploy();
         const HandleSVG = await ethers.getContractFactory('HandleSVG', {libraries: {GintoNordFontSVG: gintoNordFontSVG.target}});
         const handleSVG = await HandleSVG.deploy();
 
+        const Handles = await ethers.getContractFactory('Handles');
+        const handle = await Handles.deploy();
+        await handle.waitForDeployment();
+
+        const BicFactory = await ethers.getContractFactory('BicFactory');
+        const bicFactory = await BicFactory.deploy();
+        await bicFactory.waitForDeployment();
+
+        const txCloneHandle = await bicFactory.deployProxyByImplementation(handle.target as any, '0x' as any, ethers.ZeroHash as any);
+        const txCloneHandleReceipt = await txCloneHandle.wait();
+
         const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        const UsernameHandles = await ethers.getContractFactory('OwnershipUsernameHandles');
-        const HandlesController = await ethers.getContractFactory('HandlesController');
-        const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
         bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
         await bicPermissionsEnumerable.waitForDeployment();
-        usernameHandles = await UsernameHandles.deploy(bicPermissionsEnumerable.target);
-        await usernameHandles.waitForDeployment();
+
+        const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
+        usernameHandles = await ethers.getContractAt('Handles', cloneAddress as any);
+        usernameHandles.initialize('bic', 'bic', 'bic', deployer.address);
 
         const EntryPoint = await ethers.getContractFactory("EntryPointTest");
         const entryPoint = await EntryPoint.deploy();
+
+        const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
         bic = await BicTokenPaymaster.deploy(ethers.ZeroAddress, entryPoint.target);
+
+        const HandlesController = await ethers.getContractFactory('HandlesController');
         handlesController = await HandlesController.deploy(bicPermissionsEnumerable.target, bic.target);
         await handlesController.waitForDeployment();
         await usernameHandles.setController(handlesController.target);
 
-        ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
         await handlesController.setVerifier(wallet3.address);
 
         randomWalletAddress = ethers.Wallet.createRandom().address;
@@ -47,7 +62,7 @@ describe('Controller', function () {
     });
 
     it('Controller: create nft directly', async function () {
-        await bic.mintTokens(wallet1.address, ethers.parseEther('1') as any);
+        await bic.transfer(wallet1.address, ethers.parseEther('1') as any);
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
@@ -85,7 +100,7 @@ describe('Controller', function () {
     });
 
     it('Controller: commit to mint nft', async function () {
-        await bic.mintTokens(wallet1.address, ethers.parseEther('1'));
+        await bic.transfer(wallet1.address, ethers.parseEther('1'));
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         const currentTime = Math.floor(Date.now() / 1000);
@@ -189,7 +204,7 @@ describe('Controller', function () {
         expect(auctionId).to.equal(1n);
 
         // let assume that auction result is 1 BIC
-        await bic.mintTokens(handlesController.target, ethers.parseEther('1'));
+        await bic.transfer(handlesController.target, ethers.parseEther('1'));
         const collectDataHash = await handlesController.getCollectAuctionPayoutOp(mintName, ethers.parseEther('1'));
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
         await handlesController.connect(wallet1).collectAuctionPayout(mintName, ethers.parseEther('1'), collectSignature);

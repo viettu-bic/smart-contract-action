@@ -3,7 +3,6 @@ import {ethers} from "hardhat";
 import {expect} from "chai";
 
 describe('Handles', function () {
-    let bicPermissionsEnumerable;
     let bicHandles;
     let handleTokenURI;
 
@@ -13,23 +12,32 @@ describe('Handles', function () {
     let wallet3;
 
     beforeEach(async () => {
+        ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
+
         const GintoNordFontSVG = await ethers.getContractFactory('GintoNordFontSVG');
         const gintoNordFontSVG = await GintoNordFontSVG.deploy();
         const HandleSVG = await ethers.getContractFactory('HandleSVG', {libraries: {GintoNordFontSVG: gintoNordFontSVG.target}});
         const handleSVG = await HandleSVG.deploy();
 
-        const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
         const Handles = await ethers.getContractFactory('Handles');
         const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
-        bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-        await bicPermissionsEnumerable.waitForDeployment();
-        bicHandles = await Handles.deploy(bicPermissionsEnumerable.target, 'bic', 'bic', 'bic');
-        await bicHandles.waitForDeployment();
+        const handle = await Handles.deploy();
+        await handle.waitForDeployment();
         handleTokenURI = await HandleTokenURI.deploy();
         await handleTokenURI.waitForDeployment();
+
+        const BicFactory = await ethers.getContractFactory('BicFactory');
+        const bicFactory = await BicFactory.deploy();
+        await bicFactory.waitForDeployment();
+
+        const txCloneHandle = await bicFactory.deployProxyByImplementation(handle.target as any, '0x' as any, ethers.ZeroHash as any);
+        const txCloneHandleReceipt = await txCloneHandle.wait();
+        const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
+        bicHandles = await ethers.getContractAt('Handles', cloneAddress as any);
+
+        bicHandles.initialize('bic', 'bic', 'bic', deployer.address);
         await bicHandles.setHandleTokenURIContract(handleTokenURI.target);
 
-        ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
 
         await bicHandles.setController(wallet1.address);
     });
