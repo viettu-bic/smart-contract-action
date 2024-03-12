@@ -5,7 +5,7 @@ import {
 import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { BicPermissions } from "../../typechain-types";
+import { BicPermissions } from "../../../typechain-types";
 
 describe("BicPermissions", function () {
   let bicPermissionsEnumerable: BicPermissions;

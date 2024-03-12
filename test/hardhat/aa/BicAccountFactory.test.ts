@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../typechain-types";
+import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
 
 describe("BicAccountFactory", function () {
   let bicPermissionsEnumerable: BicPermissions;

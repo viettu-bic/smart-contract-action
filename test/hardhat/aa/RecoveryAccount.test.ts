@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../typechain-types";
+import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
 
 describe("RecoveryAccount", function () {
   let bicPermissionsEnumerable: BicPermissions;

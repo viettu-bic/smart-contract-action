@@ -3,7 +3,7 @@ import {BigNumberish, BytesLike, parseEther, Wallet} from "ethers";
 import {BicAccount, BicAccountFactory, EntryPoint, BicTokenPaymaster, BicPermissions} from "../../typechain-types";
 import {expect} from "chai";
 import {createOp} from "../util/createOp";
-import {paymaster} from "../../typechain-types/contracts/smart-wallet";
+import {paymaster} from "../../../typechain-types/contracts/smart-wallet";
 
 describe("BicTokenPaymaster", () => {
     const {provider} = ethers;
