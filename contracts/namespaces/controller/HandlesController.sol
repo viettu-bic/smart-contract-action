@@ -36,7 +36,7 @@ contract HandlesController is ReentrancyGuard {
 
     mapping(string => AuctionRequest) public nameToAuctionRequest;
 
-    event MintHandle(address indexed handle, address indexed to, string name);
+    event MintHandle(address indexed handle, address indexed to, string name, uint256 price);
     event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
     event SetVerifier(address indexed verifier);
     event SetMarketplace(address indexed marketplace);
@@ -138,7 +138,7 @@ contract HandlesController is ReentrancyGuard {
             _payout(price, beneficiaries, collects);
         }
         IHandles(handle).mintHandle(to, name);
-        emit MintHandle(handle, to, name);
+        emit MintHandle(handle, to, name, price);
     }
 
     function _payout(uint256 amount, address[] memory beneficiaries, uint256[] memory collects) private {
