@@ -15,20 +15,24 @@ describe("Handles", function () {
   // Namespace && TokenURI
   const nameElements = [
     {
-      namespace: "Ownership Username",
-      tokenUri: "https://api.beincom.io/v1/wallet/uri/ounft",
+      namespace: "ounft",
+      imageDescription: "Beincom - Ownership Username@",
+      imageUri: "https://api.beincom.io/v1/wallet/uri/ounft",
     },
     {
-      namespace: "Ownership Community Name",
-      tokenUri: "https://api.beincom.io/v1/wallet/uri/ocnft",
+      namespace: "ocnft",
+      imageDescription: "Beincom - Ownership Community Name@",
+      imageUri: "https://api.beincom.io/v1/wallet/uri/ocnft",
     },
     {
-      namespace: "Earning Username",
-      tokenUri: "https://api.beincom.io/v1/wallet/uri/eunft",
+      namespace: "eunft",
+      imageDescription: "Beincom - Earning Username@",
+      imageUri: "https://api.beincom.io/v1/wallet/uri/eunft",
     },
     {
-      namespace: "Earning Community Name",
-      tokenUri: "https://api.beincom.io/v1/wallet/uri/ecnft",
+      namespace: "ecnft",
+      imageDescription: "Beincom - Earning Community Name@",
+      imageUri: "https://api.beincom.io/v1/wallet/uri/ecnft",
     },
   ];
 
@@ -59,7 +63,12 @@ describe("Handles", function () {
     const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
     bicHandles = await ethers.getContractAt("Handles", cloneAddress as any);
 
-    bicHandles.initialize("Earning Username", "bic", "bic", deployer.address);
+    bicHandles.initialize(
+      nameElements[1].namespace,
+      "bic",
+      "bic",
+      deployer.address
+    );
     await bicHandles.setHandleTokenURIContract(handleTokenURI.target);
 
     await bicHandles.setController(wallet1.address);
@@ -69,13 +78,27 @@ describe("Handles", function () {
       await expect(
         handleTokenURI
           .connect(wallet1)
-          .setNameElement(nameElement.namespace, nameElement.tokenUri)
+          .setNameElement(
+            nameElement.namespace,
+            nameElement.imageDescription,
+            nameElement.imageUri
+          )
       ).to.be.rejected;
 
       await handleTokenURI
         .connect(deployer)
-        .setNameElement(nameElement.namespace, nameElement.tokenUri);
+        .setNameElement(
+          nameElement.namespace,
+          nameElement.imageDescription,
+          nameElement.imageUri
+        );
     }
+
+    const nameElement = await handleTokenURI.getNameElement(
+      nameElements[0].namespace
+    );
+    expect(nameElement[0]).equal(nameElements[0].imageDescription);
+    expect(nameElement[1]).equal(nameElements[0].imageUri);
   });
 
   it("Handles: should create nft successfully", async function () {
@@ -92,7 +115,7 @@ describe("Handles", function () {
     const namespace = await bicHandles.getNamespace();
     expect(handleNamespace).to.equal(namespace + "/@" + mintName);
 
-    // console.log(uri);
+    console.log(uri);
   });
 
   it("Handles: should not create nft if not controller", async function () {

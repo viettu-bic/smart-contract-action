@@ -60,15 +60,16 @@ contract HandleTokenURI is IHandleTokenURI {
      */
     function setNameElement(
         string memory namespace,
-        string memory tokenURI
+        string memory imageDescription,
+        string memory imageURI
     ) external onlyOperator {
         NameElement memory nameElement = NameElement(
-            string.concat('"Beincom - ', namespace, "@"),
-            tokenURI
+            imageDescription,
+            imageURI
         );
         nameElements[namespace] = nameElement;
 
-        emit SetNameElement(namespace, nameElement.imageDescription, tokenURI);
+        emit SetNameElement(namespace, imageDescription, imageURI);
     }
 
     /**
@@ -108,6 +109,7 @@ contract HandleTokenURI is IHandleTokenURI {
     ) internal view returns (string memory) {
         return
             string.concat(
+                '"',
                 nameElements[namespace].imageDescription,
                 localName,
                 '"'
