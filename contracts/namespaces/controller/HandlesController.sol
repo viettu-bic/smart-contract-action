@@ -3,7 +3,7 @@ pragma solidity ^0.8.23;
 
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {IMarketplace} from "../../marketplace/interfaces/IMarketplace.sol";
-import {IHandles} from '../interfaces/IHandles.sol';
+import {IHandles} from "../interfaces/IHandles.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -48,7 +48,13 @@ contract HandlesController is ReentrancyGuard {
     }
 
     modifier onlyOperator() {
-        require(_bicPermissions.hasRole(_bicPermissions.OPERATOR_ROLE(), msg.sender), "HandlesController: caller is not an operator");
+        require(
+            _bicPermissions.hasRole(
+                _bicPermissions.OPERATOR_ROLE(),
+                msg.sender
+            ),
+            "HandlesController: caller is not an operator"
+        );
         _;
     }
 
@@ -62,7 +68,9 @@ contract HandlesController is ReentrancyGuard {
         emit SetMarketplace(_marketplace);
     }
 
-    function updateCollectsDenominator(uint256 _collectsDenominator) external onlyOperator {
+    function updateCollectsDenominator(
+        uint256 _collectsDenominator
+    ) external onlyOperator {
         collectsDenominator = _collectsDenominator;
     }
 
@@ -70,17 +78,44 @@ contract HandlesController is ReentrancyGuard {
         collector = _collector;
     }
 
-    function requestHandle(HandleRequest calldata rq, uint256 validUntil, uint256 validAfter, bytes calldata signature) external nonReentrant {
+    function requestHandle(
+        HandleRequest calldata rq,
+        uint256 validUntil,
+        uint256 validAfter,
+        bytes calldata signature
+    ) external nonReentrant {
         bytes32 dataHash = getRequestHandleOp(rq, validUntil, validAfter);
-        require(_verifySignature(dataHash, signature), "HandlesController: invalid signature");
+        require(
+            _verifySignature(dataHash, signature),
+            "HandlesController: invalid signature"
+        );
 
-        if(rq.commitDuration == 0) { // directly mint from handle
-            _mintHandle(rq.handle, rq.receiver, rq.name, rq.price, rq.beneficiaries, rq.collects);
-        } else { // auction or commit
-            if(rq.isAuction) {
+        if (rq.commitDuration == 0) {
+            // directly mint from handle
+            _mintHandle(
+                rq.handle,
+                rq.receiver,
+                rq.name,
+                rq.price,
+                rq.beneficiaries,
+                rq.collects
+            );
+        } else {
+            // auction or commit
+            if (rq.isAuction) {
                 // auction
-                _mintHandle(rq.handle, address(this),  rq.name, rq.price, rq.beneficiaries, rq.collects);
-                IHandles(rq.handle).approve(address(marketplace), IHandles(rq.handle).getTokenId(rq.name));
+                _mintHandle(
+                    rq.handle,
+                    address(this),
+                    rq.name,
+                    rq.price,
+                    rq.beneficiaries,
+                    rq.collects
+                );
+                IHandles(rq.handle).approve(
+                    address(marketplace),
+                    IHandles(rq.handle).getTokenId(rq.name)
+                );
 
                 IMarketplace.AuctionParameters memory auctionParams;
                 auctionParams.assetContract = rq.handle;
@@ -88,52 +123,92 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.minimumBidAmount = rq.price;
                 auctionParams.buyoutBidAmount = 0;
                 auctionParams.startTimestamp = uint64(block.timestamp);
-                auctionParams.endTimestamp = uint64(block.timestamp + rq.commitDuration);
+                auctionParams.endTimestamp = uint64(
+                    block.timestamp + rq.commitDuration
+                );
                 auctionParams.timeBufferInSeconds = 900;
                 auctionParams.bidBufferBps = 500;
                 auctionParams.tokenId = IHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
-                nameToAuctionRequest[rq.name] = AuctionRequest(true, rq.beneficiaries, rq.collects);
+                nameToAuctionRequest[rq.name] = AuctionRequest(
+                    true,
+                    rq.beneficiaries,
+                    rq.collects
+                );
                 emit CreateAuction(auctionId);
             } else {
                 // commit
                 bool isCommitted = _isCommitted(dataHash, rq.commitDuration);
-                if(!isCommitted) {
-                    _mintHandle(rq.handle, rq.receiver, rq.name, rq.price, rq.beneficiaries, rq.collects);
+                if (!isCommitted) {
+                    _mintHandle(
+                        rq.handle,
+                        rq.receiver,
+                        rq.name,
+                        rq.price,
+                        rq.beneficiaries,
+                        rq.collects
+                    );
                 }
             }
         }
     }
 
-    function collectAuctionPayout(string calldata name, uint256 amount, bytes calldata signature) external nonReentrant {
-        require(nameToAuctionRequest[name].canClaim, "HandlesController: not an auction");
+    function collectAuctionPayout(
+        string calldata name,
+        uint256 amount,
+        bytes calldata signature
+    ) external nonReentrant {
+        require(
+            nameToAuctionRequest[name].canClaim,
+            "HandlesController: not an auction"
+        );
         bytes32 dataHash = getCollectAuctionPayoutOp(name, amount);
-        require(_verifySignature(dataHash, signature), "HandlesController: invalid signature");
-        _payout(amount, nameToAuctionRequest[name].beneficiaries, nameToAuctionRequest[name].collects);
+        require(
+            _verifySignature(dataHash, signature),
+            "HandlesController: invalid signature"
+        );
+        _payout(
+            amount,
+            nameToAuctionRequest[name].beneficiaries,
+            nameToAuctionRequest[name].collects
+        );
         nameToAuctionRequest[name].canClaim = false;
     }
 
-    function _verifySignature(bytes32 dataHash, bytes calldata signature) private view returns(bool) {
+    function _verifySignature(
+        bytes32 dataHash,
+        bytes calldata signature
+    ) private view returns (bool) {
         bytes32 dataHashSign = ECDSA.toEthSignedMessageHash(dataHash);
         address signer = ECDSA.recover(dataHashSign, signature);
         return signer == verifier;
     }
 
-    function _isCommitted(bytes32 commitment, uint256 commitDuration) private returns(bool) {
-        if(commitments[commitment] != 0) {
-            if(commitments[commitment] < block.timestamp) {
+    function _isCommitted(
+        bytes32 commitment,
+        uint256 commitDuration
+    ) private returns (bool) {
+        if (commitments[commitment] != 0) {
+            if (commitments[commitment] < block.timestamp) {
                 return false;
             }
         } else {
-            commitments[commitment] = block.timestamp + commitDuration ;
+            commitments[commitment] = block.timestamp + commitDuration;
             emit Commitment(commitment, block.timestamp + commitDuration);
         }
         return true;
     }
 
-    function _mintHandle(address handle, address to, string calldata name, uint256 price, address[] calldata beneficiaries, uint256[] calldata collects) private {
-        if(to != address(this)) {
+    function _mintHandle(
+        address handle,
+        address to,
+        string calldata name,
+        uint256 price,
+        address[] calldata beneficiaries,
+        uint256[] calldata collects
+    ) private {
+        if (to != address(this)) {
             IERC20(bic).transferFrom(msg.sender, address(this), price);
             _payout(price, beneficiaries, collects);
         }
@@ -141,69 +216,101 @@ contract HandlesController is ReentrancyGuard {
         emit MintHandle(handle, to, name);
     }
 
-    function _payout(uint256 amount, address[] memory beneficiaries, uint256[] memory collects) private {
+    function _payout(
+        uint256 amount,
+        address[] memory beneficiaries,
+        uint256[] memory collects
+    ) private {
         uint256 totalCollects = 0;
-        for(uint256 i = 0; i < beneficiaries.length; i++) {
-            uint256 collect = amount * collects[i] / collectsDenominator;
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            uint256 collect = (amount * collects[i]) / collectsDenominator;
             IERC20(bic).transfer(beneficiaries[i], collect);
             totalCollects += collect;
         }
-        if(totalCollects < amount) {
+        if (totalCollects < amount) {
             IERC20(bic).transfer(collector, amount - totalCollects);
         }
     }
 
-    function withdraw(address token, address to, uint256 amount) external onlyOperator {
-        if(token == address(0)) {
+    function withdraw(
+        address token,
+        address to,
+        uint256 amount
+    ) external onlyOperator {
+        if (token == address(0)) {
             payable(to).transfer(amount);
         } else {
             IERC20(token).transfer(to, amount);
         }
     }
 
-    function getRequestHandleOp(HandleRequest calldata rq, uint256 validUntil, uint256 validAfter) public view returns (bytes32) {
+    function getRequestHandleOp(
+        HandleRequest calldata rq,
+        uint256 validUntil,
+        uint256 validAfter
+    ) public view returns (bytes32) {
         {
-            require(block.timestamp <= validUntil, "HandlesController: invalid validUntil");
-            require(block.timestamp > validAfter, "HandlesController: invalid validAfter");
-            require(rq.beneficiaries.length == rq.collects.length, "HandlesController: invalid beneficiaries and collects");
+            require(
+                block.timestamp <= validUntil,
+                "HandlesController: invalid validUntil"
+            );
+            require(
+                block.timestamp > validAfter,
+                "HandlesController: invalid validAfter"
+            );
+            require(
+                rq.beneficiaries.length == rq.collects.length,
+                "HandlesController: invalid beneficiaries and collects"
+            );
             uint256 totalCollects = 0;
-            for(uint256 i = 0; i < rq.collects.length; i++) {
+            for (uint256 i = 0; i < rq.collects.length; i++) {
                 totalCollects += rq.collects[i];
             }
-            require(totalCollects <= collectsDenominator, "HandlesController: invalid collects");
-            require((rq.isAuction && rq.commitDuration > 0) || !rq.isAuction, "HandlesController: invalid isAuction and commitDuration");
-        }
-        if (rq.commitDuration > 0 && !rq.isAuction) {
-            return keccak256(
-            abi.encode(
-                rq.receiver,
-                rq.handle,
-                rq.name,
-                rq.price,
-                rq.beneficiaries,
-                rq.collects,
-                rq.commitDuration,
-                rq.isAuction,
-                block.chainid
-                )
+            require(
+                totalCollects <= collectsDenominator,
+                "HandlesController: invalid collects"
+            );
+            require(
+                (rq.isAuction && rq.commitDuration > 0) || !rq.isAuction,
+                "HandlesController: invalid isAuction and commitDuration"
             );
         }
-        return keccak256(
-            abi.encode(
-                rq.receiver,
-                rq.handle,
-                rq.name,
-                rq.price,
-                rq.beneficiaries,
-                rq.collects,
-                block.chainid,
-                validUntil,
-                validAfter
-            )
-        );
+        if (rq.commitDuration > 0 && !rq.isAuction) {
+            return
+                keccak256(
+                    abi.encode(
+                        rq.receiver,
+                        rq.handle,
+                        rq.name,
+                        rq.price,
+                        rq.beneficiaries,
+                        rq.collects,
+                        rq.commitDuration,
+                        rq.isAuction,
+                        block.chainid
+                    )
+                );
+        }
+        return
+            keccak256(
+                abi.encode(
+                    rq.receiver,
+                    rq.handle,
+                    rq.name,
+                    rq.price,
+                    rq.beneficiaries,
+                    rq.collects,
+                    block.chainid,
+                    validUntil,
+                    validAfter
+                )
+            );
     }
 
-    function getCollectAuctionPayoutOp(string calldata name, uint256 amount) public view returns (bytes32) {
+    function getCollectAuctionPayoutOp(
+        string calldata name,
+        uint256 amount
+    ) public view returns (bytes32) {
         return keccak256(abi.encode(name, amount, block.chainid));
     }
 }

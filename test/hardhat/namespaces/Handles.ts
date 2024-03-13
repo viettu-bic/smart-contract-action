@@ -12,14 +12,38 @@ describe("Handles", function () {
   let wallet2;
   let wallet3;
 
+  // Namespace && TokenURI
+  const nameElements = [
+    {
+      namespace: "Ownership Username",
+      tokenUri: "https://api.beincom.io/v1/wallet/uri/ounft",
+    },
+    {
+      namespace: "Ownership Community Name",
+      tokenUri: "https://api.beincom.io/v1/wallet/uri/ocnft",
+    },
+    {
+      namespace: "Earning Username",
+      tokenUri: "https://api.beincom.io/v1/wallet/uri/eunft",
+    },
+    {
+      namespace: "Earning Community Name",
+      tokenUri: "https://api.beincom.io/v1/wallet/uri/ecnft",
+    },
+  ];
+
   beforeEach(async () => {
     ({ deployer, wallet1, wallet2, wallet3 } = await getEOAAccounts());
+
+    // BicPermission
+    const BicPermission = await ethers.getContractFactory("BicPermissions");
+    const bicPermission = await BicPermission.deploy();
 
     const Handles = await ethers.getContractFactory("Handles");
     const HandleTokenURI = await ethers.getContractFactory("HandleTokenURI");
     const handle = await Handles.deploy();
     await handle.waitForDeployment();
-    handleTokenURI = await HandleTokenURI.deploy(imageBaseURI);
+    handleTokenURI = await HandleTokenURI.deploy(bicPermission.target);
     await handleTokenURI.waitForDeployment();
 
     const BicFactory = await ethers.getContractFactory("BicFactory");
@@ -39,6 +63,13 @@ describe("Handles", function () {
     await bicHandles.setHandleTokenURIContract(handleTokenURI.target);
 
     await bicHandles.setController(wallet1.address);
+
+    // Set name elements
+    for (let i = 0; i < nameElements.length; i++) {
+      await handleTokenURI
+        .connect(deployer)
+        .setNameElement(nameElements[i].namespace, nameElements[i].tokenUri);
+    }
   });
 
   it("Handles: should create nft successfully", async function () {
@@ -98,20 +129,18 @@ describe("Handles", function () {
       await bicHandles.connect(wallet2).burn(tokenId);
       const existsAfterBurn = await bicHandles.exists(tokenId);
       expect(existsAfterBurn).to.equal(false);
-      await expect(bicHandles.getLocalName(tokenId)).to.be.revertedWithCustomError(
-        bicHandles,
-        "DoesNotExist"
-      );
+      await expect(
+        bicHandles.getLocalName(tokenId)
+      ).to.be.revertedWithCustomError(bicHandles, "DoesNotExist");
     });
 
     it("Handles: should not burn nft if not owner", async function () {
       const mintName = "testt";
       await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
       const tokenId = await bicHandles.getTokenId(mintName);
-      await expect(bicHandles.connect(wallet3).burn(tokenId)).to.be.revertedWithCustomError(
-        bicHandles,
-        "NotOwner"
-      );
+      await expect(
+        bicHandles.connect(wallet3).burn(tokenId)
+      ).to.be.revertedWithCustomError(bicHandles, "NotOwner");
     });
   });
 });
