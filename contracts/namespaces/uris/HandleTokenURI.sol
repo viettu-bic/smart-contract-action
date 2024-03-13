@@ -26,6 +26,17 @@ contract HandleTokenURI is IHandleTokenURI {
     mapping(string => NameElement) nameElements;
 
     /**
+     * @notice Emitted when a name element is set
+     * @param imageDescription the description of the name (aka Beincom - Earning Username)
+     * @param imageURI the uri for svg background name image
+     */
+    event SetNameElement(
+        string namespace,
+        string imageDescription,
+        string imageURI
+    );
+
+    /**
      * @param _permissions management
      */
     constructor(BicPermissions _permissions) {
@@ -56,6 +67,8 @@ contract HandleTokenURI is IHandleTokenURI {
             tokenURI
         );
         nameElements[namespace] = nameElement;
+
+        emit SetNameElement(namespace, nameElement.imageDescription, tokenURI);
     }
 
     /**

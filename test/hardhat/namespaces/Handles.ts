@@ -65,10 +65,16 @@ describe("Handles", function () {
     await bicHandles.setController(wallet1.address);
 
     // Set name elements
-    for (let i = 0; i < nameElements.length; i++) {
+    for (const nameElement of nameElements) {
+      await expect(
+        handleTokenURI
+          .connect(wallet1)
+          .setNameElement(nameElement.namespace, nameElement.tokenUri)
+      ).to.be.rejected;
+
       await handleTokenURI
         .connect(deployer)
-        .setNameElement(nameElements[i].namespace, nameElements[i].tokenUri);
+        .setNameElement(nameElement.namespace, nameElement.tokenUri);
     }
   });
 
@@ -86,7 +92,7 @@ describe("Handles", function () {
     const namespace = await bicHandles.getNamespace();
     expect(handleNamespace).to.equal(namespace + "/@" + mintName);
 
-    console.log(uri);
+    // console.log(uri);
   });
 
   it("Handles: should not create nft if not controller", async function () {
