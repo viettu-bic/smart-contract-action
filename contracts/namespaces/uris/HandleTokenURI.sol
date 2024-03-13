@@ -63,12 +63,7 @@ contract HandleTokenURI is IHandleTokenURI {
         string memory imageDescription,
         string memory imageURI
     ) external onlyOperator {
-        NameElement memory nameElement = NameElement(
-            imageDescription,
-            imageURI
-        );
-        nameElements[namespace] = nameElement;
-
+        nameElements[namespace] = NameElement(imageDescription, imageURI);
         emit SetNameElement(namespace, imageDescription, imageURI);
     }
 
