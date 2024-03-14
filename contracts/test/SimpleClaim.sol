@@ -14,11 +14,12 @@ contract SimpleClaim {
         bic = _bic;
     }
 
-    function claim(bytes32[] calldata proof, uint256 index, uint256 amount) external {
+    function claim(bytes32[] calldata proof, address claimAddress, uint256 index, uint256 amount) external {
         console.log("sender: %s", msg.sender);
         console.log("amount: %s", amount);
         console.log("index: %s", index);
-        require(MerkleProof.verify(proof, root, keccak256(abi.encodePacked(index, msg.sender, amount))), "SimpleClaim: Invalid proof");
-        bic.transfer(msg.sender, amount);
+//        bytes32 leaf = keccak256(abi.encode(index, msg.sender, amount));
+        require(MerkleProof.verify(proof, root, keccak256(bytes.concat(keccak256(abi.encode(index, claimAddress, amount))))), "SimpleClaim: Invalid proof");
+        bic.transfer(claimAddress, amount);
     }
 }
