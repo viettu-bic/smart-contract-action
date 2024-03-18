@@ -3,26 +3,31 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
-contract BicUnlockTokenV2 is Context {
+
+contract BicUnlockTokenV2 is Context, Initializable {
     event ERC20Released(address indexed token, uint256 amount);
 
     uint256 private _released;
     uint256 private _erc20Released;
     uint256 private _totalAmount;
-    address private immutable _erc20;
-    address private immutable _beneficiary;
-    uint64 private immutable _start;
-    uint64 private immutable _end;
-    uint64 private immutable _duration;
-    uint64 private immutable _count;
+    address private _erc20;
+    address private _beneficiary;
+    uint64 private _start;
+    uint64 private _end;
+    uint64 private _duration;
+    uint64 private _count;
     uint64 private _currentCount;
 
+
+    
+    constructor() payable { }
 
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
      */
-    constructor(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds) payable {
+    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
         require(erc20 != address(0), "VestingWallet: erc20 invalid");
