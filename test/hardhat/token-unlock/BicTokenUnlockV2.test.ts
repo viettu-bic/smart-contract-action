@@ -3,18 +3,32 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import moment from "moment";
 import * as helpers from "@nomicfoundation/hardhat-network-helpers";
-import { BicUnlockTokenV2, TestERC20 } from "../../../typechain-types";
+import { BicUnlockFactory, BicUnlockTokenV2, TestERC20 } from "../../../typechain-types";
 import { getEOAAccounts } from "../util/getEoaAccount";
 
-describe("BicUnlockTokenV2", function () {
+describe("BicUnlockTokenV2 Test", function () {
   let bicUnlockTokenV2: BicUnlockTokenV2;
+  let bicUnlockFactory: BicUnlockFactory;
   let testERC20: TestERC20;
 
+  const salt = "123";
+
   before(async () => {
+    const BicUnlockFactory = await ethers.getContractFactory("BicUnlockFactory");
+    bicUnlockFactory = await BicUnlockFactory.deploy(ethers.ZeroAddress);
+    await bicUnlockFactory.waitForDeployment();
+    const bicUnlockImplementation = await bicUnlockFactory.bicUnlockImplementation();
+
     const TestERC20 = await ethers.getContractFactory("TestERC20");
     testERC20 = await TestERC20.deploy();
+    await testERC20.waitForDeployment();
 
+    // approve Admin's token for Factory
+    const approveTx = await testERC20.approve(bicUnlockFactory.target, ethers.MaxUint256);
+    await approveTx.wait();
   });
+
+
 
 
 
@@ -23,15 +37,22 @@ describe("BicUnlockTokenV2", function () {
     const speedRate = 2; // 2%
     const count = BigInt(200); // Claim 200 times
     const start = moment().unix();
+    console.log("🚀 ~ describe ~ start:", start)
     const duration = moment.duration(1, "weeks").asSeconds() * ((100 - speedRate) / 100);
+    console.log("🚀 ~ describe ~ duration:", duration)
     const totalAmount = ethers.parseUnits("4000", 18);
 
     before(async () => {
-      const BicUnlockTokenV2 = await ethers.getContractFactory("BicUnlockTokenV2");
       const { wallet1: beneficiary } = await getEOAAccounts();
 
-      bicUnlockTokenV2 = await BicUnlockTokenV2.deploy(testERC20.target, totalAmount, beneficiary.address, start, count, duration);
-      testERC20.transfer(bicUnlockTokenV2.target, totalAmount);
+      const unlockAddress = await bicUnlockFactory.getAddress(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
+      console.log("🚀 ~ before ~ unlockAddress:", unlockAddress)
+      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
+      const receipt = await createTx.wait();
+      console.log("🚀 ~ before ~ receipt:", receipt?.logs)
+
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+      console.log("🚀 ~ before ~ bicUnlockTokenV2:", await bicUnlockTokenV2.count())
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);
       expect(await bicUnlockTokenV2.end()).to.be.eq(BigInt(start) + BigInt(duration) * count);
@@ -104,7 +125,7 @@ describe("BicUnlockTokenV2", function () {
 
     it("should unlock all token successfully if passed end time", async () => {
       const { wallet1: beneficiary } = await getEOAAccounts();
-      
+
       const end = await bicUnlockTokenV2.end();
       const currentCountPrev = await bicUnlockTokenV2.currentCount();
       const n = count - currentCountPrev;
@@ -129,7 +150,7 @@ describe("BicUnlockTokenV2", function () {
       expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
 
       const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      expect(balanceOfUnlockContract).to.be.eq( BigInt(0));
+      expect(balanceOfUnlockContract).to.be.eq(BigInt(0));
     });
   });
 
@@ -141,18 +162,19 @@ describe("BicUnlockTokenV2", function () {
     let totalAmount: bigint;
 
 
-    before(async ()=>{
+    before(async () => {
+      const { wallet2: beneficiary } = await getEOAAccounts();
       totalAmount = ethers.parseUnits("5500", 18);
-      
+
       const block = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
       start = block!.timestamp;
       duration = moment.duration(1, "weeks").asSeconds() * ((100 - speedRate) / 100);
 
-      const BicUnlockTokenV2 = await ethers.getContractFactory("BicUnlockTokenV2");
-      const { wallet2: beneficiary } = await getEOAAccounts();
+      const unlockAddress = await bicUnlockFactory.getAddress(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
+      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
+      await createTx.wait();
 
-      bicUnlockTokenV2 = await BicUnlockTokenV2.deploy(testERC20.target, totalAmount, beneficiary.address, start, count, duration);
-      testERC20.transfer(bicUnlockTokenV2.target, totalAmount);
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);
       expect(await bicUnlockTokenV2.end()).to.be.eq(BigInt(start) + BigInt(duration) * count);
@@ -167,7 +189,7 @@ describe("BicUnlockTokenV2", function () {
       await helpers.time.increaseTo(timePassed);
 
       const releasableData = await bicUnlockTokenV2["releasable()"]();
-      
+
       expect(releasableData[0]).to.be.eq(BigInt(0));
       expect(releasableData[1]).to.be.eq(BigInt(0));
       const vestTx = bicUnlockTokenV2.release();
@@ -232,7 +254,7 @@ describe("BicUnlockTokenV2", function () {
 
     it("should unlock all token successfully if passed end time", async () => {
       const { wallet2: beneficiary } = await getEOAAccounts();
-      
+
       const end = await bicUnlockTokenV2.end();
       const currentCountPrev = await bicUnlockTokenV2.currentCount();
       const n = count - currentCountPrev;
@@ -258,7 +280,7 @@ describe("BicUnlockTokenV2", function () {
 
       const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
       console.log("🚀 ~ it ~ balanceOfUnlockContract:", balanceOfUnlockContract)
-      expect(balanceOfUnlockContract).to.be.eq( BigInt(0));
+      expect(balanceOfUnlockContract).to.be.eq(BigInt(0));
     });
 
   });

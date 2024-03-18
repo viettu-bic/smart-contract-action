@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 
+
 contract BicUnlockTokenV2 is Context, Initializable {
     event ERC20Released(address indexed token, uint256 amount);
 
@@ -148,4 +149,5 @@ contract BicUnlockTokenV2 is Context, Initializable {
             return (amount, totalInterval);
         }
     }
+
 }
