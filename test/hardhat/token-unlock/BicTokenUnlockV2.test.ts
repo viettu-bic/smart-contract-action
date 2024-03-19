@@ -46,14 +46,15 @@ describe("BicUnlockTokenV2 Test", function () {
     before(async () => {
       const { wallet1: beneficiary } = await getEOAAccounts();
 
-      const unlockAddress = await bicUnlockFactory.getAddress(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
-      console.log("🚀 ~ before ~ unlockAddress:", unlockAddress)
+      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
       const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
-      const receipt = await createTx.wait();
-      const balanceOf = await testERC20.balanceOf(unlockAddress);
-      console.log("🚀 ~ before ~ receipt:", receipt?.logs[receipt.logs.length - 1])
+      await createTx.wait();
 
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", receipt?.logs[receipt.logs.length - 1].args[0]);
+      const balanceOf = await testERC20.balanceOf(unlockAddress);
+      expect(balanceOf).to.be.eq(totalAmount);
+
+
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
       console.log("🚀 ~ before ~ bicUnlockTokenV2:", await bicUnlockTokenV2.count())
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);
@@ -174,11 +175,11 @@ describe("BicUnlockTokenV2 Test", function () {
       start = block!.timestamp;
       duration = moment.duration(1, "weeks").asSeconds() * ((100 - speedRate) / 100);
 
-      const unlockAddress = await bicUnlockFactory.getAddress(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
+      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
       const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
-      const receipt = await createTx.wait();
+      await createTx.wait();
 
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", receipt?.logs[receipt.logs.length - 1].args[0]);
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
 
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);

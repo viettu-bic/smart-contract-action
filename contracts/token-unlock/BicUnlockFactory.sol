@@ -25,7 +25,7 @@ contract BicUnlockFactory {
 
    
     function createUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint256 salt) public returns (BicUnlockTokenV2 ret) {
-        address addr = getAddress(erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, salt);
+        address addr = computeUnlock(erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, salt);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
             return BicUnlockTokenV2(payable(addr));
@@ -40,7 +40,7 @@ contract BicUnlockFactory {
         emit UnlockInitialized(address(ret));
     }
 
-    function getAddress(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint256 salt) public view returns (address) {
+    function computeUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint256 salt) public view returns (address) {
         return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
                 type(ERC1967Proxy).creationCode,
                 abi.encode(
