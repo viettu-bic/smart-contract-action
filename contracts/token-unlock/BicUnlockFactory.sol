@@ -7,12 +7,14 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+
+
 import "./BicTokenUnlockV2.sol";
 import "./../management/BicPermissions.sol";
 
 
 contract BicUnlockFactory {
-    event UnlockInitialize(address unlock);
+    event UnlockInitialized(address unlock);
     BicUnlockTokenV2 public immutable bicUnlockImplementation;
     BicPermissions public immutable permissions;
 
@@ -30,12 +32,12 @@ contract BicUnlockFactory {
         }
 
         // Transfer from BIC to Account
-        SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, beneficiaryAddress, totalAmount);
         ret = BicUnlockTokenV2(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(bicUnlockImplementation),
                 abi.encodeCall(BicUnlockTokenV2.initialize, (erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds)
             ))));
-        emit UnlockInitialize(address(ret));
+        SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, address(ret), totalAmount);
+        emit UnlockInitialized(address(ret));
     }
 
     function getAddress(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint256 salt) public view returns (address) {

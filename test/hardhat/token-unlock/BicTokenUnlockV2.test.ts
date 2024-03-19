@@ -11,13 +11,13 @@ describe("BicUnlockTokenV2 Test", function () {
   let bicUnlockFactory: BicUnlockFactory;
   let testERC20: TestERC20;
 
-  const salt = "123";
 
   before(async () => {
     const BicUnlockFactory = await ethers.getContractFactory("BicUnlockFactory");
     bicUnlockFactory = await BicUnlockFactory.deploy(ethers.ZeroAddress);
     await bicUnlockFactory.waitForDeployment();
     const bicUnlockImplementation = await bicUnlockFactory.bicUnlockImplementation();
+    console.log("🚀 ~ before ~ bicUnlockImplementation:", bicUnlockImplementation)
 
     const TestERC20 = await ethers.getContractFactory("TestERC20");
     testERC20 = await TestERC20.deploy();
@@ -34,12 +34,13 @@ describe("BicUnlockTokenV2 Test", function () {
 
 
   describe("Case with beauty number", () => {
+    const salt = "123";
+
     const speedRate = 2; // 2%
     const count = BigInt(200); // Claim 200 times
     const start = moment().unix();
     console.log("🚀 ~ describe ~ start:", start)
     const duration = moment.duration(1, "weeks").asSeconds() * ((100 - speedRate) / 100);
-    console.log("🚀 ~ describe ~ duration:", duration)
     const totalAmount = ethers.parseUnits("4000", 18);
 
     before(async () => {
@@ -49,9 +50,10 @@ describe("BicUnlockTokenV2 Test", function () {
       console.log("🚀 ~ before ~ unlockAddress:", unlockAddress)
       const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
       const receipt = await createTx.wait();
-      console.log("🚀 ~ before ~ receipt:", receipt?.logs)
+      const balanceOf = await testERC20.balanceOf(unlockAddress);
+      console.log("🚀 ~ before ~ receipt:", receipt?.logs[receipt.logs.length - 1])
 
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", receipt?.logs[receipt.logs.length - 1].args[0]);
       console.log("🚀 ~ before ~ bicUnlockTokenV2:", await bicUnlockTokenV2.count())
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);
@@ -61,11 +63,12 @@ describe("BicUnlockTokenV2 Test", function () {
 
     it("should not unlock token successfully if not passed duration", async () => {
       const releasableData = await bicUnlockTokenV2["releasable()"]();
+      console.log("🚀 ~ it ~ releasableData:", releasableData)
 
       expect(releasableData[0]).to.be.eq(BigInt(0));
       expect(releasableData[1]).to.be.eq(BigInt(0));
       const vestTx = bicUnlockTokenV2.release();
-      await expect(vestTx).revertedWith("No tokens to release");
+      await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
     });
 
     it("should unlock token successfully if passed 4 durations", async () => {
@@ -155,6 +158,7 @@ describe("BicUnlockTokenV2 Test", function () {
   });
 
   describe("Case with bad number, not check expect in web2, the remain amount will claim at the end time", async () => {
+    const salt = "456";
     const speedRate = 3; // 2%
     const count = BigInt(300); // Claim 300 times
     let start;
@@ -172,9 +176,10 @@ describe("BicUnlockTokenV2 Test", function () {
 
       const unlockAddress = await bicUnlockFactory.getAddress(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
       const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, start, count, duration, salt);
-      await createTx.wait();
+      const receipt = await createTx.wait();
 
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", receipt?.logs[receipt.logs.length - 1].args[0]);
+
 
       expect(await bicUnlockTokenV2.start()).to.be.eq(start);
       expect(await bicUnlockTokenV2.end()).to.be.eq(BigInt(start) + BigInt(duration) * count);
@@ -193,7 +198,7 @@ describe("BicUnlockTokenV2 Test", function () {
       expect(releasableData[0]).to.be.eq(BigInt(0));
       expect(releasableData[1]).to.be.eq(BigInt(0));
       const vestTx = bicUnlockTokenV2.release();
-      await expect(vestTx).revertedWith("No tokens to release");
+      await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
     });
 
     it("should unlock token successfully if passed 4 durations", async () => {
