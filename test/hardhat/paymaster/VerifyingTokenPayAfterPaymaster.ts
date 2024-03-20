@@ -60,7 +60,6 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
 
         smartWalletUser1Address = await bicAccountFactory.getFunction("getAddress")(user1.address as any, 0n as any);
         smartWalletUser2Address = await bicAccountFactory.getFunction("getAddress")(user2.address as any, 0n as any);
-        console.log('smartWalletUser1Address: ', smartWalletUser1Address)
         const values = [
             [0, admin.address.toLowerCase(), ethers.parseEther('100')],
             [1, smartWalletUser1Address.toLowerCase(), ethers.parseEther('100')],
@@ -153,5 +152,69 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         // console.log('tx: ', tx);
 
         console.log('bic balance: ', (await bicTokenPaymaster.balanceOf(smartWalletUser1Address)).toString());
+    });
+
+    it('user 2 can get bic from uniswap then pay fee latter', async () => {
+       const TestUniswap = await ethers.getContractFactory("TestUniswap");
+       const testUniswap = await TestUniswap.deploy();
+       await testUniswap.waitForDeployment();
+
+       const TestERC20 = await ethers.getContractFactory("TestERC20")
+        const usdt = await TestERC20.deploy();
+        await usdt.waitForDeployment();
+
+        expect(await provider.getBalance(smartWalletUser2Address)).to.equal(0);
+        expect(await usdt.balanceOf(smartWalletUser2Address)).to.equal(0);
+        expect(await bicTokenPaymaster.balanceOf(smartWalletUser2Address)).to.equal(0);
+        await usdt.transfer(smartWalletUser2Address, parseEther('1000') as any);
+        expect(await usdt.balanceOf(smartWalletUser2Address)).to.equal(parseEther('1000'));
+
+        await bicTokenPaymaster.transfer(testUniswap.target, parseEther('10000'));
+
+        const swapParams = {
+            tokenIn: usdt.target,
+            tokenOut: legacyTokenPaymasterAddress,
+            fee: 3000,
+            recipient: smartWalletUser2Address,
+            deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+            amountIn: parseEther('100'),
+            amountOutMinimum: parseEther('1470'), // bic at price 0.068 usdt
+            sqrtPriceLimitX96: 0
+        }
+
+        const swapCallData = testUniswap.interface.encodeFunctionData("exactInputSingle", [swapParams]);
+        const validAfter = Math.floor(Date.now() / 1000);
+        const validUntil = validAfter + 60*60;
+        const validTimeEncoded = defaultAbiCoder.encode(['uint48', 'uint48'], [validUntil, validAfter]);
+        const approveUsdtCallData = usdt.interface.encodeFunctionData("approve", [testUniswap.target, parseEther('100')]);
+        const approveBicCallData = bicTokenPaymaster.interface.encodeFunctionData("approve", [verifyingTokenPayAfterPaymasterAddress, parseEther('100')]);
+        const callDataForEntrypoint = bicAccountInterface.encodeFunctionData("executeBatch", [[usdt.target, bicTokenPaymaster.target, testUniswap.target], [0, 0, 0], [approveUsdtCallData, approveBicCallData, swapCallData]]);
+        const initCode = ethers.solidityPacked(
+            ["bytes", "bytes"],
+            [ethers.solidityPacked(["bytes"], [bicAccountFactoryAddress]), bicAccountFactory.interface.encodeFunctionData("createAccount", [user2.address as any, ethers.ZeroHash])]
+        );
+        const op = {
+            sender: smartWalletUser2Address,
+            nonce: 0,
+            initCode: initCode,
+            callData: callDataForEntrypoint,
+            callGasLimit: 5_000_000,
+            verificationGasLimit: 5_000_000,
+            preVerificationGas: 5_000_000,
+            maxFeePerGas: 112,
+            maxPriorityFeePerGas: 82,
+            paymasterAndData: verifyingTokenPayAfterPaymasterAddress + legacyTokenPaymasterAddress.slice(2) + validTimeEncoded.slice(2) + '00'.repeat(64),
+            signature: "0x"
+        }
+
+        const signPaymasterHash = await verifyingTokenPayAfterPaymaster.getHash(op as any, legacyTokenPaymasterAddress, validUntil as any, validAfter as any);
+        const signaturePaymaster = await verifierWallet.signMessage(ethers.getBytes(signPaymasterHash));
+        op.paymasterAndData = ethers.concat([verifyingTokenPayAfterPaymasterAddress, legacyTokenPaymasterAddress, validTimeEncoded, signaturePaymaster]);
+
+        const opHash = await entryPoint.getUserOpHash(op as any);
+        const signature = await user2.signMessage(ethers.getBytes(opHash));
+        op.signature = ethers.solidityPacked(["bytes"], [signature]);
+        const tx = await entryPoint.handleOps([op] as any, admin.address);
+        console.log('bic balance: ', (await bicTokenPaymaster.balanceOf(smartWalletUser2Address)).toString());
     });
 });
