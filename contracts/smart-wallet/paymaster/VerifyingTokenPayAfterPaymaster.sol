@@ -5,7 +5,6 @@ import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@account-abstraction/contracts/samples/IOracle.sol";
-import "hardhat/console.sol";
 
 contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
     //calculated cost of the postOp
@@ -78,41 +77,32 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 /*userOpHash*/, uint256 requiredPreFund)
     internal override returns (bytes memory context, uint256 validationData) {
         (requiredPreFund);
-        console.log("start validate paymaster user op");
 
         (address token, uint48 validUntil, uint48 validAfter, bytes calldata signature) = parsePaymasterAndData(userOp.paymasterAndData);
-        console.log("token: %s", token);
-        console.log("validUntil: %s", validUntil);
-        console.log("validAfter: %s", validAfter);
         //ECDSA library supports both 64 and 65-byte long signatures.
         // we only "require" it here so that the revert reason on invalid signature will be of "VerifyingTokenPayAfterPaymaster", and not "ECDSA"
         require(signature.length == 64 || signature.length == 65, "VerifyingTokenPayAfterPaymaster: invalid signature length in paymasterAndData");
         require(address(oracles[token]) != address(0), "VerifyingTokenPayAfterPaymaster: unsupported token");
+        bytes32 bytesData = getHash(userOp, token, validUntil, validAfter);
+
         bytes32 hash = ECDSA.toEthSignedMessageHash(getHash(userOp, token, validUntil, validAfter));
         address sender = userOp.getSender();
         senderNonce[sender]++;
-
-//        //don't revert on signature failure: return SIG_VALIDATION_FAILED
-//        if (verifyingSigner != ECDSA.recover(hash, signature)) {
-//            console.log("signature failed");
-//            return (abi.encode(sender, token),_packValidationData(true,validUntil,validAfter));
-//        }
-        console.log("signature success");
+        //don't revert on signature failure: return SIG_VALIDATION_FAILED
+        if (verifyingSigner != ECDSA.recover(hash, signature)) {
+            return (abi.encode(sender, token),_packValidationData(true,validUntil,validAfter));
+        }
         //no need for other on-chain validation: entire UserOp should have been checked
         // by the external service prior to signing it.
-        return (abi.encode(sender, token, userOp.initCode.length == 0),_packValidationData(false,validUntil,validAfter));
+        return (abi.encode(sender, token),_packValidationData(false,validUntil,validAfter));
     }
 
     function _postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) internal override {
         //we don't really care about the mode, we just pay the gas with the user's tokens.
         (mode);
-        (address sender, address token, bool isInit) = abi.decode(context, (address, address, bool));
-        console.log("isInit: %s", isInit);
+        (address sender, address token) = abi.decode(context, (address, address));
         uint256 charge = oracles[token].getTokenValueOfEth(actualGasCost + COST_OF_POST);
-        console.log("charge: %s", charge);
-        // betting for make sure tx not fail so need to simulate
         IERC20(token).transferFrom(sender, address(this), charge);
-        console.log("transfer success");
     }
 
     function parsePaymasterAndData(bytes calldata paymasterAndData) public pure returns(address token, uint48 validUntil, uint48 validAfter, bytes calldata signature) {
