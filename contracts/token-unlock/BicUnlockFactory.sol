@@ -14,7 +14,7 @@ import "./../management/BicPermissions.sol";
 
 
 contract BicUnlockFactory {
-    event UnlockInitialized(address unlock, address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint64 unlockRate);
+    event UnlockInitialized(address unlock, address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRate);
     BicUnlockTokenV2 public immutable bicUnlockImplementation;
     BicPermissions public immutable permissions;
 
@@ -24,8 +24,8 @@ contract BicUnlockFactory {
     }
 
    
-    function createUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint64 unlockRate, uint256 salt) public returns (BicUnlockTokenV2 ret) {
-        address addr = computeUnlock(erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, unlockRate, salt);
+    function createUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRate, uint256 salt) public returns (BicUnlockTokenV2 ret) {
+        address addr = computeUnlock(erc20, totalAmount, beneficiaryAddress, timeSpan, durationSeconds, unlockRate, salt);
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
             return BicUnlockTokenV2(payable(addr));
@@ -34,18 +34,18 @@ contract BicUnlockFactory {
         // Transfer from BIC to Account
         ret = BicUnlockTokenV2(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(bicUnlockImplementation),
-                abi.encodeCall(BicUnlockTokenV2.initialize, (erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, unlockRate)
+                abi.encodeCall(BicUnlockTokenV2.initialize, (erc20, totalAmount, beneficiaryAddress, timeSpan, durationSeconds, unlockRate)
             ))));
         SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, address(ret), totalAmount);
-        emit UnlockInitialized(address(ret), erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, unlockRate);
+        emit UnlockInitialized(address(ret), erc20, totalAmount, beneficiaryAddress, timeSpan, durationSeconds, unlockRate);
     }
 
-    function computeUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint64 unlockRate, uint256 salt) public view returns (address) {
+    function computeUnlock(address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRate, uint256 salt) public view returns (address) {
         return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
                 type(ERC1967Proxy).creationCode,
                 abi.encode(
                     address(bicUnlockImplementation),
-                    abi.encodeCall(BicUnlockTokenV2.initialize, (erc20, totalAmount, beneficiaryAddress, startTimestamp, countNumber, durationSeconds, unlockRate)
+                    abi.encodeCall(BicUnlockTokenV2.initialize, (erc20, totalAmount, beneficiaryAddress, timeSpan, durationSeconds, unlockRate)
                 )
             ))));
     }

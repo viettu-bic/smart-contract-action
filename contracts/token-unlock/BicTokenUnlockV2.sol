@@ -10,12 +10,16 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 contract BicUnlockTokenV2 is Context, Initializable {
     event ERC20Released(address indexed token, uint256 amount);
+    uint64 public constant P_DECIMALS = 100_000;
+
+
+    address private _erc20;
+    address private _beneficiary;
 
     uint256 private _released;
     uint256 private _erc20Released;
     uint256 private _totalAmount;
-    address private _erc20;
-    address private _beneficiary;
+    uint256 private _amountPerSecond;
     uint64 private _start;
     uint64 private _end;
     uint64 private _duration;
@@ -30,21 +34,24 @@ contract BicUnlockTokenV2 is Context, Initializable {
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
      */
-    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
+    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
-        require(countNumber > 0, "VestingWallet: count invalid");
-        require(unlockRateNumber > 0 && unlockRateNumber <= 1_000, "VestingWallet: unlock rate invalid");
+        require(unlockRateNumber > 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
         require(erc20 != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
-        _start = startTimestamp;
-        _end = startTimestamp + durationSeconds* countNumber;
+        _start = uint64(block.timestamp);
+
+        uint256 weeksRemaining = timeSpan * unlockRateNumber / P_DECIMALS;
+        uint256 amountPerSecondNumber = totalAmount / weeksRemaining;
+        _count = uint64(weeksRemaining / durationSeconds);
+        _end = _start + uint64(weeksRemaining);
         _duration = durationSeconds;
         _erc20 = erc20;
         _totalAmount = totalAmount;
-        _count = countNumber;
         _unlockRate = unlockRateNumber;
+        _amountPerSecond = amountPerSecondNumber;
     }
 
     /**
@@ -104,6 +111,20 @@ contract BicUnlockTokenV2 is Context, Initializable {
     }
 
     /**
+     * @dev Getter for amount per duration
+     */
+    function amountPerSecond() public view virtual returns (uint256) {
+        return _amountPerSecond;
+    }
+
+    /**
+     * @dev Getter for amount per duration
+     */
+    function amountPerDuration() public view virtual returns (uint256) {
+        return _duration * _amountPerSecond;
+    }
+
+    /**20366598778003497600n, 20408163265306122448n
      * @dev Amount of token already released
      */
     function released() public view virtual returns (uint256) {
@@ -154,9 +175,8 @@ contract BicUnlockTokenV2 is Context, Initializable {
         } else {
             uint256 elapsedTime = uint256(timestamp) - lastAtCurrentCount();
             uint256 totalInterval = elapsedTime / duration();
-            uint256 amountEachDuration = _totalAmount / _count;
             // TODO please check claimedIntervals = 0;
-            uint256 amount = totalInterval * amountEachDuration;
+            uint256 amount = totalInterval * amountPerDuration();
             
             return (amount, totalInterval);
         }
