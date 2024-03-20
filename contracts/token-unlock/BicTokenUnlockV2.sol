@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -20,6 +21,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
     uint64 private _duration;
     uint64 private _count;
     uint64 private _currentCount;
+    uint64 private _unlockRate;
 
 
     
@@ -28,9 +30,11 @@ contract BicUnlockTokenV2 is Context, Initializable {
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
      */
-    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds) public virtual initializer {
+    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 startTimestamp, uint64 countNumber, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
+        require(countNumber > 0, "VestingWallet: count invalid");
+        require(unlockRateNumber > 0 && unlockRateNumber <= 1_000, "VestingWallet: unlock rate invalid");
         require(erc20 != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
@@ -40,6 +44,14 @@ contract BicUnlockTokenV2 is Context, Initializable {
         _erc20 = erc20;
         _totalAmount = totalAmount;
         _count = countNumber;
+        _unlockRate = unlockRateNumber;
+    }
+
+    /**
+     * @dev Getter for the unlock rate
+     */
+    function unlockRate() public view virtual returns (uint64) {
+        return _unlockRate;
     }
 
     /**
