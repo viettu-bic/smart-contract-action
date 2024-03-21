@@ -37,15 +37,24 @@ contract BicUnlockTokenV2 is Context, Initializable {
     function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
-        require(unlockRateNumber > 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
+        require(unlockRateNumber >= 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
         require(erc20 != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
         _start = uint64(block.timestamp);
 
         uint256 weeksRemaining = timeSpan * unlockRateNumber / P_DECIMALS;
-        uint256 amountPerSecondNumber = totalAmount / weeksRemaining;
-        _count = uint64(weeksRemaining / durationSeconds);
+        uint256 amountPerSecondNumber;
+        uint64 countNumber;
+        if(weeksRemaining != 0) {
+            amountPerSecondNumber = totalAmount / weeksRemaining;
+            countNumber = uint64(weeksRemaining / durationSeconds);
+        } else {
+            amountPerSecondNumber = totalAmount;
+            countNumber = 1;
+        }
+
+        _count = countNumber;
         _end = _start + uint64(weeksRemaining);
         _duration = durationSeconds;
         _erc20 = erc20;
