@@ -20,11 +20,6 @@ describe('Controller', function () {
     beforeEach(async () => {
         ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
 
-        const GintoNordFontSVG = await ethers.getContractFactory('GintoNordFontSVG');
-        const gintoNordFontSVG = await GintoNordFontSVG.deploy();
-        const HandleSVG = await ethers.getContractFactory('HandleSVG', {libraries: {GintoNordFontSVG: gintoNordFontSVG.target}});
-        const handleSVG = await HandleSVG.deploy();
-
         const Handles = await ethers.getContractFactory('Handles');
         const handle = await Handles.deploy();
         await handle.waitForDeployment();
