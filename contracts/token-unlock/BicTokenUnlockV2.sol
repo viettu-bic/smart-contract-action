@@ -156,7 +156,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
         require(amount > 0, "VestingWallet: no tokens to release");
         
         _erc20Released += amount;
-        _currentCount+= uint64(intervals);
+        _currentCount += uint64(intervals);
         emit ERC20Released(_erc20, amount);
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
     }
