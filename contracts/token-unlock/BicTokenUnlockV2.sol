@@ -34,33 +34,30 @@ contract BicUnlockTokenV2 is Context, Initializable {
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
      */
-    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint256 timeSpan, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
+    function initialize(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
-        require(unlockRateNumber >= 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
+        require(unlockRateNumber > 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
         require(erc20 != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
         _start = uint64(block.timestamp);
-
-        uint256 weeksRemaining = timeSpan * unlockRateNumber / P_DECIMALS;
-        uint256 amountPerSecondNumber;
-        uint64 countNumber;
-        if(weeksRemaining != 0) {
-            amountPerSecondNumber = totalAmount / weeksRemaining;
-            countNumber = uint64(weeksRemaining / durationSeconds);
-        } else {
-            amountPerSecondNumber = totalAmount;
-            countNumber = 1;
-        }
-
-        _count = countNumber;
-        _end = _start + uint64(weeksRemaining);
         _duration = durationSeconds;
         _erc20 = erc20;
         _totalAmount = totalAmount;
+        _count = P_DECIMALS / unlockRateNumber;
         _unlockRate = unlockRateNumber;
-        _amountPerSecond = amountPerSecondNumber;
+        _end = _start + _count * durationSeconds;
+        if(P_DECIMALS % unlockRateNumber > 0) {
+           _end += 1 * durationSeconds;
+        }
+    }
+
+    /**
+     * @dev Getter for the unlock amount
+     */
+    function unlockTotalAmount() public view virtual returns (uint256) {
+        return _totalAmount;
     }
 
     /**
@@ -122,18 +119,11 @@ contract BicUnlockTokenV2 is Context, Initializable {
     /**
      * @dev Getter for amount per duration
      */
-    function amountPerSecond() public view virtual returns (uint256) {
-        return _amountPerSecond;
+    function amountPerDuration() public view virtual returns (uint256) {
+        return _totalAmount * _unlockRate / P_DECIMALS;
     }
 
     /**
-     * @dev Getter for amount per duration
-     */
-    function amountPerDuration() public view virtual returns (uint256) {
-        return _duration * _amountPerSecond;
-    }
-
-    /**20366598778003497600n, 20408163265306122448n
      * @dev Amount of token already released
      */
     function released() public view virtual returns (uint256) {
@@ -146,13 +136,6 @@ contract BicUnlockTokenV2 is Context, Initializable {
      */
     function releasable() public view virtual returns (uint256, uint256) {
         return _vestingSchedule(uint64(block.timestamp));
-    }
-
-        /**
-     * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
-     */
-    function releasable(uint64 timestamp) public view virtual returns (uint256, uint256) {
-        return _vestingSchedule(timestamp);
     }
 
     /**
@@ -182,9 +165,11 @@ contract BicUnlockTokenV2 is Context, Initializable {
         } else if (timestamp > end()) {
             return (IERC20(_erc20).balanceOf(address(this)), _count - _currentCount); // Allow user vest all amount in contract
         } else {
+            // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else claim all token in contract
+            if(_currentCount >= _count) return (0, 0); 
+
             uint256 elapsedTime = uint256(timestamp) - lastAtCurrentCount();
             uint256 totalInterval = elapsedTime / duration();
-            // TODO please check claimedIntervals = 0;
             uint256 amount = totalInterval * amountPerDuration();
             
             return (amount, totalInterval);

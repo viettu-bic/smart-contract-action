@@ -12,8 +12,9 @@ describe("BicUnlockTokenV2 Test", function () {
   let testERC20: TestERC20;
 
   const P_DECIMALS = 100_000;
-  const timeSpan = moment.duration(200, "weeks").asSeconds();
-  console.log("🚀 ~ timeSpan:", timeSpan)
+  const bufferCount = (p: number) => {
+    return P_DECIMALS % p > 0 ? 1 : 0;
+  }
 
   before(async () => {
     const BicUnlockFactory = await ethers.getContractFactory("BicUnlockFactory");
@@ -31,25 +32,19 @@ describe("BicUnlockTokenV2 Test", function () {
   });
 
   describe("Bic Unlock factory", () => {
-    it("should create unlock success fully", async () => {
+    const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+    it("should create unlock successfully with beauty", async () => {
       const salt = moment().unix().toString();
-      const { wallet1: beneficiary } = await getEOAAccounts();
-
-      /**
-       * Except returned
-       * @count 196
-       * 
-       */
-      const speedRateNumber = 1.8;
-      const speedRate = ethers.parseUnits((100 - speedRateNumber).toString(), 3); // 2% / 1_000
+      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("2".toString(), 3));
       const duration = moment.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
-      const weeksRemaining = timeSpan * ((100 - speedRateNumber) / 100);
-      const countExpect = BigInt(Math.round((timeSpan * ((100 - speedRateNumber) / 100) / duration)));
+      const countExpect = BigInt(Math.floor(P_DECIMALS / Number(speedRateNumber)));
+      const totalDurations = (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) * BigInt(duration);
 
 
-      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
+
+      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, duration, speedRateNumber, salt);
+      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, duration, speedRateNumber, salt);
       const receipt = await createTx.wait();
 
       bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
@@ -58,516 +53,334 @@ describe("BicUnlockTokenV2 Test", function () {
       const end = await bicUnlockTokenV2.end();
       const count = await bicUnlockTokenV2.count();
       const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
+
       expect(start).to.be.eq(block?.timestamp);
-      expect(end).to.be.eq(start + BigInt(weeksRemaining));
+      expect(end).to.be.eq(start + totalDurations);
       expect(count).to.be.eq(countExpect);
 
       const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
-      const amountPerSecond = await bicUnlockTokenV2.amountPerSecond();
+      expect(amountPerDuration).to.be.eq(BigInt(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS));
 
-      const totalAmountActual = amountPerSecond * BigInt(weeksRemaining);
       const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      expect(totalAmountActual).to.lessThanOrEqual(balanceOfUnlockContract);
+      expect(balanceOfUnlockContract).to.lessThanOrEqual(totalAmount);
+    });
+
+    it("should create unlock successfully with odd number", async () => {
+      const salt = moment().unix().toString();
+      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("1.43".toString(), 3));
+      const duration = moment.duration(1, "weeks").asSeconds();
+      const totalAmount = ethers.parseUnits("2000", 18);
+      const countExpect = BigInt(Math.floor(P_DECIMALS / Number(speedRateNumber)));
+      const totalDurations = (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) * BigInt(duration);
+
+
+
+      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, duration, speedRateNumber, salt);
+      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, duration, speedRateNumber, salt);
+      const receipt = await createTx.wait();
+
+      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+
+      const start = await bicUnlockTokenV2.start();
+      const end = await bicUnlockTokenV2.end();
+      const count = await bicUnlockTokenV2.count();
+      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
+
+      expect(start).to.be.eq(block?.timestamp);
+      expect(end).to.be.eq(start + totalDurations);
+      expect(count).to.be.eq(countExpect);
+
+      const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+      expect(amountPerDuration).to.be.eq(BigInt(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS));
+
+
+      const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
+      expect(balanceOfUnlockContract).to.lessThanOrEqual(totalAmount);
+    });
+  });
+
+  describe("Bic Unlock contract", () => {
+
+    describe("Test with beauty number", async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const duration = moment.duration(1, "weeks").asSeconds();
+      const salt = moment().unix().toString();
+      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("0.5".toString(), 3));
+      const totalAmount = "2000";
+      const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
+      const countExpect = BigInt(Math.floor(P_DECIMALS / Number(speedRateNumber)));
+      const totalDurations = (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) * BigInt(duration);
+
+      before(async () => {
+        const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmountInDecimal, beneficiary.address, duration, speedRateNumber, salt);
+        const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmountInDecimal, beneficiary.address, duration, speedRateNumber, salt);
+        const receipt = await createTx.wait();
+
+        bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+
+        const start = await bicUnlockTokenV2.start();
+        const end = await bicUnlockTokenV2.end();
+        const count = await bicUnlockTokenV2.count();
+        const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
+
+        expect(start).to.be.eq(block?.timestamp);
+        expect(end).to.be.eq(start + totalDurations);
+        expect(count).to.be.eq(countExpect);
+
+
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+        const amountPerDurationExpect = BigInt(ethers.parseUnits(String(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS), 18));
+        expect(amountPerDuration).to.be.eq(amountPerDurationExpect);
+
+        const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
+        expect(balanceOfUnlockContract).to.eq(ethers.toBigInt(totalAmountInDecimal));
+      });
+
+      it("should not unlock if not passed durations", async () => {
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(BigInt(0));
+        expect(releasableData[1]).to.be.eq(BigInt(0));
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
+      });
+
+      it("should unlock if passed 4 durations", async () => {
+        const passedDuration = 4;
+        const lastAtCurrentCountPrev = await bicUnlockTokenV2.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+
+
+        const amountExpect = amountPerDuration * BigInt(passedDuration);
+        const timePassed = lastAtCurrentCountPrev + BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+        await helpers.time.increaseTo(timePassed + BigInt(1));
+
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(amountExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockTokenV2.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(beneficiary.address);
+
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).emit(bicUnlockTokenV2, "ERC20Released");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(beneficiary.address);
+        expect(beneficiaryBalanceNext).to.be.eq(beneficiaryBalancePrev + amountExpect);
+
+        const currentCountNext = await bicUnlockTokenV2.currentCount();
+        expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(passedDuration));
+
+        const lastAtCurrentCountNext = await bicUnlockTokenV2.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration));
+      });
+
+      it("should unlock if passed fully durations", async () => {
+        const lastAtCurrentCountPrev = await bicUnlockTokenV2.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+        const count = await bicUnlockTokenV2.count();
+        const currentCount = await bicUnlockTokenV2.currentCount();
+
+        const passedDuration = count - currentCount;
+
+
+        const amountExpect = amountPerDuration * BigInt(passedDuration);
+        const amountRemainExpect = ethers.toBigInt(totalAmountInDecimal) - amountPerDuration * countExpect;
+        
+        const timePassed = lastAtCurrentCountPrev + BigInt(moment.duration(Number(passedDuration), "weeks").asSeconds());
+        await helpers.time.increaseTo(timePassed);
+
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(amountExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockTokenV2.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(beneficiary.address);
+
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).emit(bicUnlockTokenV2, "ERC20Released");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(beneficiary.address);
+        expect(beneficiaryBalanceNext).to.be.eq(beneficiaryBalancePrev + amountExpect);
+
+        const currentCountNext = await bicUnlockTokenV2.currentCount();
+        expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(passedDuration));
+
+        const unlockContractBalanceNext = await testERC20.balanceOf(bicUnlockTokenV2.target);
+        expect(unlockContractBalanceNext).to.be.eq(amountRemainExpect);
+        
+        const lastAtCurrentCountNext = await bicUnlockTokenV2.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration));
+      });
+
+    });
+
+
+    describe("Test with odd number", async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const duration = moment.duration(1, "weeks").asSeconds();
+      const salt = moment().unix().toString();
+      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("1.3".toString(), 3));
+
+      const totalAmount = "3333.37";
+      const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
+
+      const countExpect = BigInt(Math.floor(P_DECIMALS / Number(speedRateNumber)));
+      const totalDurations = (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) * BigInt(duration);
+
+      before(async () => {
+        const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmountInDecimal, beneficiary.address, duration, speedRateNumber, salt);
+        const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmountInDecimal, beneficiary.address, duration, speedRateNumber, salt);
+        const receipt = await createTx.wait();
+
+        bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
+
+        const start = await bicUnlockTokenV2.start();
+        const end = await bicUnlockTokenV2.end();
+        const count = await bicUnlockTokenV2.count();
+        const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
+
+        expect(start).to.be.eq(block?.timestamp);
+        expect(end).to.be.eq(start + totalDurations);
+        expect(count).to.be.eq(countExpect);
+
+
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+        const amountPerDurationExpect = BigInt(ethers.parseUnits(String(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS), 18));
+        expect(amountPerDuration).to.be.eq(amountPerDurationExpect);
+
+        const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
+        expect(balanceOfUnlockContract).to.lessThanOrEqual(ethers.toBigInt(totalAmountInDecimal));
+      });
+
+      it("should not unlock if not passed durations", async () => {
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(BigInt(0));
+        expect(releasableData[1]).to.be.eq(BigInt(0));
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
+      });
+
+      it("should unlock if passed 4 durations", async () => {
+        const passedDuration = 4;
+        const lastAtCurrentCountPrev = await bicUnlockTokenV2.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+
+
+        const amountExpect = amountPerDuration * BigInt(passedDuration);
+        const timePassed = lastAtCurrentCountPrev + BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+        await helpers.time.increaseTo(timePassed + BigInt(1));
+
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(amountExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockTokenV2.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(beneficiary.address);
+
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).emit(bicUnlockTokenV2, "ERC20Released");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(beneficiary.address);
+        expect(beneficiaryBalanceNext).to.be.eq(beneficiaryBalancePrev + amountExpect);
+
+        const currentCountNext = await bicUnlockTokenV2.currentCount();
+        expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(passedDuration));
+
+        const lastAtCurrentCountNext = await bicUnlockTokenV2.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration));
+      });
+
+      it("should unlock if passed fully durations", async () => {
+        const lastAtCurrentCountPrev = await bicUnlockTokenV2.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+        const count = await bicUnlockTokenV2.count();
+        const currentCount = await bicUnlockTokenV2.currentCount();
+
+        const passedDuration = count - currentCount;
+
+
+        const amountExpect = amountPerDuration * BigInt(passedDuration);
+        const amountRemainExpect = ethers.toBigInt(totalAmountInDecimal) - amountPerDuration * countExpect;
+        
+        const timePassed = lastAtCurrentCountPrev + BigInt(moment.duration(Number(passedDuration), "weeks").asSeconds());
+        await helpers.time.increaseTo(timePassed);
+
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.eq(amountExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockTokenV2.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(beneficiary.address);
+
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).emit(bicUnlockTokenV2, "ERC20Released");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(beneficiary.address);
+        expect(beneficiaryBalanceNext).to.be.eq(beneficiaryBalancePrev + amountExpect);
+
+        const currentCountNext = await bicUnlockTokenV2.currentCount();
+        expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(passedDuration));
+
+        const unlockContractBalanceNext = await testERC20.balanceOf(bicUnlockTokenV2.target);
+        expect(unlockContractBalanceNext).to.be.eq(amountRemainExpect);
+        
+        const lastAtCurrentCountNext = await bicUnlockTokenV2.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration));
+      });
+
+      it("should unlock remain amount if passed end time", async () => {
+        const lastAtCurrentCountPrev = await bicUnlockTokenV2.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
+        const end = await bicUnlockTokenV2.end();
+        const count = await bicUnlockTokenV2.count();
+        const currentCount = await bicUnlockTokenV2.currentCount();
+
+        const passedDuration = count - currentCount;
+
+
+        const amountRemainExpect = ethers.toBigInt(totalAmountInDecimal) - amountPerDuration * countExpect;
+        
+        await helpers.time.increaseTo(end + BigInt(1));
+
+        const releasableData = await bicUnlockTokenV2.releasable();
+        expect(releasableData[0]).to.be.greaterThanOrEqual(amountRemainExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockTokenV2.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(beneficiary.address);
+
+        const vestTx = bicUnlockTokenV2.release();
+        await expect(vestTx).emit(bicUnlockTokenV2, "ERC20Released");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(beneficiary.address);
+        expect(beneficiaryBalanceNext).to.be.eq(beneficiaryBalancePrev + amountRemainExpect);
+
+        const currentCountNext = await bicUnlockTokenV2.currentCount();
+        expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(passedDuration));
+
+        const unlockContractBalanceNext = await testERC20.balanceOf(bicUnlockTokenV2.target);
+        expect(unlockContractBalanceNext).to.be.eq(BigInt(0));
+        
+        const lastAtCurrentCountNext = await bicUnlockTokenV2.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration));
+      });
     })
   });
-
-
-  describe("Case with beauty number without remain time", () => {
-    const salt = "123";
-
-    const speedRateNumber = 3;
-    const speedRate = ethers.parseUnits((100 - speedRateNumber).toString(), 3); // 2% / 1_000
-    const duration = moment.duration(1, "weeks").asSeconds();
-    const totalAmount = ethers.parseUnits("4000", 18);
-    const countExpect = BigInt(Math.round((timeSpan * ((100 - speedRateNumber) / 100) / duration)));
-    const weeksRemaining = timeSpan * ((100 - speedRateNumber) / 100)
-
-    before(async () => {
-      const { wallet1: beneficiary } = await getEOAAccounts();
-
-      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const receipt = await createTx.wait();
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const balanceOf = await testERC20.balanceOf(unlockAddress);
-      expect(balanceOf).to.be.eq(totalAmount);
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const start = await bicUnlockTokenV2.start();
-      const end = await bicUnlockTokenV2.end();
-      const count = await bicUnlockTokenV2.count();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-      expect(start).to.be.eq(block?.timestamp);
-      expect(end).to.be.eq(start + BigInt(weeksRemaining));
-      expect(count).to.be.eq(countExpect);
-
-    });
-
-    it("should not unlock token successfully if not passed duration", async () => {
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      expect(releasableData[0]).to.be.eq(BigInt(0));
-      expect(releasableData[1]).to.be.eq(BigInt(0));
-      const vestTx = bicUnlockTokenV2.release();
-      await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
-    });
-
-    it("should unlock token successfully if passed 4 durations", async () => {
-      const { wallet1: beneficiary } = await getEOAAccounts();
-
-      const start = await bicUnlockTokenV2.start();
-      const currentCount = await bicUnlockTokenV2.currentCount();
-      const n = 4; // 4 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / countExpect;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-      expect(currentCount).to.be.eq(BigInt(0));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-    });
-
-    it("should unlock token successfully if passed more(15) durations", async () => {
-      const { wallet1: beneficiary } = await getEOAAccounts();
-
-      const count = await bicUnlockTokenV2.count();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = 15; // 15 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / count;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-    });
-
-    it("should unlock token successfully if passed full durations", async () => {
-      const { wallet1: beneficiary } = await getEOAAccounts();
-
-      const count = await bicUnlockTokenV2.count();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = count - currentCountPrev;
-
-      const timePassed = start + BigInt(moment.duration(Number(n), "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      const receipt = await vestTx.wait();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-
-      expect(balanceOfNext).to.be.eq(totalAmount);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-
-      const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      expect(balanceOfUnlockContract).to.be.eq(BigInt(0));
-    });
-
-  });
-
-
-  describe("Case with beauty number with remain time", () => {
-    const salt = "123";
-
-    const speedRateNumber = 1.8;
-    const speedRate = ethers.parseUnits((100 - speedRateNumber).toString(), 3); // 2% / 1_000
-    const duration = moment.duration(1, "weeks").asSeconds();
-    const totalAmount = ethers.parseUnits("4000", 18);
-    const countExpect = BigInt(Math.round((timeSpan * ((100 - speedRateNumber) / 100) / duration)));
-    const weeksRemaining = timeSpan * ((100 - speedRateNumber) / 100)
-
-    before(async () => {
-      const { wallet2: beneficiary } = await getEOAAccounts();
-
-      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const receipt = await createTx.wait();
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const balanceOf = await testERC20.balanceOf(unlockAddress);
-      expect(balanceOf).to.be.eq(totalAmount);
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const start = await bicUnlockTokenV2.start();
-      const end = await bicUnlockTokenV2.end();
-      const count = await bicUnlockTokenV2.count();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-      expect(start).to.be.eq(block?.timestamp);
-      expect(end).to.be.eq(start + BigInt(weeksRemaining));
-      expect(count).to.be.eq(countExpect);
-
-    });
-
-    it("should not unlock token successfully if not passed duration", async () => {
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      expect(releasableData[0]).to.be.eq(BigInt(0));
-      expect(releasableData[1]).to.be.eq(BigInt(0));
-      const vestTx = bicUnlockTokenV2.release();
-      await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
-    });
-
-    it("should unlock token successfully if passed 4 durations", async () => {
-      const { wallet2: beneficiary } = await getEOAAccounts();
-
-      const start = await bicUnlockTokenV2.start();
-      const currentCount = await bicUnlockTokenV2.currentCount();
-      const n = 4; // 4 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / countExpect;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-      expect(currentCount).to.be.eq(BigInt(0));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-    });
-
-    it("should unlock token successfully if passed more(15) durations", async () => {
-      const { wallet2: beneficiary } = await getEOAAccounts();
-
-      const count = await bicUnlockTokenV2.count();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = 15; // 15 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / count;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-    });
-
-    it("should unlock token successfully if passed full durations", async () => {
-      const { wallet2: beneficiary } = await getEOAAccounts();
-
-      const amountPerSecond = await bicUnlockTokenV2.amountPerSecond();
-      const duration = await bicUnlockTokenV2.duration();
-      const count = await bicUnlockTokenV2.count();
-      const end = await bicUnlockTokenV2.end();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = count - currentCountPrev;
-
-      const timePassed = start + BigInt(moment.duration(Number(n), "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      const receipt = await vestTx.wait();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + duration * n * amountPerSecond);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-
-      const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      const totalAmountRemain = (BigInt(weeksRemaining) - duration * countExpect) * amountPerSecond;
-      expect(balanceOfUnlockContract).to.be.greaterThanOrEqual(totalAmountRemain);
-    });
-
-    it("should unlock all token successfully if passed end time", async () => {
-      const { wallet2: beneficiary } = await getEOAAccounts();
-
-      const count = await bicUnlockTokenV2.count();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const end = await bicUnlockTokenV2.end();
-      const duration = await bicUnlockTokenV2.duration();
-      const amountPerSecond = await bicUnlockTokenV2.amountPerSecond();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = count - currentCountPrev;
-
-      await helpers.time.increaseTo(end + BigInt(1)); // Make sure passed end time
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-      const balanceOfUnlockContractPrev = await testERC20.balanceOf(bicUnlockTokenV2.target);
-
-
-      expect(releasableData[0]).to.be.eq(balanceOfUnlockContractPrev);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-
-      const vestTx = await bicUnlockTokenV2.release();
-      const receipt = await vestTx.wait();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-
-      
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-
-      const balanceOfUnlockContractNext = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      expect(balanceOfUnlockContractNext).to.be.lessThanOrEqual(BigInt(0));
-    });
-  });
-
-
-  describe("Case with beauty number with 0% unlock rate, mean 200 weeks", () => {
-    const salt = "123";
-    const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-
-
-    const speedRateNumber = 0;
-    const speedRate = ethers.parseUnits((100 - speedRateNumber).toString(), 3); // 2% / 1_000
-    const duration = moment.duration(1, "weeks").asSeconds();
-    const totalAmount = ethers.parseUnits("4000", 18);
-    const countExpect = BigInt(Math.round((timeSpan * ((100 - speedRateNumber) / 100) / duration)));
-    const weeksRemaining = timeSpan * ((100 - speedRateNumber) / 100)
-    before(async () => {
-
-      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const receipt = await createTx.wait();
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const balanceOf = await testERC20.balanceOf(unlockAddress);
-      expect(balanceOf).to.be.eq(totalAmount);
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const start = await bicUnlockTokenV2.start();
-      const end = await bicUnlockTokenV2.end();
-      const count = await bicUnlockTokenV2.count();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-      expect(start).to.be.eq(block?.timestamp);
-      expect(end).to.be.eq(start + BigInt(weeksRemaining));
-      expect(count).to.be.eq(countExpect);
-
-    });
-
-    it("should not unlock token successfully if not passed duration", async () => {
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-      expect(releasableData[0]).to.be.eq(BigInt(0));
-      expect(releasableData[1]).to.be.eq(BigInt(0));
-      const vestTx = bicUnlockTokenV2.release();
-      await expect(vestTx).revertedWith("VestingWallet: no tokens to release");
-    });
-
-    it("should unlock token successfully if passed 4 durations", async () => {
-
-      const start = await bicUnlockTokenV2.start();
-      const currentCount = await bicUnlockTokenV2.currentCount();
-      const n = 4; // 4 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / countExpect;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-      expect(currentCount).to.be.eq(BigInt(0));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-    });
-
-    it("should unlock token successfully if passed more(15) durations", async () => {
-
-      const count = await bicUnlockTokenV2.count();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = 15; // 15 durations(weeks)
-      const expectAmount = BigInt(n) * totalAmount / count;
-
-      const timePassed = start + BigInt(moment.duration(n, "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-
-      expect(balanceOfNext).to.be.eq(balanceOfPrev + releasableData[0]);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-    });
-
-    it("should unlock token successfully if passed full durations", async () => {
-
-      const amountPerSecond = await bicUnlockTokenV2.amountPerSecond();
-      const duration = await bicUnlockTokenV2.duration();
-      const count = await bicUnlockTokenV2.count();
-      const end = await bicUnlockTokenV2.end();
-      const start = await bicUnlockTokenV2.lastAtCurrentCount();
-      const currentCountPrev = await bicUnlockTokenV2.currentCount();
-      const n = count - currentCountPrev;
-
-      const timePassed = start + BigInt(moment.duration(Number(n), "weeks").asSeconds());
-      await helpers.time.increaseTo(timePassed);
-
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-
-      // expect(releasableData[0]).to.be.eq(expectAmount);
-      expect(releasableData[1]).to.be.eq(BigInt(n));
-
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-
-      const vestTx = await bicUnlockTokenV2.release();
-      const receipt = await vestTx.wait();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      const currentCountNext = await bicUnlockTokenV2.currentCount();
-      
-      expect(balanceOfNext).to.be.eq(totalAmount);
-      expect(currentCountNext).to.be.eq(currentCountPrev + BigInt(n));
-
-      const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
-      const totalAmountRemain = (BigInt(weeksRemaining) - duration * countExpect) * amountPerSecond;
-      expect(balanceOfUnlockContract).to.be.eq(totalAmountRemain);
-    });
-  });
-
-
-  describe("Case with beauty number with 100% unlock rate, mean 0 weeks", () => {
-    const salt = "123";
-    const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-
-
-    const speedRateNumber = 100;
-    const speedRate = ethers.parseUnits((100 - speedRateNumber).toString(), 3); // 2% / 1_000
-    const duration = moment.duration(1, "weeks").asSeconds();
-    const totalAmount = ethers.parseUnits("3000", 18);
-    const countExpect = 1 // Because speed rate 100%, mean just only claim once time with 100% token
-    const weeksRemaining = timeSpan * ((100 - speedRateNumber) / 100)
-    before(async () => {
-
-      const unlockAddress = await bicUnlockFactory.computeUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const createTx = await bicUnlockFactory.createUnlock(testERC20.target, totalAmount, beneficiary.address, timeSpan, duration, speedRate, salt);
-      const receipt = await createTx.wait();
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const balanceOf = await testERC20.balanceOf(unlockAddress);
-      expect(balanceOf).to.be.eq(totalAmount);
-
-      bicUnlockTokenV2 = await ethers.getContractAt("BicUnlockTokenV2", unlockAddress);
-
-      const start = await bicUnlockTokenV2.start();
-      const end = await bicUnlockTokenV2.end();
-      const count = await bicUnlockTokenV2.count();
-      const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
-      expect(start).to.be.eq(block?.timestamp);
-      expect(end).to.be.eq(start + BigInt(weeksRemaining));
-      expect(count).to.be.eq(countExpect);
-
-    });
-
-    it("should unlock all token instantly", async () => {
-      const releasableData = await bicUnlockTokenV2["releasable()"]();
-      const start = await bicUnlockTokenV2.start();
-      const end = await bicUnlockTokenV2.end();
-      const count = await bicUnlockTokenV2.count();
-      
-      const balanceOfPrev = await testERC20.balanceOf(beneficiary.address);
-      expect(balanceOfPrev).to.be.eq(BigInt(0));
-
-      const vestTx = await bicUnlockTokenV2.release();
-      await vestTx.wait();
-
-      const balanceOfNext = await testERC20.balanceOf(beneficiary.address);
-      expect(balanceOfNext).to.be.eq(totalAmount);
-
-
-    });
-
-  });
-
 
 
 });
