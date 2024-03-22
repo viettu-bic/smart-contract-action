@@ -225,9 +225,9 @@ describe("BicUnlockTokenV2 Test", function () {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const duration = moment.duration(1, "weeks").asSeconds();
       const salt = moment().unix().toString();
-      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("1.3".toString(), 3));
+      const speedRateNumber = ethers.toBigInt(ethers.parseUnits("1.5".toString(), 3));
 
-      const totalAmount = "3333.37";
+      const totalAmount = "3333";
       const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
 
       const countExpect = BigInt(Math.floor(P_DECIMALS / Number(speedRateNumber)));
@@ -251,7 +251,9 @@ describe("BicUnlockTokenV2 Test", function () {
 
 
         const amountPerDuration = await bicUnlockTokenV2.amountPerDuration();
-        const amountPerDurationExpect = BigInt(ethers.parseUnits(String(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS), 18));
+        console.log("🚀 ~ before ~ amountPerDuration:", amountPerDuration)
+        const amountPerDurationExpect = ethers.toBigInt(ethers.parseUnits(String(Number(totalAmount) * Number(speedRateNumber) / P_DECIMALS), 18));
+        console.log("🚀 ~ before ~ amountPerDurationExpect:", amountPerDurationExpect)
         expect(amountPerDuration).to.be.eq(amountPerDurationExpect);
 
         const balanceOfUnlockContract = await testERC20.balanceOf(bicUnlockTokenV2.target);
