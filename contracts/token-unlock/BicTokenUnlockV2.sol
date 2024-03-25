@@ -56,6 +56,13 @@ contract BicUnlockTokenV2 is Context, Initializable {
     /**
      * @dev Getter for the unlock amount
      */
+    function erc20() public view virtual returns (address) {
+        return _erc20;
+    }
+
+    /**
+     * @dev Getter for the unlock amount
+     */
     function unlockTotalAmount() public view virtual returns (uint256) {
         return _totalAmount;
     }
