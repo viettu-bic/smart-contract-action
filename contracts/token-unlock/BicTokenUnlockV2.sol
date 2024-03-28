@@ -43,7 +43,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
         _beneficiary = beneficiaryAddress;
         _start = uint64(block.timestamp);
         _duration = durationSeconds;
-        _erc20 = erc20;
+        _erc20 = erc20Address;
         _totalAmount = totalAmount;
         _count = P_DECIMALS / unlockRateNumber;
         _unlockRate = unlockRateNumber;
