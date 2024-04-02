@@ -12,6 +12,11 @@ contract BicUnlockTokenV2 is Context, Initializable {
     event ERC20Released(address indexed token, uint256 amount);
     uint64 public constant P_DECIMALS = 100_000;
 
+    struct ReleasedAt {
+        uint64 count;
+        uint64 releasedAt;
+    }
+
 
     address private _erc20;
     address private _beneficiary;
@@ -26,6 +31,8 @@ contract BicUnlockTokenV2 is Context, Initializable {
     uint64 private _count;
     uint64 private _currentCount;
     uint64 private _unlockRate;
+
+    ReleasedAt[] private releasedAt;
 
 
     
@@ -51,6 +58,13 @@ contract BicUnlockTokenV2 is Context, Initializable {
         if(P_DECIMALS % unlockRateNumber > 0) {
            _end += 1 * durationSeconds;
         }
+    }
+
+    /**
+     * @dev Getter for all released
+     */
+    function getAllReleased() public view virtual returns (ReleasedAt[] memory) {
+        return releasedAt;
     }
 
     /**
@@ -156,6 +170,10 @@ contract BicUnlockTokenV2 is Context, Initializable {
         
         _erc20Released += amount;
         _currentCount += uint64(intervals);
+        releasedAt.push(ReleasedAt({
+            count: _currentCount,
+            releasedAt: uint64(block.timestamp)
+        }));
         emit ERC20Released(_erc20, amount);
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
     }
@@ -172,7 +190,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
         } else if (timestamp > end()) {
             return (IERC20(_erc20).balanceOf(address(this)), _count - _currentCount); // Allow user vest all amount in contract
         } else {
-            // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else claim all token in contract
+            // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else release all token in contract
             if(_currentCount >= _count) return (0, 0); 
 
             uint256 elapsedTime = uint256(timestamp) - lastAtCurrentCount();
