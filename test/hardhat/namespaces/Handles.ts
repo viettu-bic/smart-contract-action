@@ -3,7 +3,6 @@ import { ethers } from "hardhat";
 import { expect } from "chai";
 
 describe("Handles", function () {
-  const imageBaseURI = "https://api.beincom.io/v1/wallet/uri";
   let bicHandles;
   let handleTokenURI;
 
@@ -17,22 +16,22 @@ describe("Handles", function () {
     {
       namespace: "ounft",
       imageDescription: "Beincom - Ownership Username@",
-      imageUri: "http://localhost:3010/uri/ounft",
+      imageUri: "https://api.beincom.app/v1/wallet/uri/ounft",
     },
     {
       namespace: "ocnft",
       imageDescription: "Beincom - Ownership Community Name@",
-      imageUri: "http://localhost:3010/uri/ocnft",
+      imageUri: "https://api.beincom.app/v1/wallet/uri/ocnft",
     },
     {
       namespace: "eunft",
       imageDescription: "Beincom - Earning Username@",
-      imageUri: "http://localhost:3010/uri/eunft",
+      imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
     },
     {
       namespace: "ecnft",
       imageDescription: "Beincom - Earning Community Name@",
-      imageUri: "http://localhost:3010/uri/ecnft",
+      imageUri: "https://api.beincom.app/v1/wallet/uri/ecnft",
     },
   ];
 
