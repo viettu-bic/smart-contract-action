@@ -89,9 +89,8 @@ contract HandleTokenURI is IHandleTokenURI {
         return
             string.concat(
                 nameElements[namespace].imageURI,
-                "/",
-                localName,
-                ".svg"
+                "?name=",
+                localName
             );
     }
 
