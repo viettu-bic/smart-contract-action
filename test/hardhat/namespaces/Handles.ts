@@ -17,22 +17,22 @@ describe("Handles", function () {
     {
       namespace: "ounft",
       imageDescription: "Beincom - Ownership Username@",
-      imageUri: "https://api.beincom.io/v1/wallet/uri/ounft",
+      imageUri: "http://localhost:3010/uri/ounft",
     },
     {
       namespace: "ocnft",
       imageDescription: "Beincom - Ownership Community Name@",
-      imageUri: "https://api.beincom.io/v1/wallet/uri/ocnft",
+      imageUri: "http://localhost:3010/uri/ocnft",
     },
     {
       namespace: "eunft",
       imageDescription: "Beincom - Earning Username@",
-      imageUri: "https://api.beincom.io/v1/wallet/uri/eunft",
+      imageUri: "http://localhost:3010/uri/eunft",
     },
     {
       namespace: "ecnft",
       imageDescription: "Beincom - Earning Community Name@",
-      imageUri: "https://api.beincom.io/v1/wallet/uri/ecnft",
+      imageUri: "http://localhost:3010/uri/ecnft",
     },
   ];
 
