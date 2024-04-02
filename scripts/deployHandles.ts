@@ -6,14 +6,16 @@ const nameNftList = [
         name: "Ownership Username NFT",
         symbol: "ouNFT",
         imageDescription: "Beincom - Ownership Username@",
-        imageUri: "https://api.beincom.io/v1/wallet/uri/ounft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        address: "0xa0cf6F69F847D062414792d8AC0BA879d2a85735",
     },
     {
         namespace: 'ocnft',
         name: "Ownership Community Name NFT",
         symbol: "ocNFT",
         imageDescription: "Beincom - Ownership Community Name@",
-        imageUri: "https://api.beincom.io/v1/wallet/uri/ocnft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        address: "0xaD82CA7dc001D5D38622CdeCa92624173Eb18937"
     },
     {
         namespace: 'opnft',
@@ -21,27 +23,31 @@ const nameNftList = [
         symbol: "opNFT",
         imageDescription: "Beincom - Ownership Personal Name@",
         imageUri: "https://api.beincom.io/v1/wallet/uri/opnft",
+        address: "0x6e8fF86585149dEC7FebFd34f67c29a8905b046d"
     },
     {
         namespace: 'eunft',
         name: "Earning Username NFT",
         symbol: "euNFT",
         imageDescription: "Beincom - Earning Username@",
-        imageUri: "https://api.beincom.io/v1/wallet/uri/eunft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        address: "0xf5c4C84929B084BBC1e2FaF5458a89b5320688DC"
     },
     {
         namespace: 'ecnft',
         name: "Earning Community Name NFT",
         symbol: "ecNFT",
         imageDescription: "Beincom - Earning Community Name@",
-        imageUri: "https://api.beincom.io/v1/wallet/uri/ecnft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        address: "0x94cE32d9fFDDcF623EDAf1eBDDf5b1B6a67Fac00"
     },
     {
         namespace: 'epnft',
         name: "Earning Personal Name NFT",
         symbol: "epNFT",
         imageDescription: "Beincom - Earning Personal Name@",
-        imageUri: "https://api.beincom.io/v1/wallet/uri/epnft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        address: "0xa405fd6123d664fC2fb06D08E34f32964B66f317"
     },
 ]
 
@@ -65,23 +71,28 @@ async function main() {
         console.log("Verify HandleTokenURI error with %s", error?.message || "unknown");
     }
 
-    const callDataAllHandles = nameNftList.map((nameNft) => {
-        return handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]);
-    });
+    // const callDataAllHandles = nameNftList.map((nameNft) => {
+    //     return handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]);
+    // });
 
     for (const nameNft of nameNftList) {
-        console.log('Clone handle for namespace: ', nameNft.namespace)
-        const txCloneHandle = await bicFactory.deployProxyByImplementation(
-            handles.target as any,
-            handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]) as any,
-            ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 1]) as any
-        );
-        const txCloneHandleReceipt = await txCloneHandle.wait();
-        const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
-        console.log('cloneAddress: ', cloneAddress)
+        // // Clone handle flow
+        // console.log('Clone handle for namespace: ', nameNft.namespace)
+        // const txCloneHandle = await bicFactory.deployProxyByImplementation(
+        //     handles.target as any,
+        //     handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]) as any,
+        //     ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 1]) as any
+        // );
+        // const txCloneHandleReceipt = await txCloneHandle.wait();
+        // const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
+        // console.log('cloneAddress: ', cloneAddress)
+
+        // Just update uri for handle flow
+
+        const cloneAddress = nameNft.address
         const clone = await ethers.getContractAt("Handles", cloneAddress);
         await clone.setHandleTokenURIContract(handleTokenURI.target as any);
-        await clone.setController("0x211e4656C4EC9B76D48101eDb46F3C066E8E761D");
+        // await clone.setController("0x211e4656C4EC9B76D48101eDb46F3C066E8E761D");
         await handleTokenURI.setNameElement(nameNft.namespace as any, nameNft.imageDescription as any, nameNft.imageUri as any);
     }
 }
