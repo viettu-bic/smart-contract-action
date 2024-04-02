@@ -6,7 +6,7 @@ const nameNftList = [
         name: "Ownership Username NFT",
         symbol: "ouNFT",
         imageDescription: "Beincom - Ownership Username@",
-        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/ounft",
         address: "0xa0cf6F69F847D062414792d8AC0BA879d2a85735",
     },
     {
@@ -14,7 +14,7 @@ const nameNftList = [
         name: "Ownership Community Name NFT",
         symbol: "ocNFT",
         imageDescription: "Beincom - Ownership Community Name@",
-        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/ocnft",
         address: "0xaD82CA7dc001D5D38622CdeCa92624173Eb18937"
     },
     {
@@ -38,7 +38,7 @@ const nameNftList = [
         name: "Earning Community Name NFT",
         symbol: "ecNFT",
         imageDescription: "Beincom - Earning Community Name@",
-        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/ecnft",
         address: "0x94cE32d9fFDDcF623EDAf1eBDDf5b1B6a67Fac00"
     },
     {
@@ -46,7 +46,7 @@ const nameNftList = [
         name: "Earning Personal Name NFT",
         symbol: "epNFT",
         imageDescription: "Beincom - Earning Personal Name@",
-        imageUri: "https://api.beincom.app/v1/wallet/uri/eunft",
+        imageUri: "https://api.beincom.app/v1/wallet/uri/epnft",
         address: "0xa405fd6123d664fC2fb06D08E34f32964B66f317"
     },
 ]
@@ -59,17 +59,19 @@ async function main() {
     // const handleTokenURI = await HandleTokenURI.deploy("0xB4f594F5EB0C327b94d102dF44ebc7b6981001e0");
     // await handleTokenURI.waitForDeployment();
 
-    const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
+    // const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
+    //
+    // console.log("🚀 ~ handleTokenURI:", handleTokenURI.target);
+    // try {
+    //     await run("verify:verify", {
+    //         address: handleTokenURI.target,
+    //         constructorArguments: ["0xB4f594F5EB0C327b94d102dF44ebc7b6981001e0"],
+    //     });
+    // } catch (error) {
+    //     console.log("Verify HandleTokenURI error with %s", error?.message || "unknown");
+    // }
 
-    console.log("🚀 ~ handleTokenURI:", handleTokenURI.target);
-    try {
-        await run("verify:verify", {
-            address: handleTokenURI.target,
-            constructorArguments: ["0xB4f594F5EB0C327b94d102dF44ebc7b6981001e0"],
-        });
-    } catch (error) {
-        console.log("Verify HandleTokenURI error with %s", error?.message || "unknown");
-    }
+    const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
 
     // const callDataAllHandles = nameNftList.map((nameNft) => {
     //     return handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]);
