@@ -11,6 +11,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 contract BicUnlockTokenV2 is Context, Initializable {
     event ERC20Released(address indexed token, uint256 amount);
     uint64 public constant P_DECIMALS = 100_000;
+    uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
 
     struct ReleasedAt {
         uint64 count;
@@ -21,10 +22,8 @@ contract BicUnlockTokenV2 is Context, Initializable {
     address private _erc20;
     address private _beneficiary;
 
-    uint256 private _released;
     uint256 private _erc20Released;
     uint256 private _totalAmount;
-    uint256 private _amountPerSecond;
     uint64 private _start;
     uint64 private _end;
     uint64 private _duration;
@@ -44,6 +43,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
     function initialize(address erc20Address, uint256 totalAmount, address beneficiaryAddress, uint64 durationSeconds, uint64 unlockRateNumber) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
+        require(durationSeconds > 0 && durationSeconds <= type(uint64).max / MAX_COUNT, "VestingWallet: duration invalid");
         require(unlockRateNumber > 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
         require(erc20Address != address(0), "VestingWallet: erc20 invalid");
 
@@ -188,7 +188,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
         if (timestamp < start()) {
             return (0, 0);
         } else if (timestamp > end()) {
-            return (IERC20(_erc20).balanceOf(address(this)), _count - _currentCount); // Allow user vest all amount in contract
+            return (IERC20(_erc20).balanceOf(address(this)), _count - _currentCount);
         } else {
             // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else release all token in contract
             if(_currentCount >= _count) return (0, 0); 
