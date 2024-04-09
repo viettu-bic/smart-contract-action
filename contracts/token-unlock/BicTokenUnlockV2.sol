@@ -174,8 +174,8 @@ contract BicUnlockTokenV2 is Context, Initializable {
             count: _currentCount,
             releasedAt: uint64(block.timestamp)
         }));
-        emit ERC20Released(_erc20, amount);
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
+        emit ERC20Released(_erc20, amount);
     }
 
 
