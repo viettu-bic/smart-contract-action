@@ -4,11 +4,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 
 
-contract BicUnlockTokenV2 is Context, Initializable {
+contract BicUnlockTokenV2 is Context, Initializable, ReentrancyGuard {
     event ERC20Released(address indexed token, uint256 amount);
     uint64 public constant P_DECIMALS = 100_000;
     uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
@@ -164,7 +165,7 @@ contract BicUnlockTokenV2 is Context, Initializable {
      *
      * Emits a {ERC20Released} event.
      */
-    function release() public virtual {
+    function release() public nonReentrant virtual  {
         (uint256 amount, uint256 intervals) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
         
