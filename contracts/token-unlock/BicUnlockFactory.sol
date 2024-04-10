@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import "./BicTokenUnlockV2.sol";
+import "./BicUnlockToken.sol";
 import "./../management/BicPermissions.sol";
 
 contract BicUnlockFactory {
@@ -19,13 +19,13 @@ contract BicUnlockFactory {
         uint64 durationSeconds,
         uint64 unlockRate
     );
-    BicUnlockTokenV2 public immutable bicUnlockImplementation;
+    BicUnlockToken public immutable bicUnlockImplementation;
     BicPermissions public immutable permissions;
 
     mapping(address => address) public unlockAddress;
 
     constructor(BicPermissions _permissions) {
-        bicUnlockImplementation = new BicUnlockTokenV2();
+        bicUnlockImplementation = new BicUnlockToken();
         permissions = _permissions;
     }
 
@@ -36,7 +36,7 @@ contract BicUnlockFactory {
         uint64 durationSeconds,
         uint64 unlockRate,
         uint256 salt
-    ) public returns (BicUnlockTokenV2 ret) {
+    ) public returns (BicUnlockToken ret) {
         require(
             unlockAddress[beneficiaryAddress] == address(0),
             "Unlock contract already deploy"
@@ -52,16 +52,16 @@ contract BicUnlockFactory {
         );
         uint codeSize = addr.code.length;
         if (codeSize > 0) {
-            return BicUnlockTokenV2(payable(addr));
+            return BicUnlockToken(payable(addr));
         }
 
         // Transfer from BIC to Account
-        ret = BicUnlockTokenV2(
+        ret = BicUnlockToken(
             payable(
                 new ERC1967Proxy{salt: bytes32(salt)}(
                     address(bicUnlockImplementation),
                     abi.encodeCall(
-                        BicUnlockTokenV2.initialize,
+                        BicUnlockToken.initialize,
                         (
                             erc20,
                             totalAmount,
@@ -111,7 +111,7 @@ contract BicUnlockFactory {
                         abi.encode(
                             address(bicUnlockImplementation),
                             abi.encodeCall(
-                                BicUnlockTokenV2.initialize,
+                                BicUnlockToken.initialize,
                                 (
                                     erc20,
                                     totalAmount,

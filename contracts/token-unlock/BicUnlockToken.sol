@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 
 
-contract BicUnlockTokenV2 is Context, Initializable, ReentrancyGuard {
+contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
     event ERC20Released(address indexed token, uint256 amount);
     uint64 public constant P_DECIMALS = 100_000;
     uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
