@@ -19,6 +19,7 @@ contract BicUnlockFactory {
         uint64 durationSeconds,
         uint64 unlockRate
     );
+
     BicUnlockToken public immutable bicUnlockImplementation;
     BicPermissions public immutable permissions;
 
@@ -37,20 +38,10 @@ contract BicUnlockFactory {
         uint64 unlockRate,
         uint256 salt
     ) public returns (BicUnlockToken ret) {
-        require(
-            unlockAddress[beneficiaryAddress] == address(0),
-            "Unlock contract already deploy"
-        );
+        require(unlockAddress[beneficiaryAddress] == address(0), "Unlock contract already deploy");
 
-        address addr = computeUnlock(
-            erc20,
-            totalAmount,
-            beneficiaryAddress,
-            durationSeconds,
-            unlockRate,
-            salt
-        );
-        uint codeSize = addr.code.length;
+        address addr = computeUnlock(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+        uint256 codeSize = addr.code.length;
         if (codeSize > 0) {
             return BicUnlockToken(payable(addr));
         }
@@ -61,33 +52,14 @@ contract BicUnlockFactory {
                 new ERC1967Proxy{salt: bytes32(salt)}(
                     address(bicUnlockImplementation),
                     abi.encodeCall(
-                        BicUnlockToken.initialize,
-                        (
-                            erc20,
-                            totalAmount,
-                            beneficiaryAddress,
-                            durationSeconds,
-                            unlockRate
-                        )
+                        BicUnlockToken.initialize, (erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate)
                     )
                 )
             )
         );
-        SafeERC20.safeTransferFrom(
-            IERC20(erc20),
-            msg.sender,
-            address(ret),
-            totalAmount
-        );
+        SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, address(ret), totalAmount);
         unlockAddress[beneficiaryAddress] = address(ret);
-        emit UnlockInitialized(
-            address(ret),
-            erc20,
-            totalAmount,
-            beneficiaryAddress,
-            durationSeconds,
-            unlockRate
-        );
+        emit UnlockInitialized(address(ret), erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate);
     }
 
     function computeUnlock(
@@ -102,27 +74,20 @@ contract BicUnlockFactory {
             return unlockAddress[beneficiaryAddress];
         }
 
-        return
-            Create2.computeAddress(
-                bytes32(salt),
-                keccak256(
-                    abi.encodePacked(
-                        type(ERC1967Proxy).creationCode,
-                        abi.encode(
-                            address(bicUnlockImplementation),
-                            abi.encodeCall(
-                                BicUnlockToken.initialize,
-                                (
-                                    erc20,
-                                    totalAmount,
-                                    beneficiaryAddress,
-                                    durationSeconds,
-                                    unlockRate
-                                )
-                            )
+        return Create2.computeAddress(
+            bytes32(salt),
+            keccak256(
+                abi.encodePacked(
+                    type(ERC1967Proxy).creationCode,
+                    abi.encode(
+                        address(bicUnlockImplementation),
+                        abi.encodeCall(
+                            BicUnlockToken.initialize,
+                            (erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate)
                         )
                     )
                 )
-            );
+            )
+        );
     }
 }
