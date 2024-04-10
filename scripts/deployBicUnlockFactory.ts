@@ -13,6 +13,12 @@ async function main() {
   await bicUnlockFactory.waitForDeployment();
 
   console.log("🚀 bicUnlockFactory :", bicUnlockFactory.target);
+
+  await run("verify:verify", {
+    address: bicUnlockFactory.target,
+    constructorArguments: [bicPermission.target],
+});
+
 }
 
 // We recommend this pattern to be able to use async/await everywhere
