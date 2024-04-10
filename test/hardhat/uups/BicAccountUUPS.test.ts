@@ -1,6 +1,7 @@
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers, upgrades } from "hardhat";
+
 import { expect } from "chai";
 import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20 } from "../../../typechain-types";
 import { contractFixture } from "../util/fixtures";
@@ -52,6 +53,16 @@ describe("BicAccountUUPS", function () {
     bicAccountFactory = bicAccountFactoryContract;
     bicAccountV2 = bicAccountV2Contract;
     testERC20 = testERC20Contract;
+
+    /**
+     * Warning already known
+     * Warning: Potentially unsafe deployment of contracts/test/BicAccount2.sol:BicAccount2
+     * You are using the `unsafeAllow.state-variable-immutable` flag.
+     * Warning: Potentially unsafe deployment of contracts/test/BicAccount2.sol:BicAccount2
+     * You are using the `unsafeAllow.constructor` flag.
+     */
+    upgrades.silenceWarnings();
+
   });
 
   const createUserOp = async (sender: string, nonce: BigInt, initCode: string, callData: string, chainNonce: BigInt = 0n) => {

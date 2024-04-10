@@ -75,7 +75,7 @@ describe("BicUnlockToken Test", function () {
       const receipt = await createTx.wait();
 
       bicUnlockToken = await ethers.getContractAt(
-        "bicUnlockToken",
+        "BicUnlockToken",
         unlockAddress
       );
 
@@ -133,7 +133,7 @@ describe("BicUnlockToken Test", function () {
       const receipt = await createTx.wait();
 
       bicUnlockToken = await ethers.getContractAt(
-        "bicUnlockToken",
+        "BicUnlockToken",
         unlockAddress
       );
 
@@ -195,7 +195,7 @@ describe("BicUnlockToken Test", function () {
         const receipt = await createTx.wait();
 
         bicUnlockToken = await ethers.getContractAt(
-          "bicUnlockToken",
+          "BicUnlockToken",
           unlockAddress
         );
 
@@ -384,7 +384,7 @@ describe("BicUnlockToken Test", function () {
         const receipt = await createTx.wait();
 
         bicUnlockToken = await ethers.getContractAt(
-          "bicUnlockToken",
+          "BicUnlockToken",
           unlockAddress
         );
 
