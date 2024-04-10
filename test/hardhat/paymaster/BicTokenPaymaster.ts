@@ -65,7 +65,7 @@ describe("BicTokenPaymaster", () => {
         const smartWallet = await ethers.getContractAt("BicAccount", smartWalletAddress);
         // expect(await smartWallet.isAdmin(admin.address)).equal(true);
         // expect(await smartWallet.isAdmin(user1.address as any)).equal(true);
-        console.log('balance after create: ', (await bicTokenPaymaster.balanceOf(smartWalletAddress as any)).toString());
+        // console.log('balance after create: ', (await bicTokenPaymaster.balanceOf(smartWalletAddress as any)).toString());
     })
 
     it('should be able to transfer tokens while create account', async () => {
@@ -98,7 +98,7 @@ describe("BicTokenPaymaster", () => {
         await entryPoint.handleOps([createWalletOp, transferOp] as any, admin.address);
 
         expect(await bicTokenPaymaster.balanceOf(smartWalletAddress2 as any)).equal(ethers.parseEther('100'));
-        console.log('balance after: ', (await bicTokenPaymaster.balanceOf(smartWalletAddress1 as any)).toString());
+        // console.log('balance after: ', (await bicTokenPaymaster.balanceOf(smartWalletAddress1 as any)).toString());
     });
 
     it('should be able to use oracle for calculate transaction fees', async () => {

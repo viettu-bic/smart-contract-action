@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers, upgrades } from "hardhat";
 import { expect } from "chai";
-import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20, TestERC721 } from "../../../typechain-types";
+import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20 } from "../../../typechain-types";
 import { contractFixture } from "../util/fixtures";
 
 describe("BicAccountUUPS", function () {

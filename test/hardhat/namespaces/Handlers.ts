@@ -37,8 +37,8 @@ describe('Handlers', function () {
         const mintName = 'test'
         await bicHandlers.connect(wallet1).mintHandle(wallet2.address, mintName);
         const tokenId = await bicHandlers.getTokenId(mintName);
-        console.log('tokenId', tokenId.toString());
+        // console.log('tokenId', tokenId.toString());
         const uri = await bicHandlers.tokenURI(tokenId);
-        console.log('uri: ', uri)
+        // console.log('uri: ', uri)
     });
 })

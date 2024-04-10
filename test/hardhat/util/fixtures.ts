@@ -48,16 +48,6 @@ const contractFixture = async () => {
   const bicAccountV2Contract = await ethers.deployContract("BicAccount2", [entryPointContract.target]);
   await bicAccountV2Contract.waitForDeployment();
 
-  /**
-   * BicTokenUnlock
-   */
-  const bicTokenUnlockContract = await ethers.deployContract("BicTokenUnlock", [bicPermissionsEnumerableContract.target, testERC20Contract.target]);
-  await bicTokenUnlockContract.waitForDeployment();
-
-  // console.log('signer1: ', signer1.address);
-  // console.log('signer2: ', signer2.address);
-  // console.log('signer3: ', signer3.address);
-
   return {
     deploySigner,
     signer1,
@@ -70,8 +60,7 @@ const contractFixture = async () => {
     bicAccountFactoryContract,
     bicAccountV2Contract,
     testERC20Contract,
-    testERC721Contract,
-    bicTokenUnlockContract
+    testERC721Contract
   };
 };
 

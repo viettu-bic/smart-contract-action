@@ -3,23 +3,20 @@ pragma solidity ^0.8.23;
 
 import "forge-std/Test.sol";
 
-import { BicUnlockTokenV2 } from "./../../contracts/token-unlock/BicTokenUnlockV2.sol";
+// import {BicUnlockToken} from "./../../contracts/token-unlock/BicTokenUnlock.sol";
+import {BicUnlockToken} from "./../../contracts/token-unlock/BicTokenUnlock.sol";
 
-contract BicUnlockTokenV2Test is Test {
-    BicUnlockTokenV2 public unlockToken;
+contract BicUnlockTokenTest is Test {
+    BicUnlockToken public uniqueUnlockToken;
     address constant dummyErc20Address = address(1); // Dummy ERC20 address for testing
     address constant beneficiaryAddress = address(2); // Dummy beneficiary address for testing
 
     function setUp() public {
-        unlockToken = new BicUnlockTokenV2();
+        unlockToken = new BicUnlockToken();
         // unlockToken.initialize(dummyErc20Address, totalAmount, beneficiaryAddress, 1, 1); // Initial dummy initialization
     }
 
-    function testFuzzInitialize(
-        uint256 totalAmount,
-        uint64 durationSeconds,
-        uint64 unlockRateNumber
-    ) public {
+    function testFuzzInitialize(uint256 totalAmount, uint64 durationSeconds, uint64 unlockRateNumber) public {
         // Validate inputs to avoid divide by zero or overflows
         if (totalAmount == 0 || unlockRateNumber == 0 || unlockRateNumber > 100_000 || durationSeconds == 0) return;
         if (durationSeconds > type(uint64).max / 100_000) return;
