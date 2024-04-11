@@ -16,7 +16,7 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     address private _erc20;
     address private _beneficiary;
 
-    uint256 private _releasedAmount;
+    uint256 private _released;
     uint256 private _totalAmount;
     uint64 private _start;
     uint64 private _end;
@@ -138,8 +138,8 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     /**
      * @dev Amount of token already released
      */
-    function releasedAmount() public view virtual returns (uint256) {
-        return _releasedAmount;
+    function released() public view virtual returns (uint256) {
+        return _released;
     }
 
     /**
@@ -159,7 +159,7 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
         (uint256 amount, uint256 counter) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
 
-        _releasedAmount += amount;
+        _released += amount;
         _currentRewardStacks += uint64(counter);
         SafeERC20.safeTransfer(IERC20(_erc20), _beneficiary, amount);
         emit ERC20Released(_beneficiary, amount, _currentRewardStacks, counter, uint64(block.timestamp));
