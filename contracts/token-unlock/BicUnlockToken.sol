@@ -10,8 +10,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract BicUnlockToken is Initializable, ReentrancyGuard {
     event ERC20Released(address beneficiary, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
 
-    uint64 public constant DENOMINATOR = 100_000; // 100% = 100_000, 10% = 10_000, 1% = 1_000, 0.1% = 100,  0.01% = 10, 0.001% = 1
-    uint64 public constant MAX_STACK = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
+    uint64 public constant DENOMINATOR = 10_000; // 100% = 10_000, 10% = 1_000, 1% = 100, 0.1% = 10,  0.01% = 1
+    uint64 public constant MAX_STACK = 10_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
 
     address private _erc20;
     address private _beneficiary;

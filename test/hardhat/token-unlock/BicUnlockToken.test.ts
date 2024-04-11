@@ -1,6 +1,8 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import moment from "moment";
+import dayjs from "dayjs";
+import dayDurationPlugin from "dayjs/plugin/duration";
+dayjs.extend(dayDurationPlugin);
 import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 import {
   BicUnlockFactory,
@@ -13,7 +15,7 @@ describe("BicUnlockToken Test", function () {
   let bicUnlockFactory: BicUnlockFactory;
   let testERC20: TestERC20;
 
-  const DENOMINATOR = 100_000;
+  const DENOMINATOR = 10_000;
   const bufferStack = (p: number) => {
     return DENOMINATOR % p > 0 ? 1 : 0;
   };
@@ -45,7 +47,8 @@ describe("BicUnlockToken Test", function () {
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("2".toString(), 3)
       );
-      const duration = moment.duration(1, "weeks").asSeconds();
+      
+      const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
@@ -100,7 +103,7 @@ describe("BicUnlockToken Test", function () {
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("1.43".toString(), 3)
       );
-      const duration = moment.duration(1, "weeks").asSeconds();
+      const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("2000", 18);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
@@ -154,7 +157,7 @@ describe("BicUnlockToken Test", function () {
   describe("Bic Unlock contract", () => {
     describe("Test with beauty number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-      const duration = moment.duration(1, "weeks").asSeconds();
+      const duration = dayjs.duration(1, "weeks").asSeconds();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("0.5".toString(), 3)
       );
@@ -238,7 +241,7 @@ describe("BicUnlockToken Test", function () {
         const amountExpect = amountPerDuration * BigInt(passedDuration);
         const timePassed =
           lastAtCurrentRewardStacksPrev +
-          BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+          BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
         const releasableData = await bicUnlockToken.releasable();
@@ -288,7 +291,7 @@ describe("BicUnlockToken Test", function () {
         const amountExpect = amountPerDuration * BigInt(passedDuration);
         const timePassed =
           lastAtCurrentRewardStacksPrev +
-          BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+          BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
         const releasableData = await bicUnlockToken.releasable();
@@ -356,7 +359,7 @@ describe("BicUnlockToken Test", function () {
 
         const timePassed =
           lastAtCurrentRewardStacksPrev +
-          BigInt(moment.duration(Number(passedDuration), "weeks").asSeconds());
+          BigInt(dayjs.duration(Number(passedDuration), "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed);
 
         const releasableData = await bicUnlockToken.releasable();
@@ -401,7 +404,7 @@ describe("BicUnlockToken Test", function () {
 
     describe("Test with odd number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-      const duration = moment.duration(1, "weeks").asSeconds();
+      const duration = dayjs.duration(1, "weeks").asSeconds();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("1.5".toString(), 3)
       );
@@ -487,7 +490,7 @@ describe("BicUnlockToken Test", function () {
         const amountExpect = amountPerDuration * BigInt(passedDuration);
         const timePassed =
           lastAtCurrentRewardStacksPrev +
-          BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+          BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
         const releasableData = await bicUnlockToken.releasable();
@@ -540,7 +543,7 @@ describe("BicUnlockToken Test", function () {
 
         const timePassed =
           lastAtCurrentRewardStacksPrev +
-          BigInt(moment.duration(Number(passedDuration), "weeks").asSeconds());
+          BigInt(dayjs.duration(Number(passedDuration), "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed);
 
         const releasableData = await bicUnlockToken.releasable();
