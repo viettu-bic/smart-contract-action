@@ -1,6 +1,6 @@
 import {Wallet} from "ethers";
 import {ethers} from "hardhat";
-import {BicAccount, EntryPoint} from "../../typechain-types";
+import {BicAccount, EntryPoint} from "../../../typechain-types";
 
 export async function createOp(smartWalletAddress: string, target: string, initCode: string,  initCallData: string, paymasterAndData: string = "0x", chainNonce: BigInt = 0n, user: Wallet, entryPoint: EntryPoint): Promise<any> {
     const smartWallet: BicAccount = await ethers.getContractAt("BicAccount", smartWalletAddress);

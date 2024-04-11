@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20, TestERC721 } from "../../typechain-types";
+import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20, TestERC721 } from "../../../typechain-types";
 import { contractFixture } from "../util/fixtures";
 
 describe("BicAccount", function() {
@@ -56,13 +56,13 @@ describe("BicAccount", function() {
           bicAccountV2Contract,
           testERC20Contract,
         } = await loadFixture(contractFixture);
-    
+
         deployer = deploySigner;
         Jack = signer1;
         Lily = signer2;
         beneficiary = beneficiarySigner;
         operator = operatorSigner;
-    
+
         entryPoint = entryPointContract;
         bicPermissionsEnumerable = bicPermissionsEnumerableContract;
         bicAccountFactory = bicAccountFactoryContract;
@@ -75,25 +75,25 @@ describe("BicAccount", function() {
         const initCallData = bicAccountFactory.interface.encodeFunctionData("createAccount", [Jack.address, salt]);
         const initCode = ethers.solidityPacked(["address", "bytes"], [bicAccountFactory.target, initCallData]);
         const userOp = await createUserOp(smartWalletAddress, nonce, initCode, "0x");
-  
+
         // Sign for this userOP
         const opHash = await entryPoint.getUserOpHash(userOp);
         const signature = await Jack.signMessage(ethers.getBytes(opHash));
         const userOpSigned = { ...userOp, signature: signature };
-  
+
         // Transfer gas fee for first time
         await Jack.sendTransaction({
           to: smartWalletAddress,
           value: ethers.parseEther("10"),
         });
-  
+
         // handleOps
         await entryPoint.connect(Jack).handleOps([userOpSigned], beneficiary);
-  
+
         // Get wallet
         smartWalletForJack = await ethers.getContractAt("BicAccount", smartWalletAddress);
     });
-    
+
     it("Deposit should working as expected", async () => {
         // Deposit 1 eth to entrypoint
         await smartWalletForJack.addDeposit({

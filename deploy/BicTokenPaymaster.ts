@@ -1,9 +1,10 @@
 import {DeployFunction} from "hardhat-deploy/types";
 import {HardhatRuntimeEnvironment} from "hardhat/types";
+import {ethers} from "hardhat";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const {deployments, getNamedAccounts, bic} = hre;
-    const {deploy, get} = deployments;
+    const {deploy, get, execute} = deployments;
     const {deployer} = await getNamedAccounts();
 
     const entryPointAddress = bic.addresses.EntryPoint;
@@ -26,7 +27,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
         // console.error(error);
     }
+
+    await execute("BicTokenPaymaster", {from: deployer, value: ethers.parseEther('0.2').toString()}, "addStake", 86400);
 }
+
 func.tags = ["BicTokenPaymaster"];
 func.dependencies = ["BicAccountFactory"];
 export default func;

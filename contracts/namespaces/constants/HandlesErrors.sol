@@ -13,4 +13,5 @@ library HandlesErrors {
     error DisablingAlreadyTriggered();
     error AlreadyEnabled();
     error NotOperator();
+    error NotImplemented();
 }

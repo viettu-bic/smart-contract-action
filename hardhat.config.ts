@@ -11,14 +11,6 @@ import env from "./env";
 import "./configs";
 import fs from "fs";
 
-function getRemappings() {
-  return fs
-      .readFileSync("remappings.txt", "utf8")
-      .split("\n")
-      .filter(Boolean) // remove empty lines
-      .map((line) => line.trim().split("="));
-}
-
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.23",
@@ -74,6 +66,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     apiKey: {
       arbitrumSepolia: env.API_KEY,
+      sepolia: env.API_KEY,
     },
     customChains: [
       {
