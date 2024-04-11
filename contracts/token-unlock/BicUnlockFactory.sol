@@ -1,12 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.12;
 
-import "@openzeppelin/contracts/utils/Create2.sol";
-import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
+import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
 import "./BicUnlockToken.sol";
 import "./../management/BicPermissions.sol";
 
@@ -40,24 +36,21 @@ contract BicUnlockFactory {
     ) public returns (BicUnlockToken ret) {
         require(unlockAddress[beneficiaryAddress] == address(0), "Unlock contract already deploy");
 
-        address addr = computeUnlock(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+
+        address addr = Clones.predictDeterministicAddress(address(bicUnlockImplementation), salthash);
         uint256 codeSize = addr.code.length;
         if (codeSize > 0) {
             return BicUnlockToken(payable(addr));
         }
 
+
+        ret = BicUnlockToken(Clones.cloneDeterministic(address(bicUnlockImplementation), salthash));
+        ret.initialize(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate);
+
         // Transfer from BIC to Account
-        ret = BicUnlockToken(
-            payable(
-                new ERC1967Proxy{salt: bytes32(salt)}(
-                    address(bicUnlockImplementation),
-                    abi.encodeCall(
-                        BicUnlockToken.initialize, (erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate)
-                    )
-                )
-            )
-        );
         SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, address(ret), totalAmount);
+        
         unlockAddress[beneficiaryAddress] = address(ret);
         emit UnlockInitialized(address(ret), erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate);
     }
@@ -74,20 +67,24 @@ contract BicUnlockFactory {
             return unlockAddress[beneficiaryAddress];
         }
 
-        return Create2.computeAddress(
-            bytes32(salt),
-            keccak256(
-                abi.encodePacked(
-                    type(ERC1967Proxy).creationCode,
-                    abi.encode(
-                        address(bicUnlockImplementation),
-                        abi.encodeCall(
-                            BicUnlockToken.initialize,
-                            (erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate)
-                        )
-                    )
-                )
-            )
-        );
+        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+
+        address predicted = Clones.predictDeterministicAddress(address(bicUnlockImplementation), salthash);
+        
+        return predicted;
     }
+
+    function _getHash(
+        address erc20,
+        uint256 totalAmount,
+        address beneficiaryAddress,
+        uint64 durationSeconds,
+        uint64 unlockRate,
+        uint256 salt
+    ) public pure returns (bytes32) {
+        bytes32 salthash = keccak256(abi.encodePacked(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt));
+        return salthash;
+    }
+    
+
 }

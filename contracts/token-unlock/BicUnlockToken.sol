@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
