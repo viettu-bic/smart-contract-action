@@ -4,7 +4,6 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./BicUnlockToken.sol";
-import "./../management/BicPermissions.sol";
 
 contract BicUnlockFactory {
     event UnlockInitialized(
@@ -17,13 +16,11 @@ contract BicUnlockFactory {
     );
 
     BicUnlockToken public immutable bicUnlockImplementation;
-    BicPermissions public immutable permissions;
 
     mapping(address => address) public unlockAddress;
 
-    constructor(BicPermissions _permissions) {
+    constructor() {
         bicUnlockImplementation = new BicUnlockToken();
-        permissions = _permissions;
     }
 
     function createUnlock(
@@ -79,8 +76,7 @@ contract BicUnlockFactory {
         uint64 durationSeconds,
         uint64 unlockRate
     ) public pure returns (bytes32) {
-        bytes32 salthash = keccak256(abi.encodePacked(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate));
-        return salthash;
+        return keccak256(abi.encodePacked(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate));
     }
     
 

@@ -3,27 +3,26 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
-    event ERC20Released(address token, uint256 amount, uint256 currentCount, uint256 count, uint64 timestamp);
+contract BicUnlockToken is Initializable, ReentrancyGuard {
+    event ERC20Released(address token, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
 
     uint64 public constant DENOMINATOR = 100_000; // 100% = 100_000, 10% = 10_000, 1% = 1_000, 0.1% = 100,  0.01% = 10, 0.001% = 1
-    uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
+    uint64 public constant MAX_STACK = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
 
     address private _erc20;
     address private _beneficiary;
 
-    uint256 private _erc20Released;
+    uint256 private _releasedAmount;
     uint256 private _totalAmount;
     uint64 private _start;
     uint64 private _end;
     uint64 private _duration;
-    uint64 private _count;
-    uint64 private _currentCount;
+    uint64 private _maxRewardStacks;
+    uint64 private _currentRewardStacks;
     uint64 private _unlockRate;
 
     constructor() payable {}
@@ -41,7 +40,7 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
         require(
-            durationSeconds > 0 && durationSeconds <= type(uint64).max / MAX_COUNT, "VestingWallet: duration invalid"
+            durationSeconds > 0 && durationSeconds <= type(uint64).max / MAX_STACK, "VestingWallet: duration invalid"
         );
         require(unlockRateNumber > 0 && unlockRateNumber <= DENOMINATOR, "VestingWallet: unlock rate invalid");
         require(erc20Address != address(0), "VestingWallet: erc20 invalid");
@@ -51,9 +50,9 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         _duration = durationSeconds;
         _erc20 = erc20Address;
         _totalAmount = totalAmount;
-        _count = DENOMINATOR / unlockRateNumber;
+        _maxRewardStacks = DENOMINATOR / unlockRateNumber;
         _unlockRate = unlockRateNumber;
-        _end = _start + _count * durationSeconds;
+        _end = _start + _maxRewardStacks * durationSeconds;
         if (DENOMINATOR % unlockRateNumber > 0) {
             _end += 1 * durationSeconds;
         }
@@ -111,22 +110,22 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
     /**
      * @dev Getter for the latest vesting
      */
-    function lastAtCurrentCount() public view virtual returns (uint256) {
-        return _lastAtCurrentCount();
+    function lastAtCurrentStack() public view virtual returns (uint256) {
+        return _lastAtCurrentStack();
     }
 
     /**
      * @dev Getter for the latest vesting
      */
-    function count() public view virtual returns (uint256) {
-        return _count;
+    function maxRewardStacks() public view virtual returns (uint256) {
+        return _maxRewardStacks;
     }
 
     /**
      * @dev Getter for current count
      */
-    function currentCount() public view virtual returns (uint256) {
-        return _currentCount;
+    function currentRewardStacks() public view virtual returns (uint256) {
+        return _currentRewardStacks;
     }
 
     /**
@@ -139,8 +138,8 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
     /**
      * @dev Amount of token already released
      */
-    function released() public view virtual returns (uint256) {
-        return _erc20Released;
+    function releasedAmount() public view virtual returns (uint256) {
+        return _releasedAmount;
     }
 
     /**
@@ -160,10 +159,10 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         (uint256 amount, uint256 counter) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
 
-        _erc20Released += amount;
-        _currentCount += uint64(counter);
+        _releasedAmount += amount;
+        _currentRewardStacks += uint64(counter);
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
-        emit ERC20Released(_erc20, amount, _currentCount, counter, uint64(block.timestamp));
+        emit ERC20Released(_erc20, amount, _currentRewardStacks, counter, uint64(block.timestamp));
     }
 
     /**
@@ -174,12 +173,12 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         if (timestamp < start()) {
             return (0, 0);
         } else if (timestamp > end()) {
-            return (IERC20(_erc20).balanceOf(address(this)), _count - _currentCount);
+            return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
-            // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else release all token in contract
-            if (_currentCount >= _count) return (0, 0);
+            // check for the latest percent amount, if _currentRewardStacks < _count => amount is unlockRate, else release all token in contract
+            if (_currentRewardStacks >= _maxRewardStacks) return (0, 0);
 
-            uint256 elapsedTime = uint256(timestamp) - _lastAtCurrentCount();
+            uint256 elapsedTime = uint256(timestamp) - _lastAtCurrentStack();
             uint256 rewardStackCounter = elapsedTime / _duration;
             uint256 amount = rewardStackCounter * _amountPerDuration();
 
@@ -191,7 +190,7 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         return _totalAmount * _unlockRate / DENOMINATOR;
     }
 
-    function _lastAtCurrentCount() internal view virtual returns (uint256) {
-        return _start + (_duration * _currentCount);
+    function _lastAtCurrentStack() internal view virtual returns (uint256) {
+        return _start + (_duration * _currentRewardStacks);
     }
 }

@@ -19,7 +19,6 @@
     "hardhat": "^2.19.4",
     "hardhat-deploy": "^0.11.45",
     "husky": "^8.0.3",
-    "inquirer": "^8.2.6",
     "moment": "^2.30.1"
   },
   "config": {
