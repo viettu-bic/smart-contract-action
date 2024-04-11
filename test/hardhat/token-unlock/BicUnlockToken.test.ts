@@ -278,6 +278,67 @@ describe("BicUnlockToken Test", function () {
         );
       });
 
+      it("should unlock if passed more 4 durations", async () => {
+        const passedDuration = 4;
+        const lastAtCurrentCountPrev =
+          await bicUnlockToken.lastAtCurrentCount();
+        const amountPerDuration = await bicUnlockToken.amountPerDuration();
+        const beneficiary = await bicUnlockToken.beneficiary();
+
+
+        const amountExpect = amountPerDuration * BigInt(passedDuration);
+        const timePassed =
+          lastAtCurrentCountPrev +
+          BigInt(moment.duration(passedDuration, "weeks").asSeconds());
+        await helpers.time.increaseTo(timePassed + BigInt(1));
+
+        const releasableData = await bicUnlockToken.releasable();
+        expect(releasableData[0]).to.be.eq(amountExpect);
+        expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
+
+        // Previous
+        const currentCountPrev = await bicUnlockToken.currentCount();
+        const beneficiaryBalancePrev = await testERC20.balanceOf(
+          beneficiary
+        );  
+
+        const vestTx = bicUnlockToken.release();
+        await expect(vestTx)
+          .emit(bicUnlockToken, "ERC20Released")
+          .emit(testERC20, "Transfer");
+        await (await vestTx).wait();
+
+        // Next
+        const beneficiaryBalanceNext = await testERC20.balanceOf(
+          beneficiary
+        );
+        expect(beneficiaryBalanceNext).to.be.eq(
+          beneficiaryBalancePrev + amountExpect
+        );
+
+        const currentCountNext = await bicUnlockToken.currentCount();
+        expect(currentCountNext).to.be.eq(
+          currentCountPrev + BigInt(passedDuration)
+        );
+
+        const lastAtCurrentCountNext =
+          await bicUnlockToken.lastAtCurrentCount();
+        expect(lastAtCurrentCountNext).to.be.eq(
+          lastAtCurrentCountPrev + BigInt(passedDuration) * BigInt(duration)
+        );
+      });
+
+      it("should trace log with 2 claim times", async () => {
+        const startBlock = 0; // The block number to start searching for events
+        const endBlock = "latest";
+        const filter = bicUnlockToken.filters.ERC20Released();
+        const events = await bicUnlockToken.queryFilter(filter, startBlock, endBlock);
+        const released = events.map((event) => {
+          return event.args;
+        })
+        expect(events.length).to.be.eq(2);
+      });
+
       it("should unlock if passed fully durations", async () => {
         const lastAtCurrentCountPrev =
           await bicUnlockToken.lastAtCurrentCount();
