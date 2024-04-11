@@ -31,12 +31,11 @@ contract BicUnlockFactory {
         uint256 totalAmount,
         address beneficiaryAddress,
         uint64 durationSeconds,
-        uint64 unlockRate,
-        uint256 salt
+        uint64 unlockRate
     ) public returns (BicUnlockToken ret) {
         require(unlockAddress[beneficiaryAddress] == address(0), "Unlock contract already deploy");
 
-        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate);
 
         address addr = Clones.predictDeterministicAddress(address(bicUnlockImplementation), salthash);
         uint256 codeSize = addr.code.length;
@@ -60,14 +59,13 @@ contract BicUnlockFactory {
         uint256 totalAmount,
         address beneficiaryAddress,
         uint64 durationSeconds,
-        uint64 unlockRate,
-        uint256 salt
+        uint64 unlockRate
     ) public view returns (address) {
         if (unlockAddress[beneficiaryAddress] != address(0)) {
             return unlockAddress[beneficiaryAddress];
         }
 
-        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt);
+        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate);
 
         address predicted = Clones.predictDeterministicAddress(address(bicUnlockImplementation), salthash);
         
@@ -79,10 +77,9 @@ contract BicUnlockFactory {
         uint256 totalAmount,
         address beneficiaryAddress,
         uint64 durationSeconds,
-        uint64 unlockRate,
-        uint256 salt
+        uint64 unlockRate
     ) public pure returns (bytes32) {
-        bytes32 salthash = keccak256(abi.encodePacked(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate, salt));
+        bytes32 salthash = keccak256(abi.encodePacked(erc20, totalAmount, beneficiaryAddress, durationSeconds, unlockRate));
         return salthash;
     }
     

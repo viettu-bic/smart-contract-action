@@ -43,7 +43,6 @@ describe("BicUnlockToken Test", function () {
   describe("Bic Unlock factory", () => {
     it("should create unlock successfully with beauty", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-      const salt = moment().unix().toString();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("2".toString(), 3)
       );
@@ -62,7 +61,6 @@ describe("BicUnlockToken Test", function () {
         beneficiary.address,
         duration,
         speedRateNumber,
-        salt
       );
       const createTx = await bicUnlockFactory.createUnlock(
         testERC20.target,
@@ -70,7 +68,6 @@ describe("BicUnlockToken Test", function () {
         beneficiary.address,
         duration,
         speedRateNumber,
-        salt
       );
       const receipt = await createTx.wait();
 
@@ -101,7 +98,6 @@ describe("BicUnlockToken Test", function () {
 
     it("should create unlock successfully with odd number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
-      const salt = moment().unix().toString();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("1.43".toString(), 3)
       );
@@ -120,7 +116,6 @@ describe("BicUnlockToken Test", function () {
         beneficiary.address,
         duration,
         speedRateNumber,
-        salt
       );
       const createTx = await bicUnlockFactory.createUnlock(
         testERC20.target,
@@ -128,7 +123,6 @@ describe("BicUnlockToken Test", function () {
         beneficiary.address,
         duration,
         speedRateNumber,
-        salt
       );
       const receipt = await createTx.wait();
 
@@ -162,7 +156,6 @@ describe("BicUnlockToken Test", function () {
     describe("Test with beauty number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const duration = moment.duration(1, "weeks").asSeconds();
-      const salt = moment().unix().toString();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("0.5".toString(), 3)
       );
@@ -182,7 +175,6 @@ describe("BicUnlockToken Test", function () {
           beneficiary.address,
           duration,
           speedRateNumber,
-          salt
         );
         const createTx = await bicUnlockFactory.createUnlock(
           testERC20.target,
@@ -190,7 +182,6 @@ describe("BicUnlockToken Test", function () {
           beneficiary.address,
           duration,
           speedRateNumber,
-          salt
         );
         const receipt = await createTx.wait();
 
@@ -349,7 +340,6 @@ describe("BicUnlockToken Test", function () {
     describe("Test with odd number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const duration = moment.duration(1, "weeks").asSeconds();
-      const salt = moment().unix().toString();
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("1.5".toString(), 3)
       );
@@ -371,7 +361,6 @@ describe("BicUnlockToken Test", function () {
           beneficiary.address,
           duration,
           speedRateNumber,
-          salt
         );
         const createTx = await bicUnlockFactory.createUnlock(
           testERC20.target,
@@ -379,7 +368,6 @@ describe("BicUnlockToken Test", function () {
           beneficiary.address,
           duration,
           speedRateNumber,
-          salt
         );
         const receipt = await createTx.wait();
 
