@@ -7,7 +7,7 @@ const contractFixture = async () => {
    * user2: EOA wallet for user2
    * beneficiary: EOA wallet for all beneficiary
    */
-  const [deploySigner, signer1, signer2, beneficiarySigner, operatorSigner] = await ethers.getSigners();
+  const [deploySigner, signer1, signer2, signer3, beneficiarySigner, operatorSigner] = await ethers.getSigners();
 
   /**
    * ERC20
@@ -52,6 +52,7 @@ const contractFixture = async () => {
     deploySigner,
     signer1,
     signer2,
+    signer3,
     beneficiarySigner,
     operatorSigner,
     entryPointContract,
@@ -59,7 +60,7 @@ const contractFixture = async () => {
     bicAccountFactoryContract,
     bicAccountV2Contract,
     testERC20Contract,
-    testERC721Contract,
+    testERC721Contract
   };
 };
 
