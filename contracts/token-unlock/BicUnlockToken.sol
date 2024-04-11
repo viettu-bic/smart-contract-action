@@ -11,7 +11,6 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     event ERC20Released(address beneficiary, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
 
     uint64 public constant DENOMINATOR = 10_000; // 100% = 10_000, 10% = 1_000, 1% = 100, 0.1% = 10,  0.01% = 1
-    uint64 public constant MAX_STACK = 10_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
 
     address private _erc20;
     address private _beneficiary;
@@ -39,9 +38,7 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     ) public virtual initializer {
         require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
         require(totalAmount > 0, "VestingWallet: total amount invalid");
-        require(
-            durationSeconds > 0 && durationSeconds <= type(uint64).max / MAX_STACK, "VestingWallet: duration invalid"
-        );
+        require(durationSeconds > 0, "VestingWallet: duration invalid");
         require(unlockRateNumber > 0 && unlockRateNumber <= DENOMINATOR, "VestingWallet: unlock rate invalid");
         require(erc20Address != address(0), "VestingWallet: erc20 invalid");
 
