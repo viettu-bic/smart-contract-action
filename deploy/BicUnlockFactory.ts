@@ -7,17 +7,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const bicPermissions = await get("BicPermissions");
   const bicUnlockFactory = await deploy("BicUnlockFactory", {
     from: deployer,
-    args: [bicPermissions.address],
+    args: [],
   });
 
   try {
     await hre.run("verify:verify", {
       contract: "contracts/token-unlock/BicUnlockFactory.sol:BicUnlockFactory",
       address: bicUnlockFactory.address,
-      constructorArguments: [bicPermissions.address],
+      constructorArguments: [],
     });
   } catch (error) {
     console.log("Verify BicUnlockFactory error with %s", error?.message || "unknown");
@@ -26,5 +25,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 };
 func.tags = ["BicUnlockFactory"];
-func.dependencies = ["BicPermissions"];
+func.dependencies = [];
 export default func;
