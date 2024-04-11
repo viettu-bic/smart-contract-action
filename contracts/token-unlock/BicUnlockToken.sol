@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
     event ERC20Released(address indexed token, uint256 amount);
 
-    uint64 public constant P_DECIMALS = 100_000;
+    uint64 public constant DENOMINATOR = 100_000; // 100% = 100_000, 10% = 10_000, 1% = 1_000, 0.1% = 100,  0.01% = 10, 0.001% = 1
     uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
 
     struct ReleasedAt {
@@ -51,7 +51,7 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         require(
             durationSeconds > 0 && durationSeconds <= type(uint64).max / MAX_COUNT, "VestingWallet: duration invalid"
         );
-        require(unlockRateNumber > 0 && unlockRateNumber <= P_DECIMALS, "VestingWallet: unlock rate invalid");
+        require(unlockRateNumber > 0 && unlockRateNumber <= DENOMINATOR, "VestingWallet: unlock rate invalid");
         require(erc20Address != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
@@ -59,10 +59,10 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         _duration = durationSeconds;
         _erc20 = erc20Address;
         _totalAmount = totalAmount;
-        _count = P_DECIMALS / unlockRateNumber;
+        _count = DENOMINATOR / unlockRateNumber;
         _unlockRate = unlockRateNumber;
         _end = _start + _count * durationSeconds;
-        if (P_DECIMALS % unlockRateNumber > 0) {
+        if (DENOMINATOR % unlockRateNumber > 0) {
             _end += 1 * durationSeconds;
         }
     }
@@ -127,7 +127,7 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
      * @dev Getter for the latest vesting
      */
     function lastAtCurrentCount() public view virtual returns (uint256) {
-        return _start + (_duration * _currentCount);
+        return _lastAtCurrentCount();
     }
 
     /**
@@ -148,7 +148,7 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
      * @dev Getter for amount per duration
      */
     function amountPerDuration() public view virtual returns (uint256) {
-        return _totalAmount * _unlockRate / P_DECIMALS;
+        return _amountPerDuration();
     }
 
     /**
@@ -172,11 +172,11 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
      * Emits a {ERC20Released} event.
      */
     function release() public virtual nonReentrant {
-        (uint256 amount, uint256 intervals) = releasable();
+        (uint256 amount, uint256 counter) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
 
         _erc20Released += amount;
-        _currentCount += uint64(intervals);
+        _currentCount += uint64(counter);
         releasedAt.push(ReleasedAt({count: _currentCount, releasedAt: uint64(block.timestamp)}));
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
         emit ERC20Released(_erc20, amount);
@@ -195,11 +195,19 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
             // check for the latest percent amount, if _currentCount < _count => amount is unlockRate, else release all token in contract
             if (_currentCount >= _count) return (0, 0);
 
-            uint256 elapsedTime = uint256(timestamp) - lastAtCurrentCount();
-            uint256 totalInterval = elapsedTime / duration();
-            uint256 amount = totalInterval * amountPerDuration();
+            uint256 elapsedTime = uint256(timestamp) - _lastAtCurrentCount();
+            uint256 rewardStackCounter = elapsedTime / _duration;
+            uint256 amount = rewardStackCounter * _amountPerDuration();
 
-            return (amount, totalInterval);
+            return (amount, rewardStackCounter);
         }
+    }
+
+    function _amountPerDuration() internal view virtual returns (uint256) {
+        return _totalAmount * _unlockRate / DENOMINATOR;
+    }
+
+    function _lastAtCurrentCount() internal view virtual returns (uint256) {
+        return _start + (_duration * _currentCount);
     }
 }

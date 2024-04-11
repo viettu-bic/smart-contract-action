@@ -14,9 +14,9 @@ describe("BicUnlockToken Test", function () {
   let bicUnlockFactory: BicUnlockFactory;
   let testERC20: TestERC20;
 
-  const P_DECIMALS = 100_000;
+  const DENOMINATOR = 100_000;
   const bufferCount = (p: number) => {
-    return P_DECIMALS % p > 0 ? 1 : 0;
+    return DENOMINATOR % p > 0 ? 1 : 0;
   };
 
   before(async () => {
@@ -50,7 +50,7 @@ describe("BicUnlockToken Test", function () {
       const duration = moment.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
       const countExpect = BigInt(
-        Math.floor(P_DECIMALS / Number(speedRateNumber))
+        Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
       const totalDurations =
         (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) *
@@ -90,7 +90,7 @@ describe("BicUnlockToken Test", function () {
 
       const amountPerDuration = await bicUnlockToken.amountPerDuration();
       expect(amountPerDuration).to.be.eq(
-        BigInt((Number(totalAmount) * Number(speedRateNumber)) / P_DECIMALS)
+        BigInt((Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR)
       );
 
       const balanceOfUnlockContract = await testERC20.balanceOf(
@@ -108,7 +108,7 @@ describe("BicUnlockToken Test", function () {
       const duration = moment.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("2000", 18);
       const countExpect = BigInt(
-        Math.floor(P_DECIMALS / Number(speedRateNumber))
+        Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
       const totalDurations =
         (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) *
@@ -148,7 +148,7 @@ describe("BicUnlockToken Test", function () {
 
       const amountPerDuration = await bicUnlockToken.amountPerDuration();
       expect(amountPerDuration).to.be.eq(
-        BigInt((Number(totalAmount) * Number(speedRateNumber)) / P_DECIMALS)
+        BigInt((Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR)
       );
 
       const balanceOfUnlockContract = await testERC20.balanceOf(
@@ -169,7 +169,7 @@ describe("BicUnlockToken Test", function () {
       const totalAmount = "3000";
       const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
       const countExpect = BigInt(
-        Math.floor(P_DECIMALS / Number(speedRateNumber))
+        Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
       const totalDurations =
         (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) *
@@ -212,7 +212,7 @@ describe("BicUnlockToken Test", function () {
         const amountPerDurationExpect = BigInt(
           ethers.parseUnits(
             String(
-              (Number(totalAmount) * Number(speedRateNumber)) / P_DECIMALS
+              (Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR
             ),
             18
           )
@@ -358,7 +358,7 @@ describe("BicUnlockToken Test", function () {
       const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
 
       const countExpect = BigInt(
-        Math.floor(P_DECIMALS / Number(speedRateNumber))
+        Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
       const totalDurations =
         (countExpect + BigInt(bufferCount(Number(speedRateNumber)))) *
@@ -401,7 +401,7 @@ describe("BicUnlockToken Test", function () {
         const amountPerDurationExpect = ethers.toBigInt(
           ethers.parseUnits(
             String(
-              (Number(totalAmount) * Number(speedRateNumber)) / P_DECIMALS
+              (Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR
             ),
             18
           )
