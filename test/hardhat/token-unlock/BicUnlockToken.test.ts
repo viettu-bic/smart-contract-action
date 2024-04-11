@@ -329,13 +329,15 @@ describe("BicUnlockToken Test", function () {
       });
 
       it("should trace log with 2 claim times", async () => {
-        const startBlock = 0; // The block number to start searching for events
+        const startBlock = 1; // The block number to start searching for events
         const endBlock = "latest";
         const filter = bicUnlockToken.filters.ERC20Released();
+        console.log("🚀 ~ it ~ filter:", filter.fragment)
         const events = await bicUnlockToken.queryFilter(filter, startBlock, endBlock);
         const released = events.map((event) => {
           return event.args;
         })
+        console.log("🚀 ~ released ~ released:", released)
         expect(events.length).to.be.eq(2);
       });
 

@@ -9,15 +9,10 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
-    event ERC20Released(address token, uint256 amount, uint256 _currentCount, uint256 count, uint64 timestamp);
+    event ERC20Released(address token, uint256 amount, uint256 currentCount, uint256 count, uint64 timestamp);
 
     uint64 public constant DENOMINATOR = 100_000; // 100% = 100_000, 10% = 10_000, 1% = 1_000, 0.1% = 100,  0.01% = 10, 0.001% = 1
     uint64 public constant MAX_COUNT = 100_000; // assume unlockRateNumber is 1, so count is 100_000, prevent overflow
-
-    struct ReleasedAt {
-        uint64 count;
-        uint64 releasedAt;
-    }
 
     address private _erc20;
     address private _beneficiary;
@@ -30,8 +25,6 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
     uint64 private _count;
     uint64 private _currentCount;
     uint64 private _unlockRate;
-
-    ReleasedAt[] private releasedAt;
 
     constructor() payable {}
 
@@ -64,13 +57,6 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
         if (DENOMINATOR % unlockRateNumber > 0) {
             _end += 1 * durationSeconds;
         }
-    }
-
-    /**
-     * @dev Getter for all released
-     */
-    function getAllReleased() public view virtual returns (ReleasedAt[] memory) {
-        return releasedAt;
     }
 
     /**
@@ -176,7 +162,6 @@ contract BicUnlockToken is Context, Initializable, ReentrancyGuard {
 
         _erc20Released += amount;
         _currentCount += uint64(counter);
-        releasedAt.push(ReleasedAt({count: _currentCount, releasedAt: uint64(block.timestamp)}));
         SafeERC20.safeTransfer(IERC20(_erc20), beneficiary(), amount);
         emit ERC20Released(_erc20, amount, _currentCount, counter, uint64(block.timestamp));
     }
