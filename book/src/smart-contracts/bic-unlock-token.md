@@ -4,7 +4,7 @@
 
 The `BicUnlockToken` smart contract is designed for managing the gradual and conditional release of ERC20 tokens to a designated beneficiary. This contract ensures that tokens are vested over a specified duration according to a predetermined rate, enhancing security and predictability for token distribution processes. This document details the functionalities, methods, and use-cases of the `BicUnlockToken` contract.
 
-- Contract: (../../../contracts/token-unlock/BicUnlockToken.sol)
+- [BicUnlockToken](../../../contracts/token-unlock/BicUnlockToken.sol)
 
 ## Key Features
 

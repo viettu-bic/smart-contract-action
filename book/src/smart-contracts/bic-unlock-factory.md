@@ -9,7 +9,7 @@
 
 - The primary goal of the **BicUnlockFactory** is to allow users to set up contracts that gradually unlock ERC20 tokens for a designated beneficiary over a specified duration and at a defined rate. Each beneficiary can have only one active unlock contract at any time, ensuring uniqueness and manageability.
 
-- Contract: (../../../contracts/token-unlock/BicUnlockFactory.sol)
+- [BicUnlockFactory](../../../contracts/token-unlock/BicUnlockFactory.sol)
   
 
 ## State Variables
