@@ -26,6 +26,15 @@ The `BicUnlockToken` smart contract is designed for managing the gradual and con
 -   `_currentRewardStacks`: Current count of intervals that have completed.
 -   `_released`: Amount of tokens that have been released so far.
 
+## Events
+-  **ERC20Released**: Emitted after successfully.
+## Errors
+-  *VestingWallet: beneficiary is zero address*
+- *VestingWallet: total amount invalid*
+- *VestingWallet: duration invalid*
+- *VestingWallet: unlock rate invalid*
+- *VestingWallet: erc20 invalid*
+
 ## Functions
 
 ### Constructor
