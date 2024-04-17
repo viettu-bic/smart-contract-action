@@ -53,32 +53,25 @@
 
 ## Usage Example
 ```ts
-        const  beneficiary = ethers.Wallet.createRandom(ethers.provider);
-    
-	    const  speedRateNumber = ethers.toBigInt(ethers.parseUnits("2".toString(), 3));
-    
-	    const  duration = dayjs.duration(1, "weeks").asSeconds();
-	    
-	    const  totalAmount = ethers.parseUnits("4000", 18);
-	    
-	    const  stacksExpect = BigInt(Math.floor(DENOMINATOR / Number(speedRateNumber)));
-	    
-	    const  totalDurations =  (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) * BigInt(duration);
-	    
-	    const  unlockAddress = await  bicUnlockFactory.computeUnlock(
-            "0xERC20Address",
-            totalAmount,
-            beneficiary.address,
-            duration,
-            speedRateNumber,
-	    );
-	    
-	    const  createTx = await  bicUnlockFactory.createUnlock(
-            "0xERC20Address",
-            totalAmount,
-            beneficiary.address,
-            duration,
-            speedRateNumber,
-        );
+    const  beneficiary = ethers.Wallet.createRandom(ethers.provider);
+    const  speedRateNumber = ethers.toBigInt(ethers.parseUnits("2".toString(), 3));
+	const  duration = dayjs.duration(1, "weeks").asSeconds();
+    const  totalAmount = ethers.parseUnits("4000", 18);
+    const  stacksExpect = BigInt(Math.floor(DENOMINATOR / Number(speedRateNumber)));
+	const  totalDurations =  (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) * BigInt(duration);
+	const  unlockAddress = await  bicUnlockFactory.computeUnlock(
+        "0xERC20Address",
+        totalAmount,
+        beneficiary.address,
+        duration,
+        speedRateNumber,
+	);
+	const createTx = await  bicUnlockFactory.createUnlock(
+        "0xERC20Address",
+        totalAmount,
+        beneficiary.address,
+        duration,
+        speedRateNumber,
+    );
 ```
     

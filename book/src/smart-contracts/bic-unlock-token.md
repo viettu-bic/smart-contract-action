@@ -65,8 +65,18 @@ Several view functions provide information about the current state of the vestin
 ## Usage Example
 
 ```ts
-	BicUnlockToken unlockContract = BicUnlockToken(deployedAddress);
-	unlockContract.initialize(tokenAddress, 100000, beneficiaryAddress, 86400, 100);
+	// NOTE: Should use BicUnlockFactory to create BicUnlockToken
+	const unlockAddress = await bicUnlockFactory.createUnlock(
+        "0xERC20Address",
+        totalAmount,
+        beneficiary.address,
+		duration,
+        speedRateNumber,
+    );
+	const bicUnlockToken = await ethers.getContractAt(
+        "BicUnlockToken",
+        unlockAddress
+    );
 	// Assume: Passed duration
-	unlockContract.release();
+	bicUnlockToken.release();
 ``` 
