@@ -22,13 +22,14 @@
 ## Errors
 - *Unlock contract already deploy*: Each beneficiary can have only one active unlock contract at any time
 
-## Constructor
-
-- BicUnlockFactory Constructor: Instantiates the **bicUnlockImplementation** with a new **BicUnlockToken**.
 
   
 
 ### Functions
+
+#### Constructor
+
+- BicUnlockFactory Constructor: Instantiates the **bicUnlockImplementation** with a new **BicUnlockToken**.
 
 #### createUnlock
 *Purpose: Creates a new unlock contract if one doesn't already exist for the beneficiary.*
@@ -52,56 +53,32 @@
 
 ## Usage Example
 ```ts
-const  beneficiary = ethers.Wallet.createRandom(ethers.provider);
+        const  beneficiary = ethers.Wallet.createRandom(ethers.provider);
     
-	    const  speedRateNumber = ethers.toBigInt(
-    
-	    ethers.parseUnits("2".toString(), 3));
+	    const  speedRateNumber = ethers.toBigInt(ethers.parseUnits("2".toString(), 3));
     
 	    const  duration = dayjs.duration(1, "weeks").asSeconds();
 	    
 	    const  totalAmount = ethers.parseUnits("4000", 18);
 	    
-	    const  stacksExpect = BigInt(
+	    const  stacksExpect = BigInt(Math.floor(DENOMINATOR / Number(speedRateNumber)));
 	    
-	    Math.floor(DENOMINATOR / Number(speedRateNumber))
-	    
-	    );
-	    
-	    const  totalDurations =
-	    
-	    (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) *
-	    
-	    BigInt(duration);
-	    
-	      
+	    const  totalDurations =  (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) * BigInt(duration);
 	    
 	    const  unlockAddress = await  bicUnlockFactory.computeUnlock(
-	    
-	    testERC20.target,
-	    
-	    totalAmount,
-	    
-	    beneficiary.address,
-	    
-	    duration,
-	    
-	    speedRateNumber,
-	    
+            "0xERC20Address",
+            totalAmount,
+            beneficiary.address,
+            duration,
+            speedRateNumber,
 	    );
 	    
 	    const  createTx = await  bicUnlockFactory.createUnlock(
-	    
-	    testERC20.target,
-	    
-	    totalAmount,
-	    
-	    beneficiary.address,
-	    
-	    duration,
-	    
-	    speedRateNumber,
-    
-    );
+            "0xERC20Address",
+            totalAmount,
+            beneficiary.address,
+            duration,
+            speedRateNumber,
+        );
 ```
     
