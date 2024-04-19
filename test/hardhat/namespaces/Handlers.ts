@@ -12,19 +12,14 @@ describe('Handlers', function () {
     let wallet3;
 
     beforeEach(async () => {
-        const GintoNordFontSVG = await ethers.getContractFactory('GintoNordFontSVG');
-        const gintoNordFontSVG = await GintoNordFontSVG.deploy();
-        const HandleSVG = await ethers.getContractFactory('HandleSVG', {libraries: {GintoNordFontSVG: gintoNordFontSVG.target}});
-        const handleSVG = await HandleSVG.deploy();
-
         const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        const Handlers = await ethers.getContractFactory('BicHandlers');
-        const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI', {libraries: {HandleSVG: handleSVG.target}});
+        const Handlers = await ethers.getContractFactory('Handles');
+        const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI');
         bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
         await bicPermissionsEnumerable.waitForDeployment();
         bicHandlers = await Handlers.deploy(bicPermissionsEnumerable.target);
         await bicHandlers.waitForDeployment();
-        handleTokenURI = await HandleTokenURI.deploy();
+        handleTokenURI = await HandleTokenURI.deploy(bicPermissionsEnumerable.target);
         await handleTokenURI.waitForDeployment();
         await bicHandlers.setHandleTokenURIContract(handleTokenURI.target);
 
