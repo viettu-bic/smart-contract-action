@@ -4,15 +4,15 @@ pragma solidity ^0.8.12;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
-import "./WrapEth.sol";
+//import "./WrapEth.sol";
 /// @notice Very basic simulation of what Uniswap does with the swaps for the unit tests on the TokenPaymaster
 /// @dev Do not use to test any actual Uniswap interaction logic as this is way too simplistic
 contract TestUniswap {
-    WrapEth public weth;
-
-    constructor(WrapEth _weth){
-        weth = _weth;
-    }
+//    WrapEth public weth;
+//
+//    constructor(WrapEth _weth){
+//        weth = _weth;
+//    }
 
     event StubUniswapExchangeEvent(uint256 amountIn, uint256 amountOut, address tokenIn, address tokenOut);
 
@@ -42,17 +42,17 @@ contract TestUniswap {
         return amountOut;
     }
 
-    /// @notice Simplified code copied from here:
-    /// https://github.com/Uniswap/v3-periphery/blob/main/contracts/base/PeripheryPayments.sol#L19
-    function unwrapWETH9(uint256 amountMinimum, address recipient) public payable {
-        uint256 balanceWETH9 = weth.balanceOf(address(this));
-        require(balanceWETH9 >= amountMinimum, "Insufficient WETH9");
-
-        if (balanceWETH9 > 0) {
-            weth.withdraw(balanceWETH9);
-            payable(recipient).transfer(balanceWETH9);
-        }
-    }
+//    /// @notice Simplified code copied from here:
+//    /// https://github.com/Uniswap/v3-periphery/blob/main/contracts/base/PeripheryPayments.sol#L19
+//    function unwrapWETH9(uint256 amountMinimum, address recipient) public payable {
+//        uint256 balanceWETH9 = weth.balanceOf(address(this));
+//        require(balanceWETH9 >= amountMinimum, "Insufficient WETH9");
+//
+//        if (balanceWETH9 > 0) {
+//            weth.withdraw(balanceWETH9);
+//            payable(recipient).transfer(balanceWETH9);
+//        }
+//    }
 
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}

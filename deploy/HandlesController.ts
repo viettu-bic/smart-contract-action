@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const bicTokenPaymaster = await get("BicTokenPaymaster");
     const handlesController = await deploy("HandlesController", {
         from: deployer,
-        args: [bicPermissions.address, bicTokenPaymaster.address],
+        args: [bicPermissions.address, '0xe8afce87993bd475faf2aea62e0b008dc27ab81a'],
 
     });
 
@@ -20,7 +20,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         await hre.run("verify:verify", {
             contract: "contracts/namespaces/controller/HandlesController.sol:HandlesController",
             address: handlesController.address,
-            constructorArguments: [bicPermissions.address, bicTokenPaymaster.address],
+            constructorArguments: [bicPermissions.address, '0xe8afce87993bd475faf2aea62e0b008dc27ab81a'],
         });
     } catch (error) {
         console.log("Verify HandlesController error with %s", error?.message || "unknown");
