@@ -20,4 +20,12 @@ contract BicFactory {
         }
         emit ProxyDeployed(_implementation, deployedProxy, msg.sender);
     }
+
+    function computeProxyAddress(
+        address _implementation,
+        bytes32 _salt
+    ) public view returns (address) {
+        bytes32 salthash = keccak256(abi.encodePacked(msg.sender, _salt));
+        return Clones.predictDeterministicAddress(_implementation, salthash);
+    }
 }
