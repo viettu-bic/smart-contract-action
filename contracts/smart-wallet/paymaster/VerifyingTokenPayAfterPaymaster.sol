@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.23;
 
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -83,7 +83,6 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
         // we only "require" it here so that the revert reason on invalid signature will be of "VerifyingTokenPayAfterPaymaster", and not "ECDSA"
         require(signature.length == 64 || signature.length == 65, "VerifyingTokenPayAfterPaymaster: invalid signature length in paymasterAndData");
         require(address(oracles[token]) != address(0), "VerifyingTokenPayAfterPaymaster: unsupported token");
-        bytes32 bytesData = getHash(userOp, token, validUntil, validAfter);
 
         bytes32 hash = ECDSA.toEthSignedMessageHash(getHash(userOp, token, validUntil, validAfter));
         address sender = userOp.getSender();
