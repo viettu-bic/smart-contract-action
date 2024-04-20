@@ -7,10 +7,21 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+/// @title BicUnlockToken Contract
+/// @notice Manages the locked tokens, allowing beneficiaries to claim their tokens after a vesting period
+/// @dev This contract uses OpenZeppelin's Initializable and ReentrancyGuard to provide initialization and reentrancy protection
 contract BicUnlockToken is Initializable, ReentrancyGuard {
+    /// @notice Emitted when tokens are released to the beneficiary
+    /// @param beneficiary The address of the beneficiary who received the tokens
+    /// @param amount The amount of tokens released
+    /// @param currentRewardStacks The current stack count of rewards released
+    /// @param stacks The total number of stacks that will be released
+    /// @param timestamp The block timestamp when the release occurred
     event ERC20Released(address beneficiary, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
 
-    uint64 public constant DENOMINATOR = 10_000; // 100% = 10_000, 10% = 1_000, 1% = 100, 0.1% = 10,  0.01% = 1
+    /// @notice The denominator used for calculating percentages, 100% = 10_000, 10% = 1_000, 1% = 100, 0.1% = 10, 0.01% = 1
+    /// @dev This is used to calculate the unlock rate
+    uint64 public constant DENOMINATOR = 10_000;
 
     address private _erc20;
     address private _beneficiary;
@@ -24,11 +35,16 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     uint64 private _currentRewardStacks;
     uint64 private _unlockRate;
 
+    /// @dev Constructor is empty and payment is disabled by default
     constructor() payable {}
 
-    /**
-     * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
-     */
+    /// @notice Initializes the contract with necessary parameters to start the vesting process
+    /// @dev Ensure all parameters are valid, particularly that addresses are not zero and amounts are positive
+    /// @param erc20Address The ERC20 token address to be locked in the contract
+    /// @param totalAmount The total amount of tokens that will be locked
+    /// @param beneficiaryAddress The address of the beneficiary who will receive the tokens after vesting
+    /// @param durationSeconds The duration of the vesting period in seconds
+    /// @param unlockRateNumber The rate at which the tokens will be released per duration
     function initialize(
         address erc20Address,
         uint256 totalAmount,
@@ -55,103 +71,86 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
         }
     }
 
-    /**
-     * @dev Getter for the unlock amount
-     */
+    /// @notice Getter for the ERC20 token address
+    /// @dev This function returns the address of the ERC20 token that is locked in the contract
     function erc20() public view virtual returns (address) {
         return _erc20;
     }
 
-    /**
-     * @dev Getter for the unlock amount
-     */
+    /// @notice Getter for the total amount of tokens locked in the contract
+    /// @dev This function returns the total amount of tokens that are locked in the contract
     function unlockTotalAmount() public view virtual returns (uint256) {
         return _totalAmount;
     }
 
-    /**
-     * @dev Getter for the unlock rate
-     */
+    /// @notice Getter for the unlock rate
+    /// @dev This function returns the unlock rate, which is the percentage of tokens that will be released per duration
     function unlockRate() public view virtual returns (uint64) {
         return _unlockRate;
     }
 
-    /**
-     * @dev Getter for the beneficiary address.
-     */
+    /// @notice Getter for the beneficiary address
+    /// @dev This function returns the address of the beneficiary who will receive the tokens after vesting
     function beneficiary() public view virtual returns (address) {
         return _beneficiary;
     }
 
-    /**
-     * @dev Getter for the start timestamp.
-     */
+    /// @notice Getter for the start timestamp
+    /// @dev This function returns the start timestamp of the vesting period
     function start() public view virtual returns (uint256) {
         return _start;
     }
 
-    /**
-     * @dev Getter for the end timestamp.
-     */
+    /// @notice Getter for the end timestamp
+    /// @dev This function returns the end timestamp of the vesting period
     function end() public view virtual returns (uint256) {
         return _end;
     }
 
-    /**
-     * @dev Getter for the vesting duration.
-     */
+    /// @notice Getter for the duration of the vesting period
+    /// @dev This function returns the duration of the vesting period
     function duration() public view virtual returns (uint256) {
         return _duration;
     }
 
-    /**
-     * @dev Getter for the latest vesting
-     */
+    /// @notice Getter for the last timestamp at the current reward stack
+    /// @dev This function returns the last timestamp at the current reward stack
     function lastAtCurrentStack() public view virtual returns (uint256) {
         return _lastAtCurrentStack();
     }
 
-    /**
-     * @dev Getter for the latest vesting
-     */
+    /// @notice Getter for the maximum reward stacks
+    /// @dev This function returns the maximum reward stacks
     function maxRewardStacks() public view virtual returns (uint256) {
         return _maxRewardStacks;
     }
 
-    /**
-     * @dev Getter for current count
-     */
+    /// @notice Getter for the current reward stacks
+    /// @dev This function returns the current reward stacks
     function currentRewardStacks() public view virtual returns (uint256) {
         return _currentRewardStacks;
     }
 
-    /**
-     * @dev Getter for amount per duration
-     */
+    /// @notice Getter for the amount of tokens that will be released per duration
+    /// @dev This function returns the amount of tokens that will be released per duration
     function amountPerDuration() public view virtual returns (uint256) {
         return _amountPerDuration();
     }
 
-    /**
-     * @dev Amount of token already released
-     */
+    /// @notice Getter for the amount of tokens that have been released
+    /// @dev This function returns the amount of tokens that have been released to the beneficiary
     function released() public view virtual returns (uint256) {
         return _released;
     }
 
-    /**
-     * @dev Getter for the amount of releasable `token` tokens. `token` should be the address of an
-     * IERC20 contract.
-     */
+    /// @notice Calculates the amount of tokens that are currently available for release
+    /// @dev This function uses the vesting formula to calculate the amount of tokens that can be released
     function releasable() public view virtual returns (uint256, uint256) {
         return _vestingSchedule(uint64(block.timestamp));
     }
 
-    /**
-     * @dev Release the tokens that have already vested.
-     *
-     * Emits a {ERC20Released} event.
-     */
+    /// @notice Allows the beneficiary to release vested tokens
+    /// @dev This function includes checks for the amount of tokens available for release and updates internal states
     function release() public virtual nonReentrant {
         (uint256 amount, uint256 counter) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
@@ -162,10 +161,10 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
         emit ERC20Released(_beneficiary, amount, _currentRewardStacks, counter, uint64(block.timestamp));
     }
 
-    /**
-     * @dev Virtual implementation of the vesting formula. This returns the amount vested, as a function of time, for
-     * an asset given its total historical allocation.
-     */
+    /// @dev Internal function to calculate the vesting schedule and determine releasable amount and reward stacks
+    /// @param timestamp The current block timestamp
+    /// @return amount The amount of tokens that can be released at this timestamp
+    /// @return counter The number of reward stacks that have been released at this timestamp
     function _vestingSchedule(uint64 timestamp) internal view virtual returns (uint256, uint256) {
         if (timestamp < start()) {
             return (0, 0);
@@ -183,10 +182,14 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
         }
     }
 
+    /// @dev Internal helper function to calculate the amount of tokens per duration
+    /// @return The calculated amount of tokens that should be released per duration based on the total amount and unlock rate
     function _amountPerDuration() internal view virtual returns (uint256) {
         return _totalAmount * _unlockRate / DENOMINATOR;
     }
 
+    /// @dev Internal helper function to calculate the last timestamp at which tokens were released based on the current reward stacks
+    /// @return The timestamp of the last release
     function _lastAtCurrentStack() internal view virtual returns (uint256) {
         return _start + (_duration * _currentRewardStacks);
     }
