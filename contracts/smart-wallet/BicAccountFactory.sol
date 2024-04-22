@@ -8,10 +8,10 @@ import "./BicAccount.sol";
 import "./../management/BicPermissions.sol";
 
 /**
- * A sample factory contract for BicAccount
- * A UserOperations "initCode" holds the address of the factory, and a method call (to createAccount, in this sample factory).
- * The factory's createAccount returns the target account address even if it is already installed.
- * This way, the entryPoint.getSenderAddress() can be called either before or after the account is created.
+ * @title A BIC account abstraction factory contract for BicAccount
+ * @notice A UserOperations "initCode" holds the address of the factory, and a method call (to createAccount, in this sample factory).
+    * The factory's createAccount returns the target account address even if it is already installed.
+    * This way, the entryPoint.getSenderAddress() can be called either before or after the account is created.
  */
 contract BicAccountFactory {
     BicAccount public immutable accountImplementation;
@@ -23,10 +23,12 @@ contract BicAccountFactory {
     }
 
     /**
-     * create an account, and return its address.
-     * returns the address even if the account is already deployed.
-     * Note that during UserOperation execution, this method is called only if the account is not deployed.
-     * This method returns an existing account address so that entryPoint.getSenderAddress() would work even after account creation
+     * @notice create an account, and return its address.
+     * @param owner the owner of the account
+     * @param salt the salt to calculate the account address
+     * @returns the address even if the account is already deployed.
+     * @dev Note that during UserOperation execution, this method is called only if the account is not deployed.
+     * @dev This method returns an existing account address so that entryPoint.getSenderAddress() would work even after account creation
      */
     function createAccount(address owner,uint256 salt) public returns (BicAccount ret) {
         address addr = getAddress(owner, salt);
@@ -41,7 +43,10 @@ contract BicAccountFactory {
     }
 
     /**
-     * calculate the counterfactual address of this account as it would be returned by createAccount()
+     * @note calculate the counterfactual address of this account as it would be returned by createAccount()
+     * @param owner the owner of the account
+     * @param salt the salt to calculate the account address
+     * @returns the address of the account
      */
     function getAddress(address owner,uint256 salt) public view returns (address) {
         return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
