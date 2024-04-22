@@ -150,7 +150,7 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     }
 
     /// @notice Allows the beneficiary to release vested tokens
-    /// @dev This function includes checks for the amount of tokens available for release and updates internal states
+    /// @dev This function includes checks for the amount of tokens available for release token and updates internal states
     function release() public virtual nonReentrant {
         (uint256 amount, uint256 counter) = releasable();
         require(amount > 0, "VestingWallet: no tokens to release");
