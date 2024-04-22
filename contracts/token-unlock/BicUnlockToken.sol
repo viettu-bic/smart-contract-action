@@ -166,9 +166,9 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
     /// @return amount The amount of tokens that can be released at this timestamp
     /// @return counter The number of reward stacks that have been released at this timestamp
     function _vestingSchedule(uint64 timestamp) internal view virtual returns (uint256, uint256) {
-        if (timestamp < start()) {
+        if (timestamp < _start) {
             return (0, 0);
-        } else if (timestamp > end()) {
+        } else if (timestamp > _end) {
             return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
             // check for the latest stack, if _currentRewardStacks < _maxRewardStacks => amount is _amountPerDuration
