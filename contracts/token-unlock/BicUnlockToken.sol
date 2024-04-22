@@ -171,7 +171,7 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
         } else if (timestamp > end()) {
             return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
-            // check for the latest percent amount, if _currentRewardStacks < _count => amount is unlockRate, else release all token in contract
+            // check for the latest stack, if _currentRewardStacks < _maxRewardStacks => amount is _amountPerDuration
             if (_currentRewardStacks >= _maxRewardStacks) return (0, 0);
 
             uint256 elapsedTime = uint256(timestamp) - _lastAtCurrentStack();
