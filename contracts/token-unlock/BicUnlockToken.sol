@@ -167,9 +167,9 @@ contract BicUnlockToken is Initializable, ReentrancyGuard {
      * an asset given its total historical allocation.
      */
     function _vestingSchedule(uint64 timestamp) internal view virtual returns (uint256, uint256) {
-        if (timestamp < start()) {
+        if (timestamp < _start) {
             return (0, 0);
-        } else if (timestamp > end()) {
+        } else if (timestamp > _end) {
             return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
             // check for the latest percent amount, if _currentRewardStacks < _count => amount is unlockRate, else release all token in contract
