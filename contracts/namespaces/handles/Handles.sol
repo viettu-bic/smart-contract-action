@@ -10,12 +10,11 @@ import {IERC165Upgradeable} from '@openzeppelin/contracts-upgradeable/utils/intr
 import {ERC721Upgradeable} from '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
 import {IHandles} from "../interfaces/IHandles.sol";
 
-/**
- * @title Handles contract for managing unique namespace-based identifiers.
- * @dev This contract utilizes ERC721Upgradeable for tokenization of handles. Each handle represents a unique identifier within a specified namespace.
- * Handles are formed by appending a local name to a namespace, separated by "/@". This contract allows minting and burning of handles, alongside basic management of their attributes.
- * Designed to be used with a Transparent upgradeable proxy without requiring an initializer.
- */
+
+/// @title Handles contract for managing unique namespace-based identifiers.
+/// @dev This contract utilizes ERC721Upgradeable for tokenization of handles. Each handle represents a unique identifier within a specified namespace.
+/// Handles are formed by appending a local name to a namespace, separated by "0x40". This contract allows minting and burning of handles, alongside basic management of their attributes.
+/// Designed to be used with a Transparent upgradeable proxy without requiring an initializer.
 contract Handles is ERC721Upgradeable, IHandles {
     using Address for address;
     /// @notice Address of the controller with administrative privileges.
