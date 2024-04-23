@@ -69,7 +69,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
     /**
      * @notice token to eth exchange rate.
      * @param valueEth the value in eth to convert to tokens.
-     * @return the value in tokens.
+     * @return valueToken the value in tokens.
      */
     function getTokenValueOfEth(uint256 valueEth) internal view virtual returns (uint256 valueToken) {
         if (oracle != address(0)) {
@@ -84,9 +84,9 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
         * verify the sender has enough tokens.
         * (since the paymaster is also the token, there is no notion of "approval")
       * @param userOp the user operation to validate.
-      * @param userOpHash the hash of the user operation.
       * @param requiredPreFund the required pre-fund for the operation.
-      * @return the context to pass to postOp, and the validation data.
+      * @return context the context to pass to postOp.
+      * @return validationData the validation data.
       */
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 /*userOpHash*/, uint256 requiredPreFund)
     internal view override returns (bytes memory context, uint256 validationData) {
@@ -125,9 +125,9 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
      * BUT: if the user changed its balance in a way that will cause  postOp to revert, then it gets called again, after reverting
      * the user's TX , back to the state it was before the transaction started (before the validatePaymasterUserOp),
      * and the transaction should succeed there.
-        * @param mode the mode of the operation.
-        * @param context the context to pass to postOp.
-        * @param actualGasCost the actual gas cost of the operation.
+     * @param mode the mode of the operation.
+     * @param context the context to pass to postOp.
+     * @param actualGasCost the actual gas cost of the operation.
      */
     function _postOp(PostOpMode mode, bytes calldata context, uint256 actualGasCost) internal override {
         //we don't really care about the mode, we just pay the gas with the user's tokens.

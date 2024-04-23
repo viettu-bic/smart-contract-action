@@ -44,7 +44,7 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
      * @notice pack the UserOperation, except the paymasterAndData.
      * this is a lighter encoding than the UserOperation.hash() method, and is used to sign the request.
      * @param userOp the UserOperation to pack.
-        * @return the packed UserOperation.
+     * @return ret the packed UserOperation.
      */
     function pack(UserOperation calldata userOp) internal pure returns (bytes memory ret) {
         // lighter signature scheme. must match UserOp.ts#packUserOp
@@ -93,7 +93,8 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
      * paymasterAndData[104:] : signature
      * @param userOp the UserOperation to validate.
      * @param requiredPreFund the required pre-fund for the operation.
-     * @return the context to pass to postOp, and the validation data.
+     * @return context the context to pass to postOp.
+     * @return validationData the validation data.
      */
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 /*userOpHash*/, uint256 requiredPreFund)
     internal override returns (bytes memory context, uint256 validationData) {
@@ -135,7 +136,10 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
     /**
      * @notice parse the paymasterAndData field.
      * @param paymasterAndData the paymasterAndData field to parse.
-     * @return the token, validUntil, validAfter, and signature.
+     * @return token adresss of token to use.
+     * @return validUntil timestamp.
+     * @return validAfter timestamp.
+     * @return signature of the request.
      */
     function parsePaymasterAndData(bytes calldata paymasterAndData) public pure returns(address token, uint48 validUntil, uint48 validAfter, bytes calldata signature) {
         token = address(bytes20(paymasterAndData[TOKEN_OFFSET:VALID_TIMESTAMP_OFFSET]));

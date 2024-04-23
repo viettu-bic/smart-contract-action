@@ -4,6 +4,7 @@ import "@nomicfoundation/hardhat-verify";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 import "@nomicfoundation/hardhat-foundry";
+import "solidity-docgen";
 
 import env from "./env";
 

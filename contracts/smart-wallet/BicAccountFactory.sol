@@ -26,7 +26,7 @@ contract BicAccountFactory {
      * @notice create an account, and return its address.
      * @param owner the owner of the account
      * @param salt the salt to calculate the account address
-     * @returns the address even if the account is already deployed.
+     * @return ret is the address even if the account is already deployed.
      * @dev Note that during UserOperation execution, this method is called only if the account is not deployed.
      * @dev This method returns an existing account address so that entryPoint.getSenderAddress() would work even after account creation
      */
@@ -46,7 +46,7 @@ contract BicAccountFactory {
      * @notice calculate the counterfactual address of this account as it would be returned by createAccount()
      * @param owner the owner of the account
      * @param salt the salt to calculate the account address
-     * @returns the address of the account
+     * @return the address of the account
      */
     function getAddress(address owner,uint256 salt) public view returns (address) {
         return Create2.computeAddress(bytes32(salt), keccak256(abi.encodePacked(
