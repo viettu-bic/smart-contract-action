@@ -43,7 +43,7 @@ contract BicAccountFactory {
     }
 
     /**
-     * @note calculate the counterfactual address of this account as it would be returned by createAccount()
+     * @notice calculate the counterfactual address of this account as it would be returned by createAccount()
      * @param owner the owner of the account
      * @param salt the salt to calculate the account address
      * @returns the address of the account

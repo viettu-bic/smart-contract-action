@@ -91,9 +91,9 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
      * paymasterAndData[20:40] : token address
      * paymasterAndData[40:104] : abi.encode(validUntil, validAfter)
      * paymasterAndData[104:] : signature
-        * @param userOp the UserOperation to validate.
-        * @param requiredPreFund the required pre-fund for the operation.
-        * @return the context to pass to postOp, and the validation data.
+     * @param userOp the UserOperation to validate.
+     * @param requiredPreFund the required pre-fund for the operation.
+     * @return the context to pass to postOp, and the validation data.
      */
     function _validatePaymasterUserOp(UserOperation calldata userOp, bytes32 /*userOpHash*/, uint256 requiredPreFund)
     internal override returns (bytes memory context, uint256 validationData) {

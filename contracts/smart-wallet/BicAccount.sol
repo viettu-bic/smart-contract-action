@@ -54,10 +54,6 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         require(msg.sender == owner || msg.sender == address(this), "only owner");
     }
 
-    function _onlyOperator() internal view {
-        require(permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only operator");
-    }
-
     function _onlyOwnerOrHasRecoveryRole() internal view {
         require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
@@ -79,7 +75,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * execute a transaction (called directly from owner, or by entryPoint)
+     * @notice execute a transaction (called directly from owner, or by entryPoint)
      * @param dest destination address to call
      * @param value the value to pass in this call
      * @param func the calldata to pass in this call
@@ -91,7 +87,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
 
 
     /**
-     * execute a sequence of transactions
+     * @notice execute a sequence of transactions
      * @dev to reduce gas consumption for trivial case (no value), use a zero-length array to mean zero value
      * @param dest an array of destination addresses
      * @param value an array of values to pass to each call. can be zero-length for no-value calls
@@ -150,21 +146,21 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * check current account deposit in the entryPoint
+     * @notice check current account deposit in the entryPoint
      */
     function getDeposit() public view returns (uint256) {
         return entryPoint().balanceOf(address(this));
     }
 
     /**
-     * deposit more funds for this account in the entryPoint
+     * @notice deposit more funds for this account in the entryPoint
      */
     function addDeposit() public payable {
         entryPoint().depositTo{value: msg.value}(address(this));
     }
 
     /**
-     * withdraw value from the account's deposit
+     * @notice withdraw value from the account's deposit
      * @param withdrawAddress target to send to
      * @param amount to withdraw
      */
@@ -173,7 +169,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * Upgrade the implementation of the account
+     * @notice Upgrade the implementation of the account
      * @param newImplementation the new implementation contract address
      */
     function _authorizeUpgrade(address newImplementation) internal view override {
@@ -182,7 +178,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * Version for BicAccount
+     * @notice Version for BicAccount
      */
     function version() external pure virtual returns (uint256) {
         return 1;
