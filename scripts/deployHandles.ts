@@ -52,49 +52,47 @@ const nameNftList = [
 ]
 
 async function main() {
-    const bicFactory = await ethers.getContractAt("BicFactory", "0xD162557458de4210a06f8cf72aB31C54Ed97c920");
-    const handles = await ethers.getContractAt("Handles", "0xc08de1A6C48c2da1B5DdC7F14d97962e17098615");
+    const bicFactory = await ethers.getContractAt("BicFactory", "0x1aE30c2a4e90729a1ADaF0Af64e915D3aCc59e56");
+    const handles = await ethers.getContractAt("Handles", "0x808Fbc3CAB0140f8128c0376A16E05d7F8Cbc98E");
 
     // const HandleTokenURI = await ethers.getContractFactory("HandleTokenURI");
-    // const handleTokenURI = await HandleTokenURI.deploy("0xB4f594F5EB0C327b94d102dF44ebc7b6981001e0");
+    // const handleTokenURI = await HandleTokenURI.deploy("0x53964BBB3B01e732844d0B595560a72B3018c143");
     // await handleTokenURI.waitForDeployment();
-
-    // const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
+    //
+    // // const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
     //
     // console.log("🚀 ~ handleTokenURI:", handleTokenURI.target);
     // try {
     //     await run("verify:verify", {
     //         address: handleTokenURI.target,
-    //         constructorArguments: ["0xB4f594F5EB0C327b94d102dF44ebc7b6981001e0"],
+    //         constructorArguments: ["0x53964BBB3B01e732844d0B595560a72B3018c143"],
     //     });
     // } catch (error) {
     //     console.log("Verify HandleTokenURI error with %s", error?.message || "unknown");
     // }
 
-    const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x685016e18d685Fc71194d9FC55b4E4c6f8b6a539");
-
-    // const callDataAllHandles = nameNftList.map((nameNft) => {
-    //     return handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]);
-    // });
+    const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x053559E61a1Da11200f600e340C82Af9Ff89d034");
 
     for (const nameNft of nameNftList) {
-        // // Clone handle flow
-        // console.log('Clone handle for namespace: ', nameNft.namespace)
-        // const txCloneHandle = await bicFactory.deployProxyByImplementation(
-        //     handles.target as any,
-        //     handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xeaBcd21B75349c59a4177E10ed17FBf2955fE697"]) as any,
-        //     ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 1]) as any
-        // );
-        // const txCloneHandleReceipt = await txCloneHandle.wait();
-        // const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
-        // console.log('cloneAddress: ', cloneAddress)
+        // Clone handle flow
+        console.log('Clone handle for namespace: ', nameNft.namespace)
+        const txCloneHandle = await bicFactory.deployProxyByImplementation(
+            handles.target as any,
+            handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xF4402fE2B09da7c02504DC308DBc307834CE56fE"]) as any,
+            ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 2]) as any
+        );
+        const txCloneHandleReceipt = await txCloneHandle.wait();
+
+        // @ts-ignore
+        const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
+        console.log('cloneAddress: ', cloneAddress)
 
         // Just update uri for handle flow
-
-        const cloneAddress = nameNft.address
+        // const cloneAddress = nameNft.address
         const clone = await ethers.getContractAt("Handles", cloneAddress);
+
         await clone.setHandleTokenURIContract(handleTokenURI.target as any);
-        // await clone.setController("0x211e4656C4EC9B76D48101eDb46F3C066E8E761D");
+        await clone.setController("0x28d838C4b6DB6d4EcFa5be92687DFBb8425d0068" as any);
         await handleTokenURI.setNameElement(nameNft.namespace as any, nameNft.imageDescription as any, nameNft.imageUri as any);
     }
 }
