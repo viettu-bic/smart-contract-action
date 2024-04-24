@@ -15,18 +15,22 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
  * @dev the gas cost is paid by the user's tokens, using the token oracle.
  */
 contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
-    //calculated cost of the postOp
+    /// calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
 
     using ECDSA for bytes32;
     using UserOperationLib for UserOperation;
 
+    /// the signer to verify the signature.
     address public immutable verifyingSigner;
 
+    /// the offset of the token in the paymasterAndData field.
     uint256 private constant TOKEN_OFFSET = 20;
 
+    /// the offset of the validUntil and validAfter in the paymasterAndData field.
     uint256 private constant VALID_TIMESTAMP_OFFSET = 40;
 
+    /// the offset of the signature in the paymasterAndData field.
     uint256 private constant SIGNATURE_OFFSET = 104;
 
     /**
@@ -37,7 +41,9 @@ contract VerifyingTokenPayAfterPaymaster is BasePaymaster {
         verifyingSigner = _verifyingSigner;
     }
 
+    /// the nonce of the sender.
     mapping(address => uint256) public senderNonce;
+    /// the oracles to use for token exchange rate.
     mapping(address => IOracle) public oracles;
 
     /**

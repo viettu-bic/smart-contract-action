@@ -1,7 +1,7 @@
 import { ethers, run } from "hardhat";
 
 async function main() {
-    const bicAccountAddress = '0xcf4B075dab2c0F2e12B9F197695398221984F978'
+    const bicAccountAddress = '0x4EcbA85A3696B02e46799189b7469062C57CBAA8'
     const BicAccount = await ethers.getContractFactory("BicAccount");
 
     await run("verify:verify", {

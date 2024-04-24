@@ -16,22 +16,42 @@ import "./../management/BicPermissions.sol";
 /**
   * @title account abstraction smart contract BIC version
   * @notice BicAccount is a simple account abstraction contract, with owner and operator roles.
-    * The owner can execute transactions, change owner, and deposit/withdraw funds.
-    * The operator can execute transactions.
-    * The recovery role can change the owner.
+  *
+  * The owner can execute transactions, change owner, and deposit/withdraw funds.
+  *
+  * The operator can execute transactions.
+  *
+  * The recovery role can change the owner.
+  *
   * @dev Based on eth-infinitism SimpleAccount
   */
 contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initializable {
+    /// @notice the owner of the account (an EOA)
     address public owner;
 
+    /// @notice the permissions contract, using recovery and operator roles
     BicPermissions public permissions;
 
+    /// @notice the entryPoint contract
     IEntryPoint private immutable _entryPoint;
 
-
+    /*
+     * @dev Emitted when the account is initialized
+     * @param entryPoint the entryPoint contract
+     * @param owner the owner of the account
+     */
     event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
+
+    /*
+     * @dev Emitted when the owner is changed
+     * @param oldOwner the old owner of the account
+     * @param newOwner the new owner of the account
+     */
     event NewOwner(address oldOwner, address newOwner);
 
+    /**
+     * @notice Modifier to restrict access to the owner
+     */
     modifier onlyOwner() {
         _onlyOwner();
         _;
@@ -45,19 +65,32 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 
+    /**
+     * @notice Create a new account
+     * @param anEntryPoint the entryPoint contract
+     */
     constructor(IEntryPoint anEntryPoint) {
         _entryPoint = anEntryPoint;
         _disableInitializers();
     }
 
+    /**
+     * check if the caller is the owner
+     */
     function _onlyOwner() internal view {
         require(msg.sender == owner || msg.sender == address(this), "only owner");
     }
 
+    /**
+     * check if the caller is the owner or has the recovery role
+     */
     function _onlyOwnerOrHasRecoveryRole() internal view {
         require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
     }
 
+    /**
+     * check if the caller is the owner or has the operator role
+     */
     function _onlyOwnerOrHasOperatorRole() internal view {
         require(msg.sender == owner || permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only owner or operator role");
     }
@@ -110,8 +143,8 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     /**
      * @dev The _entryPoint member is immutable, to reduce gas consumption.  To upgrade EntryPoint,
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
-      * the implementation by calling `upgradeTo()`
-      * @param anOwner the owner (signer) of this account
+     * the implementation by calling `upgradeTo()`
+     * @param anOwner the owner (signer) of this account
      */
     function initialize(address anOwner, BicPermissions _permissions) public virtual initializer {
         _initialize(anOwner, _permissions);
@@ -123,11 +156,18 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         emit BicAccountInitialized(_entryPoint, owner);
     }
 
-    // Require the function call went through EntryPoint or owner
+    /// Require the function call went through EntryPoint or owner
     function _requireFromEntryPointOrOwner() internal view {
         require(msg.sender == address(entryPoint()) || msg.sender == owner, "account: not Owner or EntryPoint");
     }
 
+    /**
+     * @notice Using ECDSA to validate the signature
+     * make sure owner signed the operation
+     * @param userOp the UserOperation
+     * @param userOpHash the hash of the UserOperation
+     * @return validationData 0 if the signature is valid else SIG_VALIDATION_FAILED
+     */
     function _validateSignature(UserOperation calldata userOp, bytes32 userOpHash)
     internal override virtual returns (uint256 validationData) {
         bytes32 hash = ECDSA.toEthSignedMessageHash(userOpHash);
@@ -136,6 +176,12 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         return 0;
     }
 
+    /**
+     * @notice Call a contract with the given calldata
+     * @param target the target contract address
+     * @param value the value to send
+     * @param data the calldata
+     */
     function _call(address target, uint256 value, bytes memory data) internal {
         (bool success, bytes memory result) = target.call{value: value}(data);
         if (!success) {

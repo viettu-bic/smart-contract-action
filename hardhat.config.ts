@@ -86,6 +86,10 @@ const config: HardhatUserConfig = {
     apiUrl: "https://sourcify.dev/server",
     // Optional: specify a different Sourcify repository
     browserUrl: "https://repo.sourcify.dev",
+  },
+  docgen: {
+    pages: "files",
+    exclude: ["test"],
   }
 };
 
