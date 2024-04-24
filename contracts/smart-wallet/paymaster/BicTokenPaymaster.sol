@@ -24,11 +24,13 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
  */
 contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
-    //calculated cost of the postOp
+    /// calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
 
+    /// the factory that creates accounts. used to validate account creation.
     address public immutable theFactory;
 
+    /// the oracle to use for token exchange rate.
     address public oracle;
 
     /*
@@ -80,9 +82,10 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
     /**
       * @notice validate the request:
-        * if this is a constructor call, make sure it is a known account.
-        * verify the sender has enough tokens.
-        * (since the paymaster is also the token, there is no notion of "approval")
+      *
+      * - If this is a constructor call, make sure it is a known account.
+      * - Verify the sender has enough tokens.
+      * @dev (since the paymaster is also the token, there is no notion of "approval")
       * @param userOp the user operation to validate.
       * @param requiredPreFund the required pre-fund for the operation.
       * @return context the context to pass to postOp.
@@ -122,6 +125,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
     /**
      * @notice actual charge of user.
      * @dev this method will be called just after the user's TX with mode==OpSucceeded|OpReverted (account pays in both cases)
+     *
      * BUT: if the user changed its balance in a way that will cause  postOp to revert, then it gets called again, after reverting
      * the user's TX , back to the state it was before the transaction started (before the validatePaymasterUserOp),
      * and the transaction should succeed there.

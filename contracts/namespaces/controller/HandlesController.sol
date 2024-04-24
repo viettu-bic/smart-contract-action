@@ -216,17 +216,23 @@ contract HandlesController is ReentrancyGuard {
      * @notice Collects the auction payouts after an auction concludes in the Thirdweb Marketplace. [LINK]: https://github.com/thirdweb-dev/contracts/tree/main/contracts/prebuilts/marketplace/english-auctions
      * @dev This function is called after a successful auction on the Thirdweb Marketplace to distribute the auction proceeds.
      *      The process involves two main steps:
+     *
      *      1. The winning bidder claims the auction amount through the Thirdweb Marketplace contract, which transfers the funds to this HandleController contract.
+     *
      *      2. This function is then called to distribute these funds among the predefined beneficiaries according to the specified shares.
+     *
      *      This function ensures that only valid, unclaimed auctions can be processed and verifies the operation via signature.
+     *
      *      It checks that the auction was marked as claimable, verifies the provided signature to ensure it comes from a valid source, and then performs the payout.
+     *
      *      Once the payout is completed, it marks the auction as claimed to prevent re-claiming.
      *
      * @param name The name of the handle associated with the auction.
      * @param amount The total amount of Ether or tokens to be distributed to the beneficiaries.
      * @param signature The signature from the authorized verifier to validate the claim operation.
      *
-     * The function will revert if:
+     * @notice The function will revert if:
+     *
      *      - The auction associated with the handle is not marked as canClaim.
      *      - The provided signature does not validate against the expected payload signed by the authorized signer.
      */

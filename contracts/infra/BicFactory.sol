@@ -33,6 +33,10 @@ contract BicFactory {
         emit ProxyDeployed(_implementation, deployedProxy, msg.sender);
     }
 
+    /// @notice Computes the address of a proxy contract that would be deployed using the given implementation and salt
+    /// @param _implementation The address of the implementation contract to clone
+    /// @param _salt A nonce used to create a unique deterministic address for the proxy contract
+    /// @return proxyAddress The address of the proxy contract that would be deployed
     function computeProxyAddress(
         address _implementation,
         bytes32 _salt

@@ -10,13 +10,22 @@ import "./../management/BicPermissions.sol";
 /**
  * @title A BIC account abstraction factory contract for BicAccount
  * @notice A UserOperations "initCode" holds the address of the factory, and a method call (to createAccount, in this sample factory).
-    * The factory's createAccount returns the target account address even if it is already installed.
-    * This way, the entryPoint.getSenderAddress() can be called either before or after the account is created.
+ *
+ * The factory's createAccount returns the target account address even if it is already installed.
+ *
+ * This way, the entryPoint.getSenderAddress() can be called either before or after the account is created.
  */
 contract BicAccountFactory {
+    /// @notice the account implementation contract
     BicAccount public immutable accountImplementation;
+    /// @notice the permissions contract
     BicPermissions public immutable permissions;
 
+    /**
+     * @notice BicAccountFactory constructor
+     * @param _entryPoint the entryPoint contract
+     * @param _permissions the permissions contract
+     */
     constructor(IEntryPoint _entryPoint, BicPermissions _permissions) {
         accountImplementation = new BicAccount(_entryPoint);
         permissions = _permissions;
