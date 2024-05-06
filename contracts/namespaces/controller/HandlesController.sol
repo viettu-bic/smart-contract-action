@@ -64,6 +64,8 @@ contract HandlesController is ReentrancyGuard {
     event SetMarketplace(address indexed marketplace);
     /// @dev Emitted when an auction is created, providing details of the auction ID.
     event CreateAuction(uint256 auctionId);
+    /// @dev Emitted when a handle is minted but the auction fails due none bid.
+    event BurnHandleMintedButAuctionFailed(address handle, string name, uint256 tokenId);
 
     /**
      * @notice Initializes the HandlesController contract with the given permissions contract and BIC token.
@@ -356,6 +358,7 @@ contract HandlesController is ReentrancyGuard {
     /**
      * @notice Allows the operator to claim tokens sent to the contract by mistake.
      * @dev Generates a unique hash for a handle request operation based on multiple parameters.
+     * @dev if tx is commit, its require commit duration > validUntil - validAfter because requirement can flexibly collects and beneficiaries
      * @param rq The handle request details including receiver, price, and auction settings.
      * @param validUntil The timestamp until when the request is valid.
      * @param validAfter The timestamp after when the request is valid.
@@ -400,8 +403,6 @@ contract HandlesController is ReentrancyGuard {
                         rq.handle,
                         rq.name,
                         rq.price,
-                        rq.beneficiaries,
-                        rq.collects,
                         rq.commitDuration,
                         rq.isAuction,
                         block.chainid
@@ -433,5 +434,23 @@ contract HandlesController is ReentrancyGuard {
         uint256 amount
     ) public view returns (bytes32) {
         return keccak256(abi.encode(name, amount, block.chainid));
+    }
+
+    function burnHandleMintedButAuctionFailed(address handle, string calldata name) external onlyOperator {
+        uint256 tokenId = IHandles(handle).getTokenId(name);
+        IHandles(handle).burn(tokenId);
+        emit BurnHandleMintedButAuctionFailed(handle, name, tokenId);
+    }
+
+    function withdrawERC20(address token, address to, uint256 amount) external onlyOperator {
+        if(token == address(0)) {
+            payable(to).transfer(amount);
+            return;
+        }
+        IERC20(token).transfer(to, amount);
+    }
+
+    function withdrawERC721(address token, address to, uint256 tokenId) external onlyOperator {
+        IERC721(token).transferFrom(address(this), to, tokenId);
     }
 }
