@@ -57,7 +57,7 @@ contract HandlesController is ReentrancyGuard {
     /// @dev Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price.
     event MintHandle(address indexed handle, address indexed to, string name, uint256 price);
     /// @dev Emitted when a commitment is made, providing details of the commitment and its expiration timestamp.
-    event Commitment(bytes32 indexed commitment, uint256 endTimestamp);
+    event Commitment(bytes32 indexed commitment, address from , address collection, string name, uint256 tokenId, uint256 endTimestamp, bool isClaimed);
     /// @dev Emitted when the verifier address is updated.
     event SetVerifier(address indexed verifier);
     /// @dev Emitted when the marketplace address is updated.
@@ -208,6 +208,7 @@ contract HandlesController is ReentrancyGuard {
                         rq.collects
                     );
                 }
+                _emitCommitment(rq, dataHash, !isCommitted);
             }
         }
     }
@@ -287,9 +288,21 @@ contract HandlesController is ReentrancyGuard {
             }
         } else {
             commitments[commitment] = block.timestamp + commitDuration;
-            emit Commitment(commitment, block.timestamp + commitDuration);
         }
         return true;
+    }
+
+    /**
+     * @notice Handles commitments for minting handles with a delay.
+     * @dev Internal function to handle commitments for minting handles with a delay.
+     * @param rq The handle request details including receiver, price, and auction settings.
+     * @param _dataHash The hash committment
+     * @param _isClaimed The status of claim
+     */
+    function _emitCommitment(HandleRequest calldata rq, bytes32 _dataHash, bool _isClaimed) internal {
+        uint256 tokenId = IHandles(rq.handle).getTokenId(rq.name);
+        emit Commitment(_dataHash, msg.sender, rq.handle, rq.name, tokenId, block.timestamp + rq.commitDuration, _isClaimed);
+        
     }
 
     /**
