@@ -63,6 +63,8 @@ const config: HardhatUserConfig = {
   },
   namedAccounts: {
     deployer: 0,
+    verifier: 0,
+    collector: 0,
   },
   etherscan: {
     apiKey: {
