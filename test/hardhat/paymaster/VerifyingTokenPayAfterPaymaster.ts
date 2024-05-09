@@ -111,7 +111,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
             [ethers.solidityPacked(["bytes"], [bicAccountFactoryAddress]), createAccountCallData]
         );
 
-        const validAfter = Math.floor(Date.now() / 1000);
+        const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
         console.log('before validAfter: ', validAfter)
         console.log('before validUntil: ', validUntil)
@@ -183,7 +183,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         }
 
         const swapCallData = testUniswap.interface.encodeFunctionData("exactInputSingle", [swapParams]);
-        const validAfter = Math.floor(Date.now() / 1000);
+        const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
         const validTimeEncoded = defaultAbiCoder.encode(['uint48', 'uint48'], [validUntil, validAfter]);
         const approveUsdtCallData = usdt.interface.encodeFunctionData("approve", [testUniswap.target, parseEther('100')]);

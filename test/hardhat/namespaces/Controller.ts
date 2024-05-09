@@ -130,7 +130,7 @@ describe('Controller', function () {
         await expect(txCommit)
           .to.emit(handlesController, "Commitment")
           .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId,  BigInt((blockData?.timestamp || 0) + commitDuration), false);
-        
+
         const commitTime = await handlesController.commitments(dataHash);
         try {
             await usernameHandles.ownerOf(tokenId);
@@ -220,4 +220,46 @@ describe('Controller', function () {
         expect(await bic.balanceOf(wallet2.address)).to.equal(ethers.parseEther('1')/10n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1')*9n/10n);
     })
+
+    it('Controller: mint nft and create auction but burn it because bid fail and can create again', async function () {
+        const TestMarketplace = await ethers.getContractFactory('TestMarketplace');
+        const testMarketplace = await TestMarketplace.deploy();
+        await handlesController.setMarketplace(testMarketplace.target as any);
+        const mintName = 'testt'
+        const price = ethers.parseEther('1');
+        const currentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
+        const nextHour = currentTime + 60*60;
+        const dataHash = await handlesController.getRequestHandleOp({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 60*60*24*30,
+            isAuction: true
+        } as any, nextHour as any, currentTime as any);
+        const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
+        await handlesController.connect(wallet1).requestHandle({
+            receiver: wallet1.address,
+            handle: usernameHandles.target,
+            name: mintName,
+            price: price,
+            beneficiaries: [wallet2.address],
+            collects: [1000],
+            commitDuration: 60*60*24*30,
+            isAuction: true
+        } as any, nextHour as any, currentTime as any, signature as any);
+        const tokenId = await usernameHandles.getTokenId(mintName);
+        expect(await usernameHandles.ownerOf(tokenId)).to.equal(testMarketplace.target);
+        const auctionId = await testMarketplace.auctionId();
+        expect(auctionId).to.equal(1n);
+
+        // let assume that auction fail so BIC return to controller
+        await testMarketplace.collectAuctionTokens((auctionId -1n) as any);
+        expect(await usernameHandles.ownerOf(tokenId)).to.equal(handlesController.target);
+        await handlesController.burnHandleMintedButAuctionFailed(usernameHandles.target, mintName);
+        expect(await usernameHandles.exists(tokenId)).to.equal(false);
+
+    });
 });

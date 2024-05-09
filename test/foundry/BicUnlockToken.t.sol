@@ -4,10 +4,10 @@ pragma solidity ^0.8.23;
 import "forge-std/Test.sol";
 
 // import {BicUnlockToken} from "./../../contracts/token-unlock/BicTokenUnlock.sol";
-import {BicUnlockToken} from "./../../contracts/token-unlock/BicTokenUnlock.sol";
+import {BicUnlockToken} from "./../../contracts/token-unlock/BicUnlockToken.sol";
 
 contract BicUnlockTokenTest is Test {
-    BicUnlockToken public uniqueUnlockToken;
+    BicUnlockToken public unlockToken;
     address constant dummyErc20Address = address(1); // Dummy ERC20 address for testing
     address constant beneficiaryAddress = address(2); // Dummy beneficiary address for testing
 
