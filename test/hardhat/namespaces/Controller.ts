@@ -101,7 +101,9 @@ describe('Controller', function () {
         const currentTime = Math.floor(Date.now() / 1000);
         const nextHour = currentTime + 60*60;
         const mintName = 'testt'
+        const tokenId = await usernameHandles.getTokenId(mintName);
         const price = ethers.parseEther('1');
+        const commitDuration = 60*60*24*30;
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -109,32 +111,37 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address,wallet3.address],
             collects: [1000, 2000],
-            commitDuration: 60*60*24*30,
+            commitDuration:commitDuration,
             isAuction: false
         } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
-        await handlesController.connect(wallet1).requestHandle({
+        const txCommit = await handlesController.connect(wallet1).requestHandle({
             receiver: wallet1.address,
             handle: usernameHandles.target,
             name: mintName,
             price: price,
             beneficiaries: [wallet2.address,wallet3.address],
             collects: [1000, 2000],
-            commitDuration: 60*60*24*30,
+            commitDuration:commitDuration,
             isAuction: false
         } as any, nextHour as any, currentTime as any, signature as any);
+        const blockData = await ethers.provider.getBlock(txCommit.blockNumber);
+
+        await expect(txCommit)
+          .to.emit(handlesController, "Commitment")
+          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId,  BigInt((blockData?.timestamp || 0) + commitDuration), false);
+        
         const commitTime = await handlesController.commitments(dataHash);
-        const tokenId = await usernameHandles.getTokenId(mintName);
         try {
             await usernameHandles.ownerOf(tokenId);
             expect.fail();
         } catch (e) {
             expect(e.message).to.contain('ERC721: invalid token ID');
         }
-        await ethers.provider.send('evm_increaseTime', [60*60*24*30]);
+        await ethers.provider.send('evm_increaseTime', [commitDuration]);
         console.log('new')
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
-        const newCurrentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
+        const newCurrentTime = Math.floor(Date.now() / 1000) + commitDuration;
         const newNextHour = newCurrentTime + 60*60;
         const newDataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
@@ -143,20 +150,26 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address,wallet3.address],
             collects: [1000, 2000],
-            commitDuration: 60*60*24*30,
+            commitDuration: commitDuration,
             isAuction: false
         } as any, newNextHour as any, newCurrentTime as any);
         const newSignature = await wallet3.signMessage(ethers.getBytes(newDataHash));
-        await handlesController.connect(wallet1).requestHandle({
+        const txClaim = await handlesController.connect(wallet1).requestHandle({
             receiver: wallet1.address,
             handle: usernameHandles.target,
             name: mintName,
             price: price,
             beneficiaries: [wallet2.address,wallet3.address],
             collects: [1000, 2000],
-            commitDuration: 60*60*24*30,
+            commitDuration: commitDuration,
             isAuction: false
         } as any, newNextHour as any, newCurrentTime as any, newSignature as any);
+        const blockDataAtClaim = await ethers.provider.getBlock(txClaim.blockNumber);
+
+        await expect(txClaim)
+          .to.emit(handlesController, "Commitment")
+          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId,  BigInt((blockDataAtClaim?.timestamp || 0) + commitDuration), true);
+
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
         expect(await bic.balanceOf(wallet2.address)).to.equal(price/10n);
