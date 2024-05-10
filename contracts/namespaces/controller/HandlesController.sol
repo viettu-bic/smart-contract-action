@@ -7,6 +7,7 @@ import {IHandles} from "../interfaces/IHandles.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
  * @title HandlesController
@@ -304,7 +305,7 @@ contract HandlesController is ReentrancyGuard {
     function _emitCommitment(HandleRequest calldata rq, bytes32 _dataHash, bool _isClaimed) internal {
         uint256 tokenId = IHandles(rq.handle).getTokenId(rq.name);
         emit Commitment(_dataHash, msg.sender, rq.handle, rq.name, tokenId, block.timestamp + rq.commitDuration, _isClaimed);
-        
+
     }
 
     /**
@@ -455,21 +456,14 @@ contract HandlesController is ReentrancyGuard {
         return keccak256(abi.encode(name, amount, block.chainid));
     }
 
+    /**
+     * @notice Allows the operator to burn a handle that was minted when case the auction failed (none bid).
+     * @param handle The address of the handle contract.
+     * @param name The name of the handle.
+     */
     function burnHandleMintedButAuctionFailed(address handle, string calldata name) external onlyOperator {
         uint256 tokenId = IHandles(handle).getTokenId(name);
         IHandles(handle).burn(tokenId);
         emit BurnHandleMintedButAuctionFailed(handle, name, tokenId);
-    }
-
-    function withdrawERC20(address token, address to, uint256 amount) external onlyOperator {
-        if(token == address(0)) {
-            payable(to).transfer(amount);
-            return;
-        }
-        IERC20(token).transfer(to, amount);
-    }
-
-    function withdrawERC721(address token, address to, uint256 tokenId) external onlyOperator {
-        IERC721(token).transferFrom(address(this), to, tokenId);
     }
 }

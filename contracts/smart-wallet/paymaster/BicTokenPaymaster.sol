@@ -9,6 +9,7 @@ import "@account-abstraction/contracts/interfaces/IPaymaster.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "@account-abstraction/contracts/samples/IOracle.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 
 /**
  * @title A paymaster that defines itself as a token to pay for gas.
@@ -22,7 +23,7 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
    * - Possible workarounds are either use a more complex paymaster scheme (e.g. the DepositPaymaster) or
    *   to whitelist the account and the called method ids.
  */
-contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
+contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
     /// calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
@@ -33,6 +34,11 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
     /// the oracle to use for token exchange rate.
     address public oracle;
 
+    mapping (address => bool) public isBlocked;
+
+    event BlockPlaced(address indexed _user);
+
+    event BlockReleased(address indexed _user);
     /*
      * @param accountFactory the factory that creates accounts. used to validate account creation.
      * @param _entryPoint the entry point contract to use.
@@ -97,14 +103,14 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
 
         // verificationGasLimit is dual-purposed, as gas limit for postOp. make sure it is high enough
         // make sure that verificationGasLimit is high enough to handle postOp
-        require(userOp.verificationGasLimit > COST_OF_POST, "TokenPaymaster: gas too low for postOp");
+        require(userOp.verificationGasLimit > COST_OF_POST, "BicTokenPaymaster: gas too low for postOp");
 
         if (userOp.initCode.length != 0) {
             _validateConstructor(userOp);
-            require(balanceOf(userOp.sender) >= tokenPrefund, "TokenPaymaster: no balance (pre-create)");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance (pre-create)");
         } else {
 
-            require(balanceOf(userOp.sender) >= tokenPrefund, "TokenPaymaster: no balance");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance");
         }
 
         return (abi.encode(userOp.sender), 0);
@@ -119,7 +125,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
         */
     function _validateConstructor(UserOperation calldata userOp) internal virtual view {
         address factory = address(bytes20(userOp.initCode[0 : 20]));
-        require(factory == theFactory, "TokenPaymaster: wrong account factory");
+        require(factory == theFactory, "BicTokenPaymaster: wrong account factory");
     }
 
     /**
@@ -140,5 +146,30 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes {
         uint256 charge = getTokenValueOfEth(actualGasCost + COST_OF_POST);
         //actualGasCost is known to be no larger than the above requiredPreFund, so the transfer should succeed.
         _transfer(sender, address(this), charge);
+    }
+
+    function addToBlockedList (address _user) public onlyOwner {
+        isBlocked[_user] = true;
+        emit BlockPlaced(_user);
+    }
+
+    function removeFromBlockedList (address _user) public onlyOwner {
+        isBlocked[_user] = false;
+        emit BlockReleased(_user);
+    }
+
+    function pause() public onlyOwner {
+        _pause();
+    }
+
+    function unpause() public onlyOwner {
+        _unpause();
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
+
+        require(!paused(), "BicTokenPaymaster: token transfer while paused");
+        require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
     }
 }

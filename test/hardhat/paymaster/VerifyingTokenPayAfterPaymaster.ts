@@ -91,13 +91,6 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
 
     });
 
-    // it('should be able to claim', async () => {
-    //     const proof = tree.getProof(0);
-    //     console.log('Proof:', proof);
-    //     console.log('user1:', admin.address);
-    //     await simpleClaim.connect(admin).claim(proof, admin.address, 0, ethers.parseEther('100'));
-    //     // const proof = tree.getProof(0)
-    // });
 
     it('user 1 with zero native token can claim', async () => {
         // native token balance of user 1
@@ -111,7 +104,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
             [ethers.solidityPacked(["bytes"], [bicAccountFactoryAddress]), createAccountCallData]
         );
 
-        const validAfter = Math.floor(Date.now() / 1000);
+        const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
         console.log('before validAfter: ', validAfter)
         console.log('before validUntil: ', validUntil)
@@ -183,7 +176,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         }
 
         const swapCallData = testUniswap.interface.encodeFunctionData("exactInputSingle", [swapParams]);
-        const validAfter = Math.floor(Date.now() / 1000);
+        const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
         const validTimeEncoded = defaultAbiCoder.encode(['uint48', 'uint48'], [validUntil, validAfter]);
         const approveUsdtCallData = usdt.interface.encodeFunctionData("approve", [testUniswap.target, parseEther('100')]);
@@ -217,4 +210,45 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         const tx = await entryPoint.handleOps([op] as any, admin.address);
         console.log('bic balance: ', (await bicTokenPaymaster.balanceOf(smartWalletUser2Address)).toString());
     });
+
+    it('withdrawTokensTo', async () => {
+        await bicTokenPaymaster.transfer(verifyingTokenPayAfterPaymasterAddress, parseEther('1000'));
+        await verifyingTokenPayAfterPaymaster.withdrawTokensTo(bicTokenPaymaster.target, beneficiary, parseEther('1000'));
+        expect(await bicTokenPaymaster.balanceOf(beneficiary)).to.equal(parseEther('1000'));
+    })
+
+    it('revert when wrong signarue', async () => {
+        const createAccountCallData = bicAccountFactory.interface.encodeFunctionData("createAccount", [user1.address as any, ethers.ZeroHash]);
+        const target = bicAccountFactoryAddress;
+        const value = ethers.ZeroHash;
+        const initCode = ethers.solidityPacked(
+            ["bytes", "bytes"],
+            [ethers.solidityPacked(["bytes"], [bicAccountFactoryAddress]), createAccountCallData]
+        );
+
+        const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
+        const validUntil = validAfter + 60*60;
+        const validTimeEncoded = defaultAbiCoder.encode(['uint48', 'uint48'], [validUntil, validAfter]);
+        const approveCallData = bicTokenPaymaster.interface.encodeFunctionData("approve", [verifyingTokenPayAfterPaymasterAddress, ethers.parseEther('100')]);
+        const claimCalldata = simpleClaim.interface.encodeFunctionData("claim", [tree.getProof(1), smartWalletUser1Address, 1, ethers.parseEther('100')]);
+        const callDataForEntrypoint = bicAccountInterface.encodeFunctionData("executeBatch", [[bicTokenPaymaster.target, simpleClaim.target], [value, value], [approveCallData, claimCalldata]]);
+
+        const op = {
+            sender: smartWalletUser1Address,
+            nonce: 0,
+            initCode: initCode,
+            callData: callDataForEntrypoint,
+            callGasLimit: 5_000_000,
+            verificationGasLimit: 5_000_000,
+            preVerificationGas: 5_000_000,
+            maxFeePerGas: 112,
+            maxPriorityFeePerGas: 82,
+            paymasterAndData: verifyingTokenPayAfterPaymasterAddress + legacyTokenPaymasterAddress.slice(2) + validTimeEncoded.slice(2) + '00'.repeat(64),
+            signature: "0x"
+        }
+
+        await expect(entryPoint.handleOps([op] as any, admin.address)).to.be.revertedWithCustomError(entryPoint,'FailedOp');
+
+    });
+
 });

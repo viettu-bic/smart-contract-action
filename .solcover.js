@@ -7,6 +7,7 @@ module.exports = {
     "test/TestERC721",
     "test/TestOracle",
     "test/TestUniswap",
-    "test/WrapEth"
+    "test/WrapEth",
+    "test"
   ],
 };

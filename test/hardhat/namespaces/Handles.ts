@@ -52,7 +52,10 @@ describe("Handles", function () {
     const BicFactory = await ethers.getContractFactory("BicFactory");
     const bicFactory = await BicFactory.deploy();
     await bicFactory.waitForDeployment();
-
+    const expectedAddress = await bicFactory.computeProxyAddress(
+        handle.target as any,
+        ethers.ZeroHash as any
+    );
     const txCloneHandle = await bicFactory.deployProxyByImplementation(
       handle.target as any,
       "0x" as any,
@@ -60,6 +63,7 @@ describe("Handles", function () {
     );
     const txCloneHandleReceipt = await txCloneHandle.wait();
     const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
+    expect(cloneAddress).to.equal(expectedAddress);
     bicHandles = await ethers.getContractAt("Handles", cloneAddress as any);
 
     bicHandles.initialize(
@@ -170,5 +174,19 @@ describe("Handles", function () {
         bicHandles.connect(wallet3).burn(tokenId)
       ).to.be.revertedWithCustomError(bicHandles, "NotOwner");
     });
+  });
+
+    it("Handles: should set operator successfully", async function () {
+      await bicHandles.connect(deployer).setOperator(wallet2.address);
+      expect(await bicHandles.OPERATOR()).to.equal(wallet2.address);
+      await bicHandles.connect(wallet2).setOperator(deployer.address)
+      expect(await bicHandles.OPERATOR()).to.equal(deployer.address);
+    });
+
+  it('view functions', async function () {
+    expect(await bicHandles.totalSupply()).to.equal(0);
+    expect(await bicHandles.getHandleTokenURIContract()).to.equal(handleTokenURI.target);
+    // expect(await bicHandles.getNamespaceHash()).to.equal(ethers.solidityPackedKeccak256(['bytes32'], ['bic']));
+    // expect(await bicHandles.supportsInterface()).to.equal('bic');
   });
 });

@@ -7,15 +7,15 @@ async function main() {
   const bicPermission = await ethers.deployContract("BicPermissions");
   await bicPermission.waitForDeployment();
 
-  const bicUnlockFactory = await ethers.deployContract("BicUnlockFactory", [
+  const bicRedeemFactory = await ethers.deployContract("BicRedeemFactory", [
     bicPermission.target,
   ]);
-  await bicUnlockFactory.waitForDeployment();
+  await bicRedeemFactory.waitForDeployment();
 
-  console.log("🚀 bicUnlockFactory :", bicUnlockFactory.target);
+  console.log("🚀 bicRedeemFactory :", bicRedeemFactory.target);
 
   await run("verify:verify", {
-    address: bicUnlockFactory.target,
+    address: bicRedeemFactory.target,
     constructorArguments: [bicPermission.target],
 });
 

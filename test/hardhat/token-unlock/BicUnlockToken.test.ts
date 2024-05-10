@@ -5,14 +5,14 @@ import dayDurationPlugin from "dayjs/plugin/duration";
 dayjs.extend(dayDurationPlugin);
 import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 import {
-  BicUnlockFactory,
-  BicUnlockToken,
+  BicRedeemFactory,
+  BicRedeemToken,
   TestERC20,
 } from "../../../typechain-types";
 
-describe("BicUnlockToken Test", function () {
-  let bicUnlockToken: BicUnlockToken;
-  let bicUnlockFactory: BicUnlockFactory;
+describe("BicRedeemToken Test", function () {
+  let bicRedeemToken: BicRedeemToken;
+  let bicRedeemFactory: BicRedeemFactory;
   let testERC20: TestERC20;
 
   const DENOMINATOR = 10_000;
@@ -21,13 +21,13 @@ describe("BicUnlockToken Test", function () {
   };
 
   before(async () => {
-    const BicUnlockFactory = await ethers.getContractFactory(
-      "BicUnlockFactory"
+    const BicRedeemFactory = await ethers.getContractFactory(
+      "BicRedeemFactory"
     );
-    bicUnlockFactory = await BicUnlockFactory.deploy();
-    await bicUnlockFactory.waitForDeployment();
-    const bicUnlockImplementation =
-      await bicUnlockFactory.bicUnlockImplementation();
+    bicRedeemFactory = await BicRedeemFactory.deploy();
+    await bicRedeemFactory.waitForDeployment();
+    const bicRedeemImplementation =
+      await bicRedeemFactory.bicRedeemImplementation();
 
     const TestERC20 = await ethers.getContractFactory("TestERC20");
     testERC20 = await TestERC20.deploy();
@@ -35,19 +35,19 @@ describe("BicUnlockToken Test", function () {
 
     // approve Admin's token for Factory
     const approveTx = await testERC20.approve(
-      bicUnlockFactory.target,
+      bicRedeemFactory.target,
       ethers.MaxUint256
     );
     await approveTx.wait();
   });
 
-  describe("Bic Unlock factory", () => {
-    it("should create unlock successfully with beauty", async () => {
+  describe("Bic Redeem factory", () => {
+    it("should create redeem successfully with beauty", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("2".toString(), 3)
       );
-      
+
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
       const stacksExpect = BigInt(
@@ -57,14 +57,14 @@ describe("BicUnlockToken Test", function () {
         (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) *
         BigInt(duration);
 
-      const unlockAddress = await bicUnlockFactory.computeUnlock(
+      const redeemAddress = await bicRedeemFactory.computeRedeem(
         testERC20.target,
         totalAmount,
         beneficiary.address,
         duration,
         speedRateNumber,
       );
-      const createTx = await bicUnlockFactory.createUnlock(
+      const createTx = await bicRedeemFactory.createRedeem(
         testERC20.target,
         totalAmount,
         beneficiary.address,
@@ -73,32 +73,32 @@ describe("BicUnlockToken Test", function () {
       );
       const receipt = await createTx.wait();
 
-      bicUnlockToken = await ethers.getContractAt(
-        "BicUnlockToken",
-        unlockAddress
+      bicRedeemToken = await ethers.getContractAt(
+        "BicRedeemToken",
+        redeemAddress
       );
 
-      const start = await bicUnlockToken.start();
-      const end = await bicUnlockToken.end();
-      const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
+      const start = await bicRedeemToken.start();
+      const end = await bicRedeemToken.end();
+      const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
       const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
 
       expect(start).to.be.eq(block?.timestamp);
       expect(end).to.be.eq(start + totalDurations);
       expect(maxRewardStacks).to.be.eq(stacksExpect);
 
-      const amountPerDuration = await bicUnlockToken.amountPerDuration();
+      const amountPerDuration = await bicRedeemToken.amountPerDuration();
       expect(amountPerDuration).to.be.eq(
         BigInt((Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR)
       );
 
-      const balanceOfUnlockContract = await testERC20.balanceOf(
-        bicUnlockToken.target
+      const balanceOfRedeemContract = await testERC20.balanceOf(
+        bicRedeemToken.target
       );
-      expect(balanceOfUnlockContract).to.lessThanOrEqual(totalAmount);
+      expect(balanceOfRedeemContract).to.lessThanOrEqual(totalAmount);
     });
 
-    it("should create unlock successfully with odd number", async () => {
+    it("should create redeem successfully with odd number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const speedRateNumber = ethers.toBigInt(
         ethers.parseUnits("1.43".toString(), 3)
@@ -112,14 +112,14 @@ describe("BicUnlockToken Test", function () {
         (stacksExpect + BigInt(bufferStack(Number(speedRateNumber)))) *
         BigInt(duration);
 
-      const unlockAddress = await bicUnlockFactory.computeUnlock(
+      const redeemAddress = await bicRedeemFactory.computeRedeem(
         testERC20.target,
         totalAmount,
         beneficiary.address,
         duration,
         speedRateNumber,
       );
-      const createTx = await bicUnlockFactory.createUnlock(
+      const createTx = await bicRedeemFactory.createRedeem(
         testERC20.target,
         totalAmount,
         beneficiary.address,
@@ -128,33 +128,33 @@ describe("BicUnlockToken Test", function () {
       );
       const receipt = await createTx.wait();
 
-      bicUnlockToken = await ethers.getContractAt(
-        "BicUnlockToken",
-        unlockAddress
+      bicRedeemToken = await ethers.getContractAt(
+        "BicRedeemToken",
+        redeemAddress
       );
 
-      const start = await bicUnlockToken.start();
-      const end = await bicUnlockToken.end();
-      const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
+      const start = await bicRedeemToken.start();
+      const end = await bicRedeemToken.end();
+      const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
       const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
 
       expect(start).to.be.eq(block?.timestamp);
       expect(end).to.be.eq(start + totalDurations);
       expect(maxRewardStacks).to.be.eq(stacksExpect);
 
-      const amountPerDuration = await bicUnlockToken.amountPerDuration();
+      const amountPerDuration = await bicRedeemToken.amountPerDuration();
       expect(amountPerDuration).to.be.eq(
         BigInt((Number(totalAmount) * Number(speedRateNumber)) / DENOMINATOR)
       );
 
-      const balanceOfUnlockContract = await testERC20.balanceOf(
-        bicUnlockToken.target
+      const balanceOfRedeemContract = await testERC20.balanceOf(
+        bicRedeemToken.target
       );
-      expect(balanceOfUnlockContract).to.lessThanOrEqual(totalAmount);
+      expect(balanceOfRedeemContract).to.lessThanOrEqual(totalAmount);
     });
   });
 
-  describe("Bic Unlock contract", () => {
+  describe("Bic Redeem contract", () => {
     describe("Test with beauty number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const duration = dayjs.duration(1, "weeks").asSeconds();
@@ -171,14 +171,14 @@ describe("BicUnlockToken Test", function () {
         BigInt(duration);
 
       before(async () => {
-        const unlockAddress = await bicUnlockFactory.computeUnlock(
+        const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,
           beneficiary.address,
           duration,
           speedRateNumber,
         );
-        const createTx = await bicUnlockFactory.createUnlock(
+        const createTx = await bicRedeemFactory.createRedeem(
           testERC20.target,
           totalAmountInDecimal,
           beneficiary.address,
@@ -187,21 +187,21 @@ describe("BicUnlockToken Test", function () {
         );
         const receipt = await createTx.wait();
 
-        bicUnlockToken = await ethers.getContractAt(
-          "BicUnlockToken",
-          unlockAddress
+        bicRedeemToken = await ethers.getContractAt(
+          "BicRedeemToken",
+          redeemAddress
         );
 
-        const start = await bicUnlockToken.start();
-        const end = await bicUnlockToken.end();
-        const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
+        const start = await bicRedeemToken.start();
+        const end = await bicRedeemToken.end();
+        const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
         const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
 
         expect(start).to.be.eq(block?.timestamp);
         expect(end).to.be.eq(start + totalDurations);
         expect(maxRewardStacks).to.be.eq(stacksExpect);
 
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
         const amountPerDurationExpect = BigInt(
           ethers.parseUnits(
             String(
@@ -212,30 +212,30 @@ describe("BicUnlockToken Test", function () {
         );
         expect(amountPerDuration).to.be.eq(amountPerDurationExpect);
 
-        const balanceOfUnlockContract = await testERC20.balanceOf(
-          bicUnlockToken.target
+        const balanceOfRedeemContract = await testERC20.balanceOf(
+          bicRedeemToken.target
         );
-        expect(balanceOfUnlockContract).to.eq(
+        expect(balanceOfRedeemContract).to.eq(
           ethers.toBigInt(totalAmountInDecimal)
         );
       });
 
-      it("should not unlock if not passed durations", async () => {
-        const releasableData = await bicUnlockToken.releasable();
+      it("should not redeem if not passed durations", async () => {
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(BigInt(0));
         expect(releasableData[1]).to.be.eq(BigInt(0));
-        const vestTx = bicUnlockToken.release();
+        const vestTx = bicRedeemToken.release();
         await expect(vestTx).revertedWith(
           "VestingWallet: no tokens to release"
         );
       });
 
-      it("should unlock if passed 4 durations", async () => {
+      it("should redeem if passed 4 durations", async () => {
         const passedDuration = 4;
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const beneficiary = await bicUnlockToken.beneficiary();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const beneficiary = await bicRedeemToken.beneficiary();
 
 
         const amountExpect = amountPerDuration * BigInt(passedDuration);
@@ -244,19 +244,19 @@ describe("BicUnlockToken Test", function () {
           BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(amountExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary
-        );  
+        );
 
-        const vestTx = bicUnlockToken.release();
+        const vestTx = bicRedeemToken.release();
         await expect(vestTx)
-          .emit(bicUnlockToken, "ERC20Released")
+          .emit(bicRedeemToken, "ERC20Released")
           .emit(testERC20, "Transfer");
         await (await vestTx).wait();
 
@@ -268,24 +268,24 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
       });
 
-      it("should unlock if passed more 4 durations", async () => {
+      it("should redeem if passed more 4 durations", async () => {
         const passedDuration = 4;
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const beneficiary = await bicUnlockToken.beneficiary();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const beneficiary = await bicRedeemToken.beneficiary();
 
 
         const amountExpect = amountPerDuration * BigInt(passedDuration);
@@ -294,19 +294,19 @@ describe("BicUnlockToken Test", function () {
           BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(amountExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary
-        );  
+        );
 
-        const vestTx = bicUnlockToken.release();
+        const vestTx = bicRedeemToken.release();
         await expect(vestTx)
-          .emit(bicUnlockToken, "ERC20Released")
+          .emit(bicRedeemToken, "ERC20Released")
           .emit(testERC20, "Transfer");
         await (await vestTx).wait();
 
@@ -318,13 +318,13 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
@@ -333,9 +333,9 @@ describe("BicUnlockToken Test", function () {
       it("should trace log with 2 claim times", async () => {
         const startBlock = 1; // The block number to start searching for events
         const endBlock = "latest";
-        const filter = bicUnlockToken.filters.ERC20Released();
+        const filter = bicRedeemToken.filters.ERC20Released();
         console.log("🚀 ~ it ~ filter:", filter.fragment)
-        const events = await bicUnlockToken.queryFilter(filter, startBlock, endBlock);
+        const events = await bicRedeemToken.queryFilter(filter, startBlock, endBlock);
         const released = events.map((event) => {
           return event.args;
         })
@@ -343,12 +343,12 @@ describe("BicUnlockToken Test", function () {
         expect(events.length).to.be.eq(2);
       });
 
-      it("should unlock if passed fully durations", async () => {
+      it("should redeem if passed fully durations", async () => {
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
-        const currentRewardStacks = await bicUnlockToken.currentRewardStacks();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
+        const currentRewardStacks = await bicRedeemToken.currentRewardStacks();
 
         const passedDuration = maxRewardStacks - currentRewardStacks;
 
@@ -362,18 +362,18 @@ describe("BicUnlockToken Test", function () {
           BigInt(dayjs.duration(Number(passedDuration), "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed);
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(amountExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary.address
         );
 
-        const vestTx = bicUnlockToken.release();
-        await expect(vestTx).emit(bicUnlockToken, "ERC20Released");
+        const vestTx = bicRedeemToken.release();
+        await expect(vestTx).emit(bicRedeemToken, "ERC20Released");
         await (await vestTx).wait();
 
         // Next
@@ -384,18 +384,18 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
-        const unlockContractBalanceNext = await testERC20.balanceOf(
-          bicUnlockToken.target
+        const redeemContractBalanceNext = await testERC20.balanceOf(
+          bicRedeemToken.target
         );
-        expect(unlockContractBalanceNext).to.be.eq(amountRemainExpect);
+        expect(redeemContractBalanceNext).to.be.eq(amountRemainExpect);
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
@@ -420,14 +420,14 @@ describe("BicUnlockToken Test", function () {
         BigInt(duration);
 
       before(async () => {
-        const unlockAddress = await bicUnlockFactory.computeUnlock(
+        const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,
           beneficiary.address,
           duration,
           speedRateNumber,
         );
-        const createTx = await bicUnlockFactory.createUnlock(
+        const createTx = await bicRedeemFactory.createRedeem(
           testERC20.target,
           totalAmountInDecimal,
           beneficiary.address,
@@ -436,21 +436,21 @@ describe("BicUnlockToken Test", function () {
         );
         const receipt = await createTx.wait();
 
-        bicUnlockToken = await ethers.getContractAt(
-          "BicUnlockToken",
-          unlockAddress
+        bicRedeemToken = await ethers.getContractAt(
+          "BicRedeemToken",
+          redeemAddress
         );
 
-        const start = await bicUnlockToken.start();
-        const end = await bicUnlockToken.end();
-        const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
+        const start = await bicRedeemToken.start();
+        const end = await bicRedeemToken.end();
+        const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
         const block = await ethers.provider.getBlock(receipt?.blockNumber || 0);
 
         expect(start).to.be.eq(block?.timestamp);
         expect(end).to.be.eq(start + totalDurations);
         expect(maxRewardStacks).to.be.eq(stacksExpect);
 
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
         const amountPerDurationExpect = ethers.toBigInt(
           ethers.parseUnits(
             String(
@@ -462,30 +462,30 @@ describe("BicUnlockToken Test", function () {
 
         expect(amountPerDuration).to.be.eq(amountPerDurationExpect);
 
-        const balanceOfUnlockContract = await testERC20.balanceOf(
-          bicUnlockToken.target
+        const balanceOfRedeemContract = await testERC20.balanceOf(
+          bicRedeemToken.target
         );
-        expect(balanceOfUnlockContract).to.lessThanOrEqual(
+        expect(balanceOfRedeemContract).to.lessThanOrEqual(
           ethers.toBigInt(totalAmountInDecimal)
         );
       });
 
-      it("should not unlock if not passed durations", async () => {
-        const releasableData = await bicUnlockToken.releasable();
+      it("should not redeem if not passed durations", async () => {
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(BigInt(0));
         expect(releasableData[1]).to.be.eq(BigInt(0));
-        const vestTx = bicUnlockToken.release();
+        const vestTx = bicRedeemToken.release();
         await expect(vestTx).revertedWith(
           "VestingWallet: no tokens to release"
         );
       });
 
-      it("should unlock if passed 4 durations", async () => {
+      it("should redeem if passed 4 durations", async () => {
         const passedDuration = 4;
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const beneficiary = await bicUnlockToken.beneficiary();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const beneficiary = await bicRedeemToken.beneficiary();
 
         const amountExpect = amountPerDuration * BigInt(passedDuration);
         const timePassed =
@@ -493,18 +493,18 @@ describe("BicUnlockToken Test", function () {
           BigInt(dayjs.duration(passedDuration, "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed + BigInt(1));
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(amountExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary
         );
 
-        const vestTx = bicUnlockToken.release();
-        await expect(vestTx).emit(bicUnlockToken, "ERC20Released");
+        const vestTx = bicRedeemToken.release();
+        await expect(vestTx).emit(bicRedeemToken, "ERC20Released");
         await (await vestTx).wait();
 
         // Next
@@ -515,24 +515,24 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
       });
 
-      it("should unlock if passed fully durations", async () => {
+      it("should redeem if passed fully durations", async () => {
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
-        const currentRewardStacks = await bicUnlockToken.currentRewardStacks();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
+        const currentRewardStacks = await bicRedeemToken.currentRewardStacks();
 
         const passedDuration = maxRewardStacks - currentRewardStacks;
 
@@ -546,18 +546,18 @@ describe("BicUnlockToken Test", function () {
           BigInt(dayjs.duration(Number(passedDuration), "weeks").asSeconds());
         await helpers.time.increaseTo(timePassed);
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.eq(amountExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary.address
         );
 
-        const vestTx = bicUnlockToken.release();
-        await expect(vestTx).emit(bicUnlockToken, "ERC20Released");
+        const vestTx = bicRedeemToken.release();
+        await expect(vestTx).emit(bicRedeemToken, "ERC20Released");
         await (await vestTx).wait();
 
         // Next
@@ -568,30 +568,30 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
-        const unlockContractBalanceNext = await testERC20.balanceOf(
-          bicUnlockToken.target
+        const redeemContractBalanceNext = await testERC20.balanceOf(
+          bicRedeemToken.target
         );
-        expect(unlockContractBalanceNext).to.be.eq(amountRemainExpect);
+        expect(redeemContractBalanceNext).to.be.eq(amountRemainExpect);
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
       });
 
-      it("should unlock remain amount if passed end time", async () => {
+      it("should redeem remain amount if passed end time", async () => {
         const lastAtCurrentRewardStacksPrev =
-          await bicUnlockToken.lastAtCurrentStack();
-        const amountPerDuration = await bicUnlockToken.amountPerDuration();
-        const end = await bicUnlockToken.end();
-        const maxRewardStacks = await bicUnlockToken.maxRewardStacks();
-        const currentRewardStacks = await bicUnlockToken.currentRewardStacks();
+          await bicRedeemToken.lastAtCurrentStack();
+        const amountPerDuration = await bicRedeemToken.amountPerDuration();
+        const end = await bicRedeemToken.end();
+        const maxRewardStacks = await bicRedeemToken.maxRewardStacks();
+        const currentRewardStacks = await bicRedeemToken.currentRewardStacks();
 
         const passedDuration = maxRewardStacks - currentRewardStacks;
 
@@ -601,18 +601,18 @@ describe("BicUnlockToken Test", function () {
 
         await helpers.time.increaseTo(end + BigInt(1));
 
-        const releasableData = await bicUnlockToken.releasable();
+        const releasableData = await bicRedeemToken.releasable();
         expect(releasableData[0]).to.be.greaterThanOrEqual(amountRemainExpect);
         expect(releasableData[1]).to.be.eq(BigInt(passedDuration));
 
         // Previous
-        const currentRewardStacksPrev = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksPrev = await bicRedeemToken.currentRewardStacks();
         const beneficiaryBalancePrev = await testERC20.balanceOf(
           beneficiary.address
         );
 
-        const vestTx = bicUnlockToken.release();
-        await expect(vestTx).emit(bicUnlockToken, "ERC20Released");
+        const vestTx = bicRedeemToken.release();
+        await expect(vestTx).emit(bicRedeemToken, "ERC20Released");
         await (await vestTx).wait();
 
         // Next
@@ -623,18 +623,18 @@ describe("BicUnlockToken Test", function () {
           beneficiaryBalancePrev + amountRemainExpect
         );
 
-        const currentRewardStacksNext = await bicUnlockToken.currentRewardStacks();
+        const currentRewardStacksNext = await bicRedeemToken.currentRewardStacks();
         expect(currentRewardStacksNext).to.be.eq(
           currentRewardStacksPrev + BigInt(passedDuration)
         );
 
-        const unlockContractBalanceNext = await testERC20.balanceOf(
-          bicUnlockToken.target
+        const redeemContractBalanceNext = await testERC20.balanceOf(
+          bicRedeemToken.target
         );
-        expect(unlockContractBalanceNext).to.be.eq(BigInt(0));
+        expect(redeemContractBalanceNext).to.be.eq(BigInt(0));
 
         const lastAtcurrentRewardStacksNext =
-          await bicUnlockToken.lastAtCurrentStack();
+          await bicRedeemToken.lastAtCurrentStack();
         expect(lastAtcurrentRewardStacksNext).to.be.eq(
           lastAtCurrentRewardStacksPrev + BigInt(passedDuration) * BigInt(duration)
         );
