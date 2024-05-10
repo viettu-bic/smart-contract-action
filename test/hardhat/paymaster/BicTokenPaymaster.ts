@@ -19,11 +19,11 @@ describe("BicTokenPaymaster", () => {
     let legacyTokenPaymasterAddress: string;
     let bicPermissions: BicPermissions;
     let bicPermissionsAddress: string;
+    let walletToTestBlacklist;
 
     beforeEach(async () => {
-        [admin, beneficiary] = await ethers.getSigners();
+        [admin, walletToTestBlacklist] = await ethers.getSigners();
         beneficiary = ethers.Wallet.createRandom().address;
-        [admin] = await ethers.getSigners();
         const EntryPoint = await ethers.getContractFactory("EntryPointTest");
         entryPoint = await EntryPoint.deploy();
         await entryPoint.waitForDeployment();
@@ -169,4 +169,21 @@ describe("BicTokenPaymaster", () => {
         await bicTokenPaymaster.transferOwnership(beneficiary as any);
         expect(await bicTokenPaymaster.owner()).equal(beneficiary);
     });
+
+    it('should be able to block transfer from a address', async () => {
+        await bicTokenPaymaster.transfer(walletToTestBlacklist.address as any, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.addToBlockedList(walletToTestBlacklist.address as any);
+        await expect(bicTokenPaymaster.connect(walletToTestBlacklist).transfer(beneficiary as any, ethers.parseEther('100') as any)).to.be.revertedWith('BicTokenPaymaster: sender is blocked');
+        await bicTokenPaymaster.removeFromBlockedList(walletToTestBlacklist.address as any);
+        await bicTokenPaymaster.connect(walletToTestBlacklist).transfer(beneficiary as any, ethers.parseEther('100') as any);
+        expect(await bicTokenPaymaster.balanceOf(beneficiary as any)).equal(ethers.parseEther('100'));
+    })
+
+    it('event admin cannot transfer when paused', async () => {
+        await bicTokenPaymaster.pause();
+        await expect(bicTokenPaymaster.transfer(beneficiary as any, ethers.parseEther('100') as any)).to.be.revertedWith('BicTokenPaymaster: token transfer while paused');
+        await bicTokenPaymaster.unpause();
+        await bicTokenPaymaster.transfer(beneficiary as any, ethers.parseEther('100') as any);
+        expect(await bicTokenPaymaster.balanceOf(beneficiary as any)).equal(ethers.parseEther('100'));
+    })
 });

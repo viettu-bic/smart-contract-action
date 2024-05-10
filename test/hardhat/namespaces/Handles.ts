@@ -175,4 +175,18 @@ describe("Handles", function () {
       ).to.be.revertedWithCustomError(bicHandles, "NotOwner");
     });
   });
+
+    it("Handles: should set operator successfully", async function () {
+      await bicHandles.connect(deployer).setOperator(wallet2.address);
+      expect(await bicHandles.OPERATOR()).to.equal(wallet2.address);
+      await bicHandles.connect(wallet2).setOperator(deployer.address)
+      expect(await bicHandles.OPERATOR()).to.equal(deployer.address);
+    });
+
+  it('view functions', async function () {
+    expect(await bicHandles.totalSupply()).to.equal(0);
+    expect(await bicHandles.getHandleTokenURIContract()).to.equal(handleTokenURI.target);
+    // expect(await bicHandles.getNamespaceHash()).to.equal(ethers.solidityPackedKeccak256(['bytes32'], ['bic']));
+    // expect(await bicHandles.supportsInterface()).to.equal('bic');
+  });
 });

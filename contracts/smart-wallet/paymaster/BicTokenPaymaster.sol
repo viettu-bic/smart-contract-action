@@ -103,14 +103,14 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
         // verificationGasLimit is dual-purposed, as gas limit for postOp. make sure it is high enough
         // make sure that verificationGasLimit is high enough to handle postOp
-        require(userOp.verificationGasLimit > COST_OF_POST, "TokenPaymaster: gas too low for postOp");
+        require(userOp.verificationGasLimit > COST_OF_POST, "BicTokenPaymaster: gas too low for postOp");
 
         if (userOp.initCode.length != 0) {
             _validateConstructor(userOp);
-            require(balanceOf(userOp.sender) >= tokenPrefund, "TokenPaymaster: no balance (pre-create)");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance (pre-create)");
         } else {
 
-            require(balanceOf(userOp.sender) >= tokenPrefund, "TokenPaymaster: no balance");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance");
         }
 
         return (abi.encode(userOp.sender), 0);
@@ -125,7 +125,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
         */
     function _validateConstructor(UserOperation calldata userOp) internal virtual view {
         address factory = address(bytes20(userOp.initCode[0 : 20]));
-        require(factory == theFactory, "TokenPaymaster: wrong account factory");
+        require(factory == theFactory, "BicTokenPaymaster: wrong account factory");
     }
 
     /**
@@ -169,7 +169,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
 
-        require(!paused(), "ERC20Pausable: token transfer while paused");
-        require(!isBlocked[from], "TokenPaymaster: sender is blocked");
+        require(!paused(), "BicTokenPaymaster: token transfer while paused");
+        require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
     }
 }
