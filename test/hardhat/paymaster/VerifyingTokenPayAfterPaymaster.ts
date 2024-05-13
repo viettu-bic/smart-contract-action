@@ -56,8 +56,6 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         await bicTokenPaymaster.waitForDeployment();
         legacyTokenPaymasterAddress = await bicTokenPaymaster.getAddress();
 
-        await entryPoint.depositTo(legacyTokenPaymasterAddress as any, { value: parseEther('1000') } as any)
-
         smartWalletUser1Address = await bicAccountFactory.getFunction("getAddress")(user1.address as any, 0n as any);
         smartWalletUser2Address = await bicAccountFactory.getFunction("getAddress")(user2.address as any, 0n as any);
         const values = [
@@ -72,23 +70,19 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         tree = StandardMerkleTree.of(values, ["uint256", "address", "uint256"])
         const SimpleClaim = await ethers.getContractFactory('SimpleClaim');
         simpleClaim = await SimpleClaim.deploy(tree.root, legacyTokenPaymasterAddress);
-        await bicTokenPaymaster.transfer(simpleClaim.target, parseEther('1000'));
+        await bicTokenPaymaster.mint(simpleClaim.target, parseEther('1000'));
         expect(await bicTokenPaymaster.balanceOf(simpleClaim.target)).to.equal(parseEther('1000'));
         await simpleClaim.waitForDeployment();
-
         const VerifyingTokenPayAfterPaymaster = await ethers.getContractFactory('VerifyingTokenPayAfterPaymaster');
         verifyingTokenPayAfterPaymaster = await VerifyingTokenPayAfterPaymaster.deploy(entryPointAddress, verifierWallet.address);
         await verifyingTokenPayAfterPaymaster.waitForDeployment();
         verifyingTokenPayAfterPaymasterAddress = await verifyingTokenPayAfterPaymaster.getAddress();
-
         const TestOracle = await ethers.getContractFactory("TestOracle");
         const testOracle = await TestOracle.deploy();
         await testOracle.waitForDeployment();
         const testOracleAddress = await testOracle.getAddress();
-
         await verifyingTokenPayAfterPaymaster.setOracle(legacyTokenPaymasterAddress, testOracleAddress);
-        await entryPoint.depositTo(verifyingTokenPayAfterPaymaster as any, { value: parseEther('1000') } as any)
-
+        await entryPoint.depositTo(verifyingTokenPayAfterPaymaster as any, { value: parseEther('1') } as any)
     });
 
 
@@ -106,10 +100,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
 
         const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
-        console.log('before validAfter: ', validAfter)
-        console.log('before validUntil: ', validUntil)
         const validTimeEncoded = defaultAbiCoder.encode(['uint48', 'uint48'], [validUntil, validAfter]);
-        console.log('validTimeEncoded: ', validTimeEncoded)
         const approveCallData = bicTokenPaymaster.interface.encodeFunctionData("approve", [verifyingTokenPayAfterPaymasterAddress, ethers.parseEther('100')]);
         const claimCalldata = simpleClaim.interface.encodeFunctionData("claim", [tree.getProof(1), smartWalletUser1Address, 1, ethers.parseEther('100')]);
         const callDataForEntrypoint = bicAccountInterface.encodeFunctionData("executeBatch", [[bicTokenPaymaster.target, simpleClaim.target], [value, value], [approveCallData, claimCalldata]]);
@@ -130,15 +121,12 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
 
 
         const signPaymasterHash = await verifyingTokenPayAfterPaymaster.getHash(op as any, legacyTokenPaymasterAddress, validUntil as any, validAfter as any);
-        console.log('signPaymasterHash: ', signPaymasterHash);
         const signaturePaymaster = await verifierWallet.signMessage(ethers.getBytes(signPaymasterHash));
-        console.log('signaturePaymaster: ', signaturePaymaster);
         op.paymasterAndData = ethers.concat([verifyingTokenPayAfterPaymasterAddress, legacyTokenPaymasterAddress, validTimeEncoded, signaturePaymaster]);
 
         const opHash = await entryPoint.getUserOpHash(op as any);
         const signature = await user1.signMessage(ethers.getBytes(opHash));
         op.signature = ethers.solidityPacked(["bytes"], [signature]);
-        console.log('legacyTokenPaymasterAddress: ', legacyTokenPaymasterAddress)
 
         // await expect(entryPoint.handleOps([op] as any, admin.address)).to.be.revertedWithCustomError(entryPoint,'SignatureValidationFailed');
         const tx = await entryPoint.handleOps([op] as any, admin.address);
@@ -155,15 +143,12 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
        const TestERC20 = await ethers.getContractFactory("TestERC20")
         const usdt = await TestERC20.deploy();
         await usdt.waitForDeployment();
-
         expect(await provider.getBalance(smartWalletUser2Address)).to.equal(0);
         expect(await usdt.balanceOf(smartWalletUser2Address)).to.equal(0);
         expect(await bicTokenPaymaster.balanceOf(smartWalletUser2Address)).to.equal(0);
         await usdt.transfer(smartWalletUser2Address, parseEther('1000') as any);
         expect(await usdt.balanceOf(smartWalletUser2Address)).to.equal(parseEther('1000'));
-
-        await bicTokenPaymaster.transfer(testUniswap.target, parseEther('10000'));
-
+        await bicTokenPaymaster.mint(testUniswap.target, parseEther('10000'));
         const swapParams = {
             tokenIn: usdt.target,
             tokenOut: legacyTokenPaymasterAddress,
@@ -174,7 +159,6 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
             amountOutMinimum: parseEther('1470'), // bic at price 0.068 usdt
             sqrtPriceLimitX96: 0
         }
-
         const swapCallData = testUniswap.interface.encodeFunctionData("exactInputSingle", [swapParams]);
         const validAfter = (await ethers.provider.getBlock('latest'))?.timestamp;
         const validUntil = validAfter + 60*60;
@@ -203,7 +187,6 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
         const signPaymasterHash = await verifyingTokenPayAfterPaymaster.getHash(op as any, legacyTokenPaymasterAddress, validUntil as any, validAfter as any);
         const signaturePaymaster = await verifierWallet.signMessage(ethers.getBytes(signPaymasterHash));
         op.paymasterAndData = ethers.concat([verifyingTokenPayAfterPaymasterAddress, legacyTokenPaymasterAddress, validTimeEncoded, signaturePaymaster]);
-
         const opHash = await entryPoint.getUserOpHash(op as any);
         const signature = await user2.signMessage(ethers.getBytes(opHash));
         op.signature = ethers.solidityPacked(["bytes"], [signature]);
@@ -212,7 +195,7 @@ describe('VerifyingTokenPayAfterPaymaster', () => {
     });
 
     it('withdrawTokensTo', async () => {
-        await bicTokenPaymaster.transfer(verifyingTokenPayAfterPaymasterAddress, parseEther('1000'));
+        await bicTokenPaymaster.mint(verifyingTokenPayAfterPaymasterAddress, parseEther('1000'));
         await verifyingTokenPayAfterPaymaster.withdrawTokensTo(bicTokenPaymaster.target, beneficiary, parseEther('1000'));
         expect(await bicTokenPaymaster.balanceOf(beneficiary)).to.equal(parseEther('1000'));
     })

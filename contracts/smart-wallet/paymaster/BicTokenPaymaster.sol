@@ -9,7 +9,7 @@ import "@account-abstraction/contracts/interfaces/IPaymaster.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "@account-abstraction/contracts/samples/IOracle.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
  * @title A paymaster that defines itself as a token to pay for gas.
@@ -36,6 +36,8 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
     mapping (address => bool) public isBlocked;
 
+    uint256 private immutable _cap;
+
     event BlockPlaced(address indexed _user);
 
     event BlockReleased(address indexed _user);
@@ -45,9 +47,8 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Testing Beincom", "TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         theFactory = accountFactory;
-        //pre-mint some tokens contract deployer
-        _mint(msg.sender, 6339777879 * 1e18);
 
+        _cap = 6339777879 * 1e18;
         //owner is allowed to withdraw tokens from the paymaster's balance
         _approve(address(this), msg.sender, type(uint).max);
     }
@@ -171,5 +172,17 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
         require(!paused(), "BicTokenPaymaster: token transfer while paused");
         require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
+    }
+
+    /**
+     * @dev Returns the cap on the token's total supply.
+     */
+    function cap() public view virtual returns (uint256) {
+        return _cap;
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        require(totalSupply() + amount <= cap(), "BicTokenPaymaster: cap exceeded");
+        _mint(to, amount);
     }
 }

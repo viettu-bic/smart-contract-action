@@ -45,12 +45,13 @@ describe("BicTokenPaymaster", () => {
         legacyTokenPaymasterAddress = await bicTokenPaymaster.getAddress();
 
         await entryPoint.depositTo(legacyTokenPaymasterAddress as any, { value: parseEther('1000') } as any)
+        await bicTokenPaymaster.mint(admin.address, ethers.parseEther('1000') as any);
     });
 
     it('should be able to use to create account', async () => {
         const smartWalletAddress = await bicAccountFactory.getFunction("getAddress")(user1.address as any, 0n as any);
 
-        await bicTokenPaymaster.transfer(smartWalletAddress as any, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.mint(smartWalletAddress as any, ethers.parseEther('1000') as any);
 
         const initCallData = bicAccountFactory.interface.encodeFunctionData("createAccount", [user1.address as any, ethers.ZeroHash]);
         const target = bicAccountFactoryAddress;
@@ -73,7 +74,7 @@ describe("BicTokenPaymaster", () => {
         user2 = ethers.Wallet.createRandom() as Wallet
         const smartWalletAddress1 = await bicAccountFactory.getFunction("getAddress")(user1.address as any, 0n as any);
         const smartWalletAddress2 = await bicAccountFactory.getFunction("getAddress")(user2.address as any, 0n as any);
-        await bicTokenPaymaster.transfer(smartWalletAddress1 as any, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.mint(smartWalletAddress1 as any, ethers.parseEther('1000') as any);
 
         const initCallData = bicAccountFactory.interface.encodeFunctionData("createAccount", [user1.address as any, ethers.ZeroHash]);
         const target = bicAccountFactoryAddress;
@@ -136,7 +137,7 @@ describe("BicTokenPaymaster", () => {
         await testOracle.waitForDeployment();
         const testOracleAddress = await testOracle.getAddress();
         await bicTokenPaymaster.setOracle(testOracleAddress as any);
-        await bicTokenPaymaster.transfer(smartWalletAddress2 as any, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.mint(smartWalletAddress2 as any, ethers.parseEther('1000') as any);
 
         const initCallData2 = bicAccountFactory.interface.encodeFunctionData("createAccount", [user2.address as any, ethers.ZeroHash]);
         const target2 = bicAccountFactoryAddress;
@@ -171,7 +172,7 @@ describe("BicTokenPaymaster", () => {
     });
 
     it('should be able to block transfer from a address', async () => {
-        await bicTokenPaymaster.transfer(walletToTestBlacklist.address as any, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.mint(walletToTestBlacklist.address as any, ethers.parseEther('1000') as any);
         await bicTokenPaymaster.addToBlockedList(walletToTestBlacklist.address as any);
         await expect(bicTokenPaymaster.connect(walletToTestBlacklist).transfer(beneficiary as any, ethers.parseEther('100') as any)).to.be.revertedWith('BicTokenPaymaster: sender is blocked');
         await bicTokenPaymaster.removeFromBlockedList(walletToTestBlacklist.address as any);
@@ -179,11 +180,25 @@ describe("BicTokenPaymaster", () => {
         expect(await bicTokenPaymaster.balanceOf(beneficiary as any)).equal(ethers.parseEther('100'));
     })
 
-    it('event admin cannot transfer when paused', async () => {
+    it('even admin cannot transfer when paused', async () => {
         await bicTokenPaymaster.pause();
         await expect(bicTokenPaymaster.transfer(beneficiary as any, ethers.parseEther('100') as any)).to.be.revertedWith('BicTokenPaymaster: token transfer while paused');
         await bicTokenPaymaster.unpause();
         await bicTokenPaymaster.transfer(beneficiary as any, ethers.parseEther('100') as any);
         expect(await bicTokenPaymaster.balanceOf(beneficiary as any)).equal(ethers.parseEther('100'));
     })
+
+    it('cap should be 6339777879', async () => {
+        expect(await bicTokenPaymaster.cap()).equal(parseEther('6339777879'));
+    })
+
+    it('cannot mint more than cap', async () => {
+        await expect(bicTokenPaymaster.mint(beneficiary as any, parseEther('6339777879') + 1n)).to.be.revertedWith('BicTokenPaymaster: cap exceeded');
+    });
+
+    it('should be able to mint to 6339777879 and cannot mint even 1 wei after that', async () => {
+        await bicTokenPaymaster.mint(admin.address as any, parseEther('6339777879') - ethers.parseEther('1000'));
+        expect(await bicTokenPaymaster.balanceOf(admin.address as any)).equal(parseEther('6339777879'));
+        await expect(bicTokenPaymaster.mint(admin.address as any, 1n)).to.be.revertedWith('BicTokenPaymaster: cap exceeded');
+    });
 });

@@ -57,7 +57,7 @@ describe('Controller', function () {
     });
 
     it('Controller: create nft directly', async function () {
-        await bic.transfer(wallet1.address, ethers.parseEther('1') as any);
+        await bic.mint(wallet1.address, ethers.parseEther('1') as any);
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
@@ -95,7 +95,7 @@ describe('Controller', function () {
     });
 
     it('Controller: commit to mint nft', async function () {
-        await bic.transfer(wallet1.address, ethers.parseEther('1'));
+        await bic.mint(wallet1.address, ethers.parseEther('1'));
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         const currentTime = Math.floor(Date.now() / 1000);
@@ -212,7 +212,7 @@ describe('Controller', function () {
         expect(auctionId).to.equal(1n);
 
         // let assume that auction result is 1 BIC
-        await bic.transfer(handlesController.target, ethers.parseEther('1'));
+        await bic.mint(handlesController.target, ethers.parseEther('1'));
         const collectDataHash = await handlesController.getCollectAuctionPayoutOp(mintName, ethers.parseEther('1'));
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
         await handlesController.connect(wallet1).collectAuctionPayout(mintName, ethers.parseEther('1'), collectSignature);
