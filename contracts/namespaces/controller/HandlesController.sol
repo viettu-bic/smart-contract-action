@@ -235,7 +235,7 @@ contract HandlesController is ReentrancyGuard {
                 emit CreateAuction(auctionId);
             } else {
                 // commit
-                bool isCommitted = _isCommitted(dataHash, rq.commitDuration);
+                bool isCommitted = _isCommitted(dataHash, rq);
                 if (!isCommitted) {
                     _mintHandle(
                         rq.handle,
@@ -245,8 +245,8 @@ contract HandlesController is ReentrancyGuard {
                         rq.beneficiaries,
                         rq.collects
                     );
+                    _emitCommitment(rq, dataHash, 0, true);
                 }
-                _emitCommitment(rq, dataHash, !isCommitted);
             }
         }
     }
@@ -314,18 +314,21 @@ contract HandlesController is ReentrancyGuard {
      * @notice Handles commitments for minting handles with a delay.
      * @dev Internal function to handle commitments for minting handles with a delay.
      * @param commitment The hash of the commitment.
-     * @param commitDuration The duration of the commitment.
+     * @param rq The handle request details including receiver, price, and auction settings.
      */
     function _isCommitted(
         bytes32 commitment,
-        uint256 commitDuration
+        HandleRequest calldata rq
     ) private returns (bool) {
         if (commitments[commitment] != 0) {
             if (commitments[commitment] < block.timestamp) {
                 return false;
             }
         } else {
-            commitments[commitment] = block.timestamp + commitDuration;
+            // User commited
+            commitments[commitment] = block.timestamp + rq.commitDuration;
+            // Emit event for once time user commited
+            _emitCommitment(rq, commitment, commitments[commitment], false);
         }
         return true;
     }
@@ -337,9 +340,9 @@ contract HandlesController is ReentrancyGuard {
      * @param _dataHash The hash committment
      * @param _isClaimed The status of claim
      */
-    function _emitCommitment(HandleRequest calldata rq, bytes32 _dataHash, bool _isClaimed) internal {
+    function _emitCommitment(HandleRequest memory rq, bytes32 _dataHash, uint256 endTime, bool _isClaimed) internal {
         uint256 tokenId = IHandles(rq.handle).getTokenId(rq.name);
-        emit Commitment(_dataHash, msg.sender, rq.handle, rq.name, tokenId, rq.price, block.timestamp + rq.commitDuration, _isClaimed);
+        emit Commitment(_dataHash, msg.sender, rq.handle, rq.name, tokenId, rq.price, endTime, _isClaimed);
 
     }
 

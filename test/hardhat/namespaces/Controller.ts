@@ -187,7 +187,7 @@ describe('Controller', function () {
 
         await expect(txClaim)
           .to.emit(handlesController, "Commitment")
-          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, BigInt((blockDataAtClaim?.timestamp || 0) + commitDuration), true);
+          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, 0, true);
 
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
