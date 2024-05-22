@@ -26,6 +26,17 @@ contract HandlesController is ReentrancyGuard {
     }
 
     /**
+     * @notice Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
+     * @dev Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
+     */
+    struct AuctionConfig {
+        uint256 buyoutBidAmount;
+        uint64 timeBufferInSeconds;
+        uint64 bidBufferBps;
+    }
+
+
+    /**
      * @dev Represents a request to create a handle, either through direct sale or auction.
      */
     struct HandleRequest {
@@ -53,6 +64,8 @@ contract HandlesController is ReentrancyGuard {
     uint256 public collectsDenominator = 10000;
     /// @dev The address of the collector, who receives any residual funds not distributed to beneficiaries.
     address public collector;
+    /// @dev The configuration of the auction marketplace.
+    AuctionConfig public auctionConfig;
     /// @dev Mapping from handle names to their corresponding auction requests, managing the state and distribution of auctioned handles.
     mapping(string => AuctionRequest) public nameToAuctionRequest;
     /// @dev Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price.
@@ -63,6 +76,8 @@ contract HandlesController is ReentrancyGuard {
     event SetVerifier(address indexed verifier);
     /// @dev Emitted when the marketplace address is updated.
     event SetMarketplace(address indexed marketplace);
+    /// @dev Emmitted when the auction marketplace configuration is updated.
+    event SetAuctionMarketplace(AuctionConfig _newConfig);
     /// @dev Emitted when an auction is created, providing details of the auction ID.
     event CreateAuction(uint256 auctionId);
     /// @dev Emitted when a handle is minted but the auction fails due none bid.
@@ -74,6 +89,12 @@ contract HandlesController is ReentrancyGuard {
     constructor(IBicPermissions _bp, IERC20 _bic) {
         _bicPermissions = _bp;
         bic = _bic;
+
+        auctionConfig = AuctionConfig({
+            buyoutBidAmount: 0,
+            timeBufferInSeconds: 900,
+            bidBufferBps: 1000
+        });
     }
 
     /**
@@ -108,6 +129,20 @@ contract HandlesController is ReentrancyGuard {
     function setMarketplace(address _marketplace) external onlyOperator {
         marketplace = IMarketplace(_marketplace);
         emit SetMarketplace(_marketplace);
+    }
+
+    /**
+     * @notice Sets the configuration of the auction marketplace.
+     * @dev Can only be set by an operator. Emits a SetMarketplace event upon success.
+     * @param _newConfig configuration of the auction marketplace
+     */
+    function setAuctionMarketplaceConfig(AuctionConfig memory _newConfig) external onlyOperator {
+        require(_newConfig.timeBufferInSeconds > 0, "HandlesController: timeBufferInSeconds must be greater than 0"); 
+        require(_newConfig.bidBufferBps > 0, "HandlesController: bidBufferBps must be greater than 0");
+        // 
+        require(_newConfig.bidBufferBps <= 10_000, "HandlesController: bidBufferBps must be less than 10_000");
+        auctionConfig = _newConfig;
+        emit SetAuctionMarketplace(_newConfig);
     }
 
     /**
@@ -182,13 +217,13 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.assetContract = rq.handle;
                 auctionParams.currency = address(bic);
                 auctionParams.minimumBidAmount = rq.price;
-                auctionParams.buyoutBidAmount = 0;
+                auctionParams.buyoutBidAmount = auctionConfig.buyoutBidAmount;
                 auctionParams.startTimestamp = uint64(block.timestamp);
                 auctionParams.endTimestamp = uint64(
                     block.timestamp + rq.commitDuration
                 );
-                auctionParams.timeBufferInSeconds = 900;
-                auctionParams.bidBufferBps = 500;
+                auctionParams.timeBufferInSeconds = auctionConfig.timeBufferInSeconds;
+                auctionParams.bidBufferBps = auctionConfig.bidBufferBps;
                 auctionParams.tokenId = IHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
