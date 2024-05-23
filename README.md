@@ -60,6 +60,17 @@ You can run unit tests using:
 ```
 hardhat test
 ```
+
+### 6. Deployment
+#### 6.1. Deploy by module
+```
+hardhat ignition deploy ignition/modules/{module_name}.ts --network {network}
+```
+#### 6.2. Deploy all
+```
+hardhat run scripts/deploy.ts --network {network}
+```
+
 ## License
 
 [GPL-3.0](./LICENSE)
