@@ -55,6 +55,14 @@ async function main() {
         const {handles, handleTokenURI, handlesController} = await hre.ignition.deploy(HandleModule);
         const {bicFactory} = await hre.ignition.deploy(Infra);
         const [deployer] = await ethers.getSigners();
+
+        console.log('Setup handles controller');
+        await handlesController.setVerifier(process.env.VERIFIER_ADDRESS || '0x42F1202e97EF9e9bEeE57CF9542784630E5127A7');
+        await handlesController.setCollector(process.env.COLLECTOR_ADDRESS || '0xC9167C15f539891B625671b030a0Db7b8c08173f');
+        await handlesController.setMarketplace(process.env.MARKETPLACE_ADDRESS || '0x4a4cC4EF2730B6817BaebA59D186A36424CcA64a');
+        await handlesController.setAuctionMarketplaceConfig([0n,60n, 100n]) //0 buyout price, 60s time bps, 1% price bps
+        console.log('Done setup handle controller');
+
         for (const nameNft of nameNftList) {
             // Clone handle flow
             console.log('Clone handle for namespace: ', nameNft.namespace)
@@ -77,6 +85,7 @@ async function main() {
             await clone.setController(handlesController.target as any);
             await handleTokenURI.setNameElement(nameNft.namespace as any, nameNft.imageDescription as any, nameNft.imageUri as any);
         }
+        console.log('Done setup handles');
     }
     if(process.env.IS_DEPLOY_TOKEN_REDEEM) {
         const {tokenRedeem} = await hre.ignition.deploy(TokenRedeem);
