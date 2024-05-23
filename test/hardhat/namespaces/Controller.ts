@@ -56,6 +56,25 @@ describe('Controller', function () {
         await handlesController.setCollector(randomWalletAddress as any);
     });
 
+    it('Controller: should be update successful Auction config', async function () {
+        const currentAuctionConfig = await handlesController.auctionConfig();
+        // Default
+        expect(currentAuctionConfig[0]).to.equal(BigInt(0)); 
+        expect(currentAuctionConfig[1]).to.equal(BigInt(900));
+        expect(currentAuctionConfig[2]).to.equal(BigInt(1000));
+
+        const newConfig = [100n, 200n, 300n];
+        const updateTx = await handlesController.setAuctionMarketplaceConfig(newConfig);
+        await expect(updateTx)
+          .to.emit(handlesController, "SetAuctionMarketplace")
+          .withArgs(newConfig);
+        const nextAuctionConfig = await handlesController.auctionConfig();
+
+        expect(nextAuctionConfig[0]).to.equal(newConfig[0]);
+        expect(nextAuctionConfig[1]).to.equal(newConfig[1]);
+        expect(nextAuctionConfig[2]).to.equal(newConfig[2]);
+    });
+
     it('Controller: create nft directly', async function () {
         await bic.mint(wallet1.address, ethers.parseEther('1') as any);
         const initialBicBalance = await bic.balanceOf(wallet1.address);
@@ -129,7 +148,7 @@ describe('Controller', function () {
 
         await expect(txCommit)
           .to.emit(handlesController, "Commitment")
-          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId,  BigInt((blockData?.timestamp || 0) + commitDuration), false);
+          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, BigInt((blockData?.timestamp || 0) + commitDuration), false);
 
         const commitTime = await handlesController.commitments(dataHash);
         try {
@@ -168,7 +187,7 @@ describe('Controller', function () {
 
         await expect(txClaim)
           .to.emit(handlesController, "Commitment")
-          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId,  BigInt((blockDataAtClaim?.timestamp || 0) + commitDuration), true);
+          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, 0, true);
 
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
