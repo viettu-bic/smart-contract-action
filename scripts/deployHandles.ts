@@ -74,26 +74,26 @@ async function main() {
     const handleTokenURI = await ethers.getContractAt("HandleTokenURI", "0x053559E61a1Da11200f600e340C82Af9Ff89d034");
 
     for (const nameNft of nameNftList) {
-        // Clone handle flow
-        console.log('Clone handle for namespace: ', nameNft.namespace)
-        const txCloneHandle = await bicFactory.deployProxyByImplementation(
-            handles.target as any,
-            handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xF4402fE2B09da7c02504DC308DBc307834CE56fE"]) as any,
-            ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 2]) as any
-        );
-        const txCloneHandleReceipt = await txCloneHandle.wait();
-
-        // @ts-ignore
-        const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
-        console.log('cloneAddress: ', cloneAddress)
+        // // Clone handle flow
+        // console.log('Clone handle for namespace: ', nameNft.namespace)
+        // const txCloneHandle = await bicFactory.deployProxyByImplementation(
+        //     handles.target as any,
+        //     handles.interface.encodeFunctionData('initialize', [nameNft.namespace, nameNft.name, nameNft.symbol, "0xF4402fE2B09da7c02504DC308DBc307834CE56fE"]) as any,
+        //     ethers.solidityPackedKeccak256(['string', 'string', 'uint256'], ['Handles', nameNft.namespace, 2]) as any
+        // );
+        // const txCloneHandleReceipt = await txCloneHandle.wait();
+        //
+        // // @ts-ignore
+        // const cloneAddress = txCloneHandleReceipt?.logs[txCloneHandleReceipt?.logs.length - 1].args[1];
+        // console.log('cloneAddress: ', cloneAddress)
 
         // Just update uri for handle flow
-        // const cloneAddress = nameNft.address
+        const cloneAddress = nameNft.address
         const clone = await ethers.getContractAt("Handles", cloneAddress);
 
-        await clone.setHandleTokenURIContract(handleTokenURI.target as any);
-        await clone.setController("0x28d838C4b6DB6d4EcFa5be92687DFBb8425d0068" as any);
-        await handleTokenURI.setNameElement(nameNft.namespace as any, nameNft.imageDescription as any, nameNft.imageUri as any);
+        // await clone.setHandleTokenURIContract(handleTokenURI.target as any);
+        await clone.setController("0x2226326E0D66Ebb3cfE8628222C6cEec0f3f7852" as any);
+        // await handleTokenURI.setNameElement(nameNft.namespace as any, nameNft.imageDescription as any, nameNft.imageUri as any);
     }
 }
 
