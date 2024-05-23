@@ -40,7 +40,7 @@ contract Handles is ERC721Upgradeable, IHandles {
     /// @notice Ensures that the function is called only by the operator.
     modifier onlyOperator() {
         if (msg.sender != OPERATOR) {
-            revert HandlesErrors.NotController();
+            revert HandlesErrors.NotOperator();
         }
         _;
     }
