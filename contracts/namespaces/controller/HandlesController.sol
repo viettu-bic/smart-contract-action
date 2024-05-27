@@ -21,8 +21,6 @@ contract HandlesController is ReentrancyGuard {
      */
     struct AuctionRequest {
         bool canClaim;            // Indicates if the auction's proceeds can be claimed.
-        address[] beneficiaries;  // List of addresses
-        uint256[] collects;       // Corresponding shares of the proceeds for each beneficiary.
     }
 
     /**
@@ -137,9 +135,9 @@ contract HandlesController is ReentrancyGuard {
      * @param _newConfig configuration of the auction marketplace
      */
     function setAuctionMarketplaceConfig(AuctionConfig memory _newConfig) external onlyOperator {
-        require(_newConfig.timeBufferInSeconds > 0, "HandlesController: timeBufferInSeconds must be greater than 0"); 
+        require(_newConfig.timeBufferInSeconds > 0, "HandlesController: timeBufferInSeconds must be greater than 0");
         require(_newConfig.bidBufferBps > 0, "HandlesController: bidBufferBps must be greater than 0");
-        // 
+        //
         require(_newConfig.bidBufferBps <= 10_000, "HandlesController: bidBufferBps must be less than 10_000");
         auctionConfig = _newConfig;
         emit SetAuctionMarketplace(_newConfig);
@@ -228,9 +226,7 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
                 nameToAuctionRequest[rq.name] = AuctionRequest(
-                    true,
-                    rq.beneficiaries,
-                    rq.collects
+                    true
                 );
                 emit CreateAuction(auctionId);
             } else {
@@ -278,21 +274,23 @@ contract HandlesController is ReentrancyGuard {
     function collectAuctionPayout(
         string calldata name,
         uint256 amount,
+        address[] calldata beneficiaries,
+        uint256[] calldata collects,
         bytes calldata signature
     ) external nonReentrant {
         require(
             nameToAuctionRequest[name].canClaim,
             "HandlesController: not an auction"
         );
-        bytes32 dataHash = getCollectAuctionPayoutOp(name, amount);
+        bytes32 dataHash = getCollectAuctionPayoutOp(name, amount, beneficiaries, collects);
         require(
             _verifySignature(dataHash, signature),
             "HandlesController: invalid signature"
         );
         _payout(
             amount,
-            nameToAuctionRequest[name].beneficiaries,
-            nameToAuctionRequest[name].collects
+            beneficiaries,
+            collects
         );
         nameToAuctionRequest[name].canClaim = false;
     }
@@ -489,9 +487,11 @@ contract HandlesController is ReentrancyGuard {
      */
     function getCollectAuctionPayoutOp(
         string calldata name,
-        uint256 amount
+        uint256 amount,
+        address[] calldata beneficiaries,
+        uint256[] calldata collects
     ) public view returns (bytes32) {
-        return keccak256(abi.encode(name, amount, block.chainid));
+        return keccak256(abi.encode(name, amount, block.chainid, beneficiaries, collects));
     }
 
     /**

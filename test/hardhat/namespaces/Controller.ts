@@ -59,7 +59,7 @@ describe('Controller', function () {
     it('Controller: should be update successful Auction config', async function () {
         const currentAuctionConfig = await handlesController.auctionConfig();
         // Default
-        expect(currentAuctionConfig[0]).to.equal(BigInt(0)); 
+        expect(currentAuctionConfig[0]).to.equal(BigInt(0));
         expect(currentAuctionConfig[1]).to.equal(BigInt(900));
         expect(currentAuctionConfig[2]).to.equal(BigInt(1000));
 
@@ -232,11 +232,11 @@ describe('Controller', function () {
 
         // let assume that auction result is 1 BIC
         await bic.mint(handlesController.target, ethers.parseEther('1'));
-        const collectDataHash = await handlesController.getCollectAuctionPayoutOp(mintName, ethers.parseEther('1'));
+        const collectDataHash = await handlesController.getCollectAuctionPayoutOp(mintName, ethers.parseEther('1'), [wallet3.address], [1000]);
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
-        await handlesController.connect(wallet1).collectAuctionPayout(mintName, ethers.parseEther('1'), collectSignature);
+        await handlesController.connect(wallet1).collectAuctionPayout(mintName, ethers.parseEther('1'), [wallet3.address], [1000], collectSignature);
 
-        expect(await bic.balanceOf(wallet2.address)).to.equal(ethers.parseEther('1')/10n);
+        expect(await bic.balanceOf(wallet3.address)).to.equal(ethers.parseEther('1')/10n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1')*9n/10n);
     })
 
