@@ -15,13 +15,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  * Uses ECDSA for signature verification and integrates with a marketplace for auction functionalities.
  */
 contract HandlesController is ReentrancyGuard {
-    /**
-     * @notice Represents a request for an auction, including the ability to claim the handle, the beneficiaries, and their respective shares of the proceeds.
-     * @dev Represents a request for an auction, including the ability to claim the handle, the beneficiaries, and their respective shares of the proceeds.
-     */
-    struct AuctionRequest {
-        bool canClaim;            // Indicates if the auction's proceeds can be claimed.
-    }
 
     /**
      * @notice Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
@@ -64,8 +57,8 @@ contract HandlesController is ReentrancyGuard {
     address public collector;
     /// @dev The configuration of the auction marketplace.
     AuctionConfig public auctionConfig;
-    /// @dev Mapping from handle names to their corresponding auction requests, managing the state and distribution of auctioned handles.
-    mapping(string => AuctionRequest) public nameToAuctionRequest;
+    /// @dev Mapping of auctionId to status isClaimed.
+    mapping(uint256 => bool) public auctionCanClaim;
     /// @dev Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price.
     event MintHandle(address indexed handle, address indexed to, string name, uint256 price);
     /// @dev Emitted when a commitment is made, providing details of the commitment and its expiration timestamp.
@@ -225,9 +218,7 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.tokenId = IHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
-                nameToAuctionRequest[rq.name] = AuctionRequest(
-                    true
-                );
+                auctionCanClaim[auctionId] = true;
                 emit CreateAuction(auctionId);
             } else {
                 // commit
@@ -262,7 +253,7 @@ contract HandlesController is ReentrancyGuard {
      *
      *      Once the payout is completed, it marks the auction as claimed to prevent re-claiming.
      *
-     * @param name The name of the handle associated with the auction.
+     * @param auctionId The ID of the auction in the Thirdweb Marketplace contract.
      * @param amount The total amount of Ether or tokens to be distributed to the beneficiaries.
      * @param signature The signature from the authorized verifier to validate the claim operation.
      *
@@ -272,17 +263,17 @@ contract HandlesController is ReentrancyGuard {
      *      - The provided signature does not validate against the expected payload signed by the authorized signer.
      */
     function collectAuctionPayout(
-        string calldata name,
+        uint256 auctionId,
         uint256 amount,
         address[] calldata beneficiaries,
         uint256[] calldata collects,
         bytes calldata signature
     ) external nonReentrant {
         require(
-            nameToAuctionRequest[name].canClaim,
+            auctionCanClaim[auctionId],
             "HandlesController: not an auction"
         );
-        bytes32 dataHash = getCollectAuctionPayoutOp(name, amount, beneficiaries, collects);
+        bytes32 dataHash = getCollectAuctionPayoutOp(auctionId, amount, beneficiaries, collects);
         require(
             _verifySignature(dataHash, signature),
             "HandlesController: invalid signature"
@@ -292,7 +283,7 @@ contract HandlesController is ReentrancyGuard {
             beneficiaries,
             collects
         );
-        nameToAuctionRequest[name].canClaim = false;
+        auctionCanClaim[auctionId] = false;
     }
 
     /**
@@ -486,12 +477,12 @@ contract HandlesController is ReentrancyGuard {
      * @dev Generates a unique hash for a collect auction payout operation.
      */
     function getCollectAuctionPayoutOp(
-        string calldata name,
+        uint256 auctionId,
         uint256 amount,
         address[] calldata beneficiaries,
         uint256[] calldata collects
     ) public view returns (bytes32) {
-        return keccak256(abi.encode(name, amount, block.chainid, beneficiaries, collects));
+        return keccak256(abi.encode(auctionId, amount, block.chainid, beneficiaries, collects));
     }
 
     /**
