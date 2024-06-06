@@ -6,8 +6,10 @@ import {HandlesEvents} from '../constants/HandlesEvents.sol';
 import {HandlesErrors} from '../constants/HandlesErrors.sol';
 import {IHandleTokenURI} from '../interfaces/IHandleTokenURI.sol';
 import {Address} from '@openzeppelin/contracts/utils/Address.sol';
+import {ERC2981} from '@openzeppelin/contracts/token/common/ERC2981.sol';
 import {IERC165Upgradeable} from '@openzeppelin/contracts-upgradeable/utils/introspection/IERC165Upgradeable.sol';
 import {ERC721Upgradeable} from '@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol';
+
 import {IHandles} from "../interfaces/IHandles.sol";
 
 
@@ -17,7 +19,7 @@ import {IHandles} from "../interfaces/IHandles.sol";
 /// Handles are formed by appending a local name to a namespace, separated by "0x40". This contract allows minting and burning of handles, alongside basic management of their attributes.
 ///
 /// Designed to be used with a Transparent upgradeable proxy without requiring an initializer.
-contract Handles is ERC721Upgradeable, IHandles {
+contract Handles is ERC721Upgradeable, ERC2981, IHandles {
     using Address for address;
     /// @notice Address of the controller with administrative privileges.
     address public CONTROLLER;
@@ -141,6 +143,13 @@ contract Handles is ERC721Upgradeable, IHandles {
         delete _localNames[tokenId];
     }
 
+
+    /// @notice ERC2981 royalty information for a given token ID and sale price.
+    /// @dev ERC2981 royalty information for a given token ID and sale price.
+    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) external onlyOperator {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
+
     /// @notice Checks if a handle exists by its token ID.
     /// @dev Checks if a handle exists by its token ID.
     function exists(uint256 tokenId) external view override returns (bool) {
@@ -194,7 +203,7 @@ contract Handles is ERC721Upgradeable, IHandles {
     /// @dev Returns true if this contract implements the interface defined by `interfaceId`.
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override(ERC721Upgradeable, IERC165Upgradeable) returns (bool) {
+    ) public view virtual override(ERC721Upgradeable, ERC2981 ,IERC165Upgradeable) returns (bool) {
         return (ERC721Upgradeable.supportsInterface(interfaceId));
     }
 
