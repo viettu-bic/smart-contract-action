@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 contract TestERC721 is ERC721 {
-    uint256 private _nextTokenId;
+    uint256 public _nextTokenId;
 
     constructor() ERC721("TestERC721", "TERC721") {}
 
