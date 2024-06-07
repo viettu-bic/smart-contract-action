@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract BicForwarder {
+interface IBicForwarder {
     struct RequestData {
         address from;
         address to;
@@ -9,6 +9,10 @@ contract BicForwarder {
         uint256 value;
     }
 
+    function forwardRequest(RequestData memory requestData) external;
+}
+
+contract BicForwarder is IBicForwarder {
     constructor() {}
 
     function forwardRequest(RequestData memory requestData) public {

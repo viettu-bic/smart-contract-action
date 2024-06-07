@@ -19,6 +19,8 @@ interface IMarketplace {
 
     function createAuction(AuctionParameters calldata _params) external returns (uint256 auctionId);
 
+    function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external payable;
+
     enum Status {
         UNSET,
         CREATED,

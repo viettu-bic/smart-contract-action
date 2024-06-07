@@ -47,7 +47,7 @@ contract TestMarketplace is IMarketplace, ERC2771Context {
         return auctionId += 1;
     }
 
-    function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external {
+    function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external payable {
         require(
             _bidAmount > 0,
             "Marketplace: Bid amount must be greater than 0"
