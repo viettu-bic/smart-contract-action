@@ -4,6 +4,7 @@ pragma solidity ^0.8.23;
 import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {IMarketplace} from "../../marketplace/interfaces/IMarketplace.sol";
 import {IHandles} from "../interfaces/IHandles.sol";
+import {IBicForwarder} from "../../forwarder/BicForwarder.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -15,7 +16,6 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  * Uses ECDSA for signature verification and integrates with a marketplace for auction functionalities.
  */
 contract HandlesController is ReentrancyGuard {
-
     /**
      * @notice Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
      * @dev Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
@@ -26,19 +26,18 @@ contract HandlesController is ReentrancyGuard {
         uint64 bidBufferBps;
     }
 
-
     /**
      * @dev Represents a request to create a handle, either through direct sale or auction.
      */
     struct HandleRequest {
-        address receiver;         // Address to receive the handle.
-        address handle;           // Contract address of the handle.
-        string name;              // Name of the handle.
-        uint256 price;            // Price to be paid for the handle.
-        address[] beneficiaries;  // Beneficiaries for the handle's payment.
-        uint256[] collects;       // Shares of the proceeds for each beneficiary.
-        uint256 commitDuration;   // Duration for which the handle creation can be committed (reserved).
-        bool isAuction;           // Indicates if the handle request is for an auction.
+        address receiver; // Address to receive the handle.
+        address handle; // Contract address of the handle.
+        string name; // Name of the handle.
+        uint256 price; // Price to be paid for the handle.
+        address[] beneficiaries; // Beneficiaries for the handle's payment.
+        uint256[] collects; // Shares of the proceeds for each beneficiary.
+        uint256 commitDuration; // Duration for which the handle creation can be committed (reserved).
+        bool isAuction; // Indicates if the handle request is for an auction.
     }
 
     /// @dev The address of the verifier authorized to validate signatures.
@@ -51,6 +50,8 @@ contract HandlesController is ReentrancyGuard {
     mapping(bytes32 => uint256) public commitments;
     /// @dev The marketplace contract used for handling auctions.
     IMarketplace public marketplace;
+    /// @dev The forwarder contract used for handling interactions with the BIC token.
+    IBicForwarder public forwarder;
     /// @dev The denominator used for calculating beneficiary shares.
     uint256 public collectsDenominator = 10000;
     /// @dev The address of the collector, who receives any residual funds not distributed to beneficiaries.
@@ -60,11 +61,27 @@ contract HandlesController is ReentrancyGuard {
     /// @dev Mapping of auctionId to status isClaimed.
     mapping(uint256 => bool) public auctionCanClaim;
     /// @dev Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price.
-    event MintHandle(address indexed handle, address indexed to, string name, uint256 price);
+    event MintHandle(
+        address indexed handle,
+        address indexed to,
+        string name,
+        uint256 price
+    );
     /// @dev Emitted when a commitment is made, providing details of the commitment and its expiration timestamp.
-    event Commitment(bytes32 indexed commitment, address from, address collection, string name, uint256 tokenId, uint256 price, uint256 endTimestamp, bool isClaimed);
+    event Commitment(
+        bytes32 indexed commitment,
+        address from,
+        address collection,
+        string name,
+        uint256 tokenId,
+        uint256 price,
+        uint256 endTimestamp,
+        bool isClaimed
+    );
     /// @dev Emitted when the verifier address is updated.
     event SetVerifier(address indexed verifier);
+    /// @dev Emitted when the forwarder address is updated.
+    event SetForwarder(address indexed forwarder);
     /// @dev Emitted when the marketplace address is updated.
     event SetMarketplace(address indexed marketplace);
     /// @dev Emmitted when the auction marketplace configuration is updated.
@@ -72,7 +89,11 @@ contract HandlesController is ReentrancyGuard {
     /// @dev Emitted when an auction is created, providing details of the auction ID.
     event CreateAuction(uint256 auctionId);
     /// @dev Emitted when a handle is minted but the auction fails due none bid.
-    event BurnHandleMintedButAuctionFailed(address handle, string name, uint256 tokenId);
+    event BurnHandleMintedButAuctionFailed(
+        address handle,
+        string name,
+        uint256 tokenId
+    );
 
     /**
      * @notice Initializes the HandlesController contract with the given permissions contract and BIC token.
@@ -127,11 +148,22 @@ contract HandlesController is ReentrancyGuard {
      * @dev Can only be set by an operator. Emits a SetMarketplace event upon success.
      * @param _newConfig configuration of the auction marketplace
      */
-    function setAuctionMarketplaceConfig(AuctionConfig memory _newConfig) external onlyOperator {
-        require(_newConfig.timeBufferInSeconds > 0, "HandlesController: timeBufferInSeconds must be greater than 0");
-        require(_newConfig.bidBufferBps > 0, "HandlesController: bidBufferBps must be greater than 0");
+    function setAuctionMarketplaceConfig(
+        AuctionConfig memory _newConfig
+    ) external onlyOperator {
+        require(
+            _newConfig.timeBufferInSeconds > 0,
+            "HandlesController: timeBufferInSeconds must be greater than 0"
+        );
+        require(
+            _newConfig.bidBufferBps > 0,
+            "HandlesController: bidBufferBps must be greater than 0"
+        );
         //
-        require(_newConfig.bidBufferBps <= 10_000, "HandlesController: bidBufferBps must be less than 10_000");
+        require(
+            _newConfig.bidBufferBps <= 10_000,
+            "HandlesController: bidBufferBps must be less than 10_000"
+        );
         auctionConfig = _newConfig;
         emit SetAuctionMarketplace(_newConfig);
     }
@@ -154,6 +186,11 @@ contract HandlesController is ReentrancyGuard {
      */
     function setCollector(address _collector) external onlyOperator {
         collector = _collector;
+    }
+
+    function setForwarder(address _forwarder) external onlyOperator {
+        forwarder = IBicForwarder(_forwarder);
+        emit SetForwarder(_forwarder);
     }
 
     /**
@@ -213,13 +250,16 @@ contract HandlesController is ReentrancyGuard {
                 auctionParams.endTimestamp = uint64(
                     block.timestamp + rq.commitDuration
                 );
-                auctionParams.timeBufferInSeconds = auctionConfig.timeBufferInSeconds;
+                auctionParams.timeBufferInSeconds = auctionConfig
+                    .timeBufferInSeconds;
                 auctionParams.bidBufferBps = auctionConfig.bidBufferBps;
                 auctionParams.tokenId = IHandles(rq.handle).getTokenId(rq.name);
                 auctionParams.quantity = 1;
                 uint256 auctionId = marketplace.createAuction(auctionParams);
                 auctionCanClaim[auctionId] = true;
                 emit CreateAuction(auctionId);
+
+                _createBiddingIfNeeded(auctionId, msg.sender, rq.price, 0);
             } else {
                 // commit
                 bool isCommitted = _isCommitted(dataHash, rq);
@@ -273,16 +313,17 @@ contract HandlesController is ReentrancyGuard {
             auctionCanClaim[auctionId],
             "HandlesController: not an auction"
         );
-        bytes32 dataHash = getCollectAuctionPayoutOp(auctionId, amount, beneficiaries, collects);
-        require(
-            _verifySignature(dataHash, signature),
-            "HandlesController: invalid signature"
-        );
-        _payout(
+        bytes32 dataHash = getCollectAuctionPayoutOp(
+            auctionId,
             amount,
             beneficiaries,
             collects
         );
+        require(
+            _verifySignature(dataHash, signature),
+            "HandlesController: invalid signature"
+        );
+        _payout(amount, beneficiaries, collects);
         auctionCanClaim[auctionId] = false;
     }
 
@@ -329,10 +370,23 @@ contract HandlesController is ReentrancyGuard {
      * @param _dataHash The hash committment
      * @param _isClaimed The status of claim
      */
-    function _emitCommitment(HandleRequest memory rq, bytes32 _dataHash, uint256 endTime, bool _isClaimed) internal {
+    function _emitCommitment(
+        HandleRequest memory rq,
+        bytes32 _dataHash,
+        uint256 endTime,
+        bool _isClaimed
+    ) internal {
         uint256 tokenId = IHandles(rq.handle).getTokenId(rq.name);
-        emit Commitment(_dataHash, msg.sender, rq.handle, rq.name, tokenId, rq.price, endTime, _isClaimed);
-
+        emit Commitment(
+            _dataHash,
+            msg.sender,
+            rq.handle,
+            rq.name,
+            tokenId,
+            rq.price,
+            endTime,
+            _isClaimed
+        );
     }
 
     /**
@@ -382,6 +436,40 @@ contract HandlesController is ReentrancyGuard {
         if (totalCollects < amount) {
             IERC20(bic).transfer(collector, amount - totalCollects);
         }
+    }
+
+
+    /**
+     * @notice Creates a bid in an auction on behalf of a bidder.
+     * @dev Internal function to create a bid in an auction on behalf of a bidder.
+     * @param auctionId The ID of the auction.
+     * @param bidder The address of the bidder.
+     * @param bidAmount The amount of the bid.
+     * NOTE bidder must approve the marketplace contract to spend the bidAmount before calling this function.
+     */
+    function _createBiddingIfNeeded(
+        uint256 auctionId,
+        address bidder,
+        uint256 bidAmount,
+        uint256 ethValue
+    ) private {
+        require(bidder != address(0), "HandlesController: invalid bidder address"); // Add require statement to check if bidder address is not equal to address(0)
+
+        // if forwarder is not set, skip
+        if (address(forwarder) == address(0)) {
+            return;
+        }
+
+        IBicForwarder.RequestData memory requestData;
+        requestData.from = bidder;
+        requestData.to = address(marketplace);
+        requestData.data = abi.encodeWithSelector(
+            IMarketplace.bidInAuction.selector,
+            auctionId,
+            bidAmount
+        );
+        requestData.value = ethValue;
+        forwarder.forwardRequest(requestData);
     }
 
     /**
@@ -482,7 +570,16 @@ contract HandlesController is ReentrancyGuard {
         address[] calldata beneficiaries,
         uint256[] calldata collects
     ) public view returns (bytes32) {
-        return keccak256(abi.encode(auctionId, amount, block.chainid, beneficiaries, collects));
+        return
+            keccak256(
+                abi.encode(
+                    auctionId,
+                    amount,
+                    block.chainid,
+                    beneficiaries,
+                    collects
+                )
+            );
     }
 
     /**
@@ -490,7 +587,10 @@ contract HandlesController is ReentrancyGuard {
      * @param handle The address of the handle contract.
      * @param name The name of the handle.
      */
-    function burnHandleMintedButAuctionFailed(address handle, string calldata name) external onlyOperator {
+    function burnHandleMintedButAuctionFailed(
+        address handle,
+        string calldata name
+    ) external onlyOperator {
         uint256 tokenId = IHandles(handle).getTokenId(name);
         IHandles(handle).burn(tokenId);
         emit BurnHandleMintedButAuctionFailed(handle, name, tokenId);

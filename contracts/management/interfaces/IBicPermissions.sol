@@ -6,4 +6,6 @@ interface IBicPermissions is IAccessControlEnumerable {
     function RECOVERY_ROLE() external pure returns (bytes32);
 
     function OPERATOR_ROLE() external pure returns (bytes32);
+
+    function CONTROLLER_ROLE() external pure returns (bytes32);
 }

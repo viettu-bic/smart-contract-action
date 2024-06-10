@@ -61,7 +61,5 @@ contract TestHandlesController {
         requestData.value = 0;
         
         forwarder.forwardRequest(requestData);
-        // packed bidding and send to forwarder
-
     }
 }

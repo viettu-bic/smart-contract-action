@@ -1,8 +1,8 @@
-import {ethers} from "hardhat";
-import {getEOAAccounts} from "../util/getEoaAccount";
-import {expect} from "chai";
-import {controller} from "../../../typechain-types/contracts/namespaces";
-import {parseEther} from "ethers";
+import { ethers } from "hardhat";
+import { getEOAAccounts } from "../util/getEoaAccount";
+import { expect } from "chai";
+import { controller } from "../../../typechain-types/contracts/namespaces";
+import { parseEther } from "ethers";
 
 
 describe('Controller', function () {
@@ -10,6 +10,7 @@ describe('Controller', function () {
     let wallet1;
     let wallet2;
     let wallet3;
+    let wallet4; // Test for create auction and bid in once transaction
     let randomWalletAddress;
 
     let bicPermissionsEnumerable;
@@ -18,7 +19,7 @@ describe('Controller', function () {
     let bic;
 
     beforeEach(async () => {
-        ({deployer, wallet1, wallet2, wallet3} = await getEOAAccounts());
+        ({ deployer, wallet1, wallet2, wallet3, wallet4 } = await getEOAAccounts());
 
         const Handles = await ethers.getContractFactory('Handles');
         const handle = await Handles.deploy();
@@ -54,6 +55,7 @@ describe('Controller', function () {
 
         randomWalletAddress = ethers.Wallet.createRandom().address;
         await handlesController.setCollector(randomWalletAddress as any);
+
     });
 
     it('Controller: should be update successful Auction config', async function () {
@@ -66,8 +68,8 @@ describe('Controller', function () {
         const newConfig = [100n, 200n, 300n];
         const updateTx = await handlesController.setAuctionMarketplaceConfig(newConfig);
         await expect(updateTx)
-          .to.emit(handlesController, "SetAuctionMarketplace")
-          .withArgs(newConfig);
+            .to.emit(handlesController, "SetAuctionMarketplace")
+            .withArgs(newConfig);
         const nextAuctionConfig = await handlesController.auctionConfig();
 
         expect(nextAuctionConfig[0]).to.equal(newConfig[0]);
@@ -82,7 +84,7 @@ describe('Controller', function () {
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
         const mintName = 'testt'
         const currentTime = Math.floor(Date.now() / 1000);
-        const nextHour = currentTime + 60*60;
+        const nextHour = currentTime + 60 * 60;
         const price = parseEther('1');
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
@@ -109,8 +111,8 @@ describe('Controller', function () {
         const tokenId = await usernameHandles.getTokenId(mintName);
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
-        expect(await bic.balanceOf(wallet2.address)).to.equal(price/10n);
-        expect(await bic.balanceOf(randomWalletAddress)).to.equal(price*9n/10n);
+        expect(await bic.balanceOf(wallet2.address)).to.equal(price / 10n);
+        expect(await bic.balanceOf(randomWalletAddress)).to.equal(price * 9n / 10n);
     });
 
     it('Controller: commit to mint nft', async function () {
@@ -118,19 +120,19 @@ describe('Controller', function () {
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         const currentTime = Math.floor(Date.now() / 1000);
-        const nextHour = currentTime + 60*60;
+        const nextHour = currentTime + 60 * 60;
         const mintName = 'testt'
         const tokenId = await usernameHandles.getTokenId(mintName);
         const price = ethers.parseEther('1');
-        const commitDuration = 60*60*24*30;
+        const commitDuration = 60 * 60 * 24 * 30;
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
             name: mintName,
             price: price,
-            beneficiaries: [wallet2.address,wallet3.address],
+            beneficiaries: [wallet2.address, wallet3.address],
             collects: [1000, 2000],
-            commitDuration:commitDuration,
+            commitDuration: commitDuration,
             isAuction: false
         } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
@@ -139,16 +141,16 @@ describe('Controller', function () {
             handle: usernameHandles.target,
             name: mintName,
             price: price,
-            beneficiaries: [wallet2.address,wallet3.address],
+            beneficiaries: [wallet2.address, wallet3.address],
             collects: [1000, 2000],
-            commitDuration:commitDuration,
+            commitDuration: commitDuration,
             isAuction: false
         } as any, nextHour as any, currentTime as any, signature as any);
         const blockData = await ethers.provider.getBlock(txCommit.blockNumber);
 
         await expect(txCommit)
-          .to.emit(handlesController, "Commitment")
-          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, BigInt((blockData?.timestamp || 0) + commitDuration), false);
+            .to.emit(handlesController, "Commitment")
+            .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, BigInt((blockData?.timestamp || 0) + commitDuration), false);
 
         const commitTime = await handlesController.commitments(dataHash);
         try {
@@ -161,13 +163,13 @@ describe('Controller', function () {
         console.log('new')
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
         const newCurrentTime = Math.floor(Date.now() / 1000) + commitDuration;
-        const newNextHour = newCurrentTime + 60*60;
+        const newNextHour = newCurrentTime + 60 * 60;
         const newDataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
             name: mintName,
             price: price,
-            beneficiaries: [wallet2.address,wallet3.address],
+            beneficiaries: [wallet2.address, wallet3.address],
             collects: [1000, 2000],
             commitDuration: commitDuration,
             isAuction: false
@@ -178,7 +180,7 @@ describe('Controller', function () {
             handle: usernameHandles.target,
             name: mintName,
             price: price,
-            beneficiaries: [wallet2.address,wallet3.address],
+            beneficiaries: [wallet2.address, wallet3.address],
             collects: [1000, 2000],
             commitDuration: commitDuration,
             isAuction: false
@@ -186,24 +188,24 @@ describe('Controller', function () {
         const blockDataAtClaim = await ethers.provider.getBlock(txClaim.blockNumber);
 
         await expect(txClaim)
-          .to.emit(handlesController, "Commitment")
-          .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, 0, true);
+            .to.emit(handlesController, "Commitment")
+            .withArgs(dataHash, wallet1.address, usernameHandles.target, mintName, tokenId, price, 0, true);
 
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(wallet1.address);
         expect(initialBicBalance - price).to.equal(await bic.balanceOf(wallet1.address));
-        expect(await bic.balanceOf(wallet2.address)).to.equal(price/10n);
-        expect(await bic.balanceOf(wallet3.address)).to.equal(price/5n);
-        expect(await bic.balanceOf(randomWalletAddress)).to.equal(price*7n/10n);
+        expect(await bic.balanceOf(wallet2.address)).to.equal(price / 10n);
+        expect(await bic.balanceOf(wallet3.address)).to.equal(price / 5n);
+        expect(await bic.balanceOf(randomWalletAddress)).to.equal(price * 7n / 10n);
     })
 
     it('Controller: mint nft and create auction', async function () {
         const TestMarketplace = await ethers.getContractFactory('TestMarketplace');
-        const testMarketplace = await TestMarketplace.deploy();
+        const testMarketplace = await TestMarketplace.deploy(bic.target, []);
         await handlesController.setMarketplace(testMarketplace.target as any);
         const mintName = 'testt'
         const price = ethers.parseEther('1');
-        const currentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
-        const nextHour = currentTime + 60*60;
+        const currentTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+        const nextHour = currentTime + 60 * 60;
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -211,7 +213,7 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address],
             collects: [1000],
-            commitDuration: 60*60*24*30,
+            commitDuration: 60 * 60 * 24 * 30,
             isAuction: true
         } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
@@ -222,7 +224,7 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address],
             collects: [1000],
-            commitDuration: 60*60*24*30,
+            commitDuration: 60 * 60 * 24 * 30,
             isAuction: true
         } as any, nextHour as any, currentTime as any, signature as any);
         const tokenId = await usernameHandles.getTokenId(mintName);
@@ -236,18 +238,19 @@ describe('Controller', function () {
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
         await handlesController.connect(wallet1).collectAuctionPayout(auctionId, ethers.parseEther('1'), [wallet3.address], [1000], collectSignature);
 
-        expect(await bic.balanceOf(wallet3.address)).to.equal(ethers.parseEther('1')/10n);
-        expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1')*9n/10n);
+        expect(await bic.balanceOf(wallet3.address)).to.equal(ethers.parseEther('1') / 10n);
+        expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1') * 9n / 10n);
     })
 
     it('Controller: mint nft and create auction but burn it because bid fail and can create again', async function () {
         const TestMarketplace = await ethers.getContractFactory('TestMarketplace');
-        const testMarketplace = await TestMarketplace.deploy();
+        const testMarketplace = await TestMarketplace.deploy(bic.target, []);
+
         await handlesController.setMarketplace(testMarketplace.target as any);
         const mintName = 'testt'
         const price = ethers.parseEther('1');
-        const currentTime = Math.floor(Date.now() / 1000) + 60*60*24*30;
-        const nextHour = currentTime + 60*60;
+        const currentTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+        const nextHour = currentTime + 60 * 60;
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -255,7 +258,7 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address],
             collects: [1000],
-            commitDuration: 60*60*24*30,
+            commitDuration: 60 * 60 * 24 * 30,
             isAuction: true
         } as any, nextHour as any, currentTime as any);
         const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
@@ -266,7 +269,7 @@ describe('Controller', function () {
             price: price,
             beneficiaries: [wallet2.address],
             collects: [1000],
-            commitDuration: 60*60*24*30,
+            commitDuration: 60 * 60 * 24 * 30,
             isAuction: true
         } as any, nextHour as any, currentTime as any, signature as any);
         const tokenId = await usernameHandles.getTokenId(mintName);
@@ -275,7 +278,7 @@ describe('Controller', function () {
         expect(auctionId).to.equal(1n);
 
         // let assume that auction fail so BIC return to controller
-        await testMarketplace.collectAuctionTokens((auctionId -1n) as any);
+        await testMarketplace.collectAuctionTokens((auctionId - 1n) as any);
         expect(await usernameHandles.ownerOf(tokenId)).to.equal(handlesController.target);
         await handlesController.burnHandleMintedButAuctionFailed(usernameHandles.target, mintName);
         expect(await usernameHandles.exists(tokenId)).to.equal(false);
