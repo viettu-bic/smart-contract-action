@@ -60,6 +60,8 @@ contract TestMarketplace is IMarketplace, ERC2771Context {
         auction.highestBidder = sender;
         auction.bidAmount = _bidAmount;
         auctions[_auctionId] = auction;
+
+        emit NewBid(auctionId, sender, address(bic), _bidAmount);
     }
 
     //    function collectAuctionPayout(uint256 _auctionId) external {
