@@ -5,12 +5,22 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 contract TestERC721 is ERC721 {
-    uint256 private _nextTokenId;
+    uint256 public _nextTokenId;
 
-    constructor() ERC721("TestERC721", "TERC721") {}
+    constructor() ERC721("TestERC721", "TERC721") {
+    }
 
     function safeMint() public {
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
+    }
+
+    function mint() public {
+        uint256 tokenId = _nextTokenId++;
+        _mint(msg.sender, tokenId);
+    }
+
+    function _baseURI() internal pure override returns (string memory) {
+        return "https://api.pudgypenguins.io/lil/";
     }
 }
