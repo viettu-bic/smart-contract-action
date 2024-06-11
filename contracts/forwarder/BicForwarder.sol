@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
 
 interface IBicForwarder {
+    event Requested(address indexed controller, address indexed from, address indexed to, bytes data, uint256 value);
     struct RequestData {
         address from;
         address to;
@@ -26,7 +27,7 @@ contract BicForwarder is IBicForwarder {
     modifier onController() {
         require(
             bicPermissions.hasRole(
-                bicPermissions.OPERATOR_ROLE(),
+                bicPermissions.CONTROLLER_ROLE(),
                 msg.sender
             ),
             "HandlesController: caller is not a controller"
@@ -34,7 +35,7 @@ contract BicForwarder is IBicForwarder {
         _;
     }
 
-    function forwardRequest(RequestData memory requestData) external override {
+    function forwardRequest(RequestData memory requestData) external onController override {
         (bool success, bytes memory returnData) = requestData.to.call{value: requestData.value}(
             abi.encodePacked(requestData.data, requestData.from)
         );
@@ -43,6 +44,7 @@ contract BicForwarder is IBicForwarder {
             string memory reason = _getRevertReason(returnData);
             revert(reason);
         }
+        emit Requested(msg.sender, requestData.from, requestData.to, requestData.data, requestData.value);
     }
 
     /**
