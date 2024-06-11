@@ -15,19 +15,22 @@ interface IBicForwarder {
 }
 
 contract BicForwarder is IBicForwarder {
+    bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
     IBicPermissions public immutable bicPermissions;
+
 
     constructor(IBicPermissions _bp) {
         bicPermissions = _bp;
     }
 
     /**
-     * @notice Ensures that the function is called only by the operator.
+     * @notice Ensures that the function is called only by the controller.
      */
     modifier onController() {
         require(
             bicPermissions.hasRole(
-                bicPermissions.CONTROLLER_ROLE(),
+                // bicPermissions.CONTROLLER_ROLE(),
+                CONTROLLER_ROLE,
                 msg.sender
             ),
             "HandlesController: caller is not a controller"

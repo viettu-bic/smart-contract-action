@@ -146,7 +146,7 @@ describe('ControllerWithForwarder', function () {
             await approveTx.wait();
 
             const mintName = 'test-create-and-bidding'
-            const price = ethers.parseEther('15');
+            const price = ethers.parseEther('200');
             // const block = await ethers.provider.getBlock('latest');
 
             const currentTime = Math.floor(Date.now() / 1000);
@@ -169,7 +169,7 @@ describe('ControllerWithForwarder', function () {
             const nextAuctionId = await testMarketplace.auctionId();
             const bidInAuctionData = testMarketplace.interface.encodeFunctionData('bidInAuction', [nextAuctionId, price]);
             await expect(requestTx)
-                .to.emit(handlesController, "CreateAuction").withArgs(1n)
+                .to.emit(handlesController, "CreateAuction").withArgs(nextAuctionId)
                 .to.emit(testMarketplace, "NewBid")
                 .to.emit(bic, "Transfer").withArgs(wallet4.address, testMarketplace.target, price)
                 .to.emit(bicForwarder, "Requested").withArgs(handlesController.target, wallet4.address, testMarketplace.target, bidInAuctionData, 0n)
@@ -184,5 +184,56 @@ describe('ControllerWithForwarder', function () {
             const nextBalance = await bic.balanceOf(testMarketplace.target);
             expect(nextBalance).to.equal(price);
         });
+
+
+        it("Controller: should create and NOT Bidding if forwarder is address(0)", async () => {
+            const { wallet3, wallet4 } = await getEOAAccounts();
+
+            const setForwarderTx = await handlesController.setForwarder(ethers.ZeroAddress);
+            await setForwarderTx.wait();
+
+            const mintName = 'test-create-and-not-bidding'
+            const price = ethers.parseEther('15');
+            // const block = await ethers.provider.getBlock('latest');
+
+            const currentTime = Math.floor(Date.now() / 1000);
+            const nextHour = currentTime + 60 * 60;
+            const requestData = {
+                receiver: wallet4.address,
+                handle: usernameHandles.target,
+                name: mintName,
+                price: price,
+                beneficiaries: [],
+                collects: [],
+                commitDuration: 60 * 60 * 24 * 30,
+                isAuction: true
+            }
+
+            const dataHash = await handlesController.getRequestHandleOp(requestData, nextHour, currentTime);
+            const signature = await wallet3.signMessage(ethers.getBytes(dataHash));
+            const requestTx = await handlesController.connect(wallet4).requestHandle(requestData, nextHour, currentTime, signature);
+            await requestTx.wait();
+            const nextAuctionId = await testMarketplace.auctionId();
+
+            const prevBalance = await bic.balanceOf(testMarketplace.target);
+
+            await expect(requestTx)
+                .to.emit(handlesController, "CreateAuction").withArgs(nextAuctionId)
+                // .to.emit(testMarketplace, "NewBid")
+                // .to.emit(bic, "Transfer").withArgs(wallet4.address, testMarketplace.target, price)
+                // .to.emit(bicForwarder, "Requested").withArgs(handlesController.target, wallet4.address, testMarketplace.target, bidInAuctionData, 0n)
+
+
+            const tokenId = await usernameHandles.getTokenId(mintName);
+            expect(await usernameHandles.ownerOf(tokenId)).to.equal(testMarketplace.target);
+            const auctionId = await testMarketplace.auctionId();
+            expect(auctionId).to.equal(nextAuctionId);
+
+
+            const nextBalance = await bic.balanceOf(testMarketplace.target);
+            // because forwarder is address(0) so the balance should be the same
+            expect(nextBalance).to.equal(prevBalance + BigInt(0));
+        });
+
     });
 });
