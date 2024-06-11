@@ -121,6 +121,26 @@ describe("Handles", function () {
     console.log(uri);
   });
 
+  it("Handles: ERC2981", async function () {
+    const mintName = "erc2981";
+    const salePrice = ethers.parseEther("15");
+    await bicHandles.connect(wallet1).mintHandle(wallet2.address, mintName);
+    const tokenId = await bicHandles.getTokenId(mintName);
+    const royaltyPrev = await bicHandles.royaltyInfo(tokenId, salePrice);
+    // Expect 0% and address(0)
+    expect(royaltyPrev[0]).to.equal(ethers.ZeroAddress);
+    expect(royaltyPrev[1]).to.equal(0);
+   
+    const feeNumerator = BigInt(1000);
+    const feeDenominator = BigInt(10000);
+    const setRoyaltyTx = await bicHandles.connect(deployer).setTokenRoyalty(tokenId, deployer.address, feeNumerator);
+    await setRoyaltyTx.wait();
+    const royaltyNext = await bicHandles.royaltyInfo(tokenId, salePrice);
+    expect(royaltyNext[0]).to.equal(deployer.address);
+    expect(royaltyNext[1]).to.equal((salePrice * feeNumerator) / feeDenominator);
+
+  });
+
   it("Handles: should not create nft if not controller", async function () {
     const mintName = "testt";
     await expect(
