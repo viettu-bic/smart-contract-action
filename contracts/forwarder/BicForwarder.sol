@@ -56,12 +56,17 @@ contract BicForwarder is IBicForwarder {
      * @return The revert reason string
      */
     function _getRevertReason(bytes memory _returnData) internal pure returns (string memory) {
+        // If the _returnData length is less than 68, then the transaction failed silently (without a revert message)
+        // 68 bytes = 4 bytes (function selector) + 32 bytes (offset) + 32 bytes (string length)
         if (_returnData.length < 68) {
             return "Forwarding request failed";
         }
         assembly {
+            // Slice the sighash (first 4 bytes of the _returnData)
+            // This skips the function selector (0x08c379a0 for Error(string)) to get to the actual error message
             _returnData := add(_returnData, 0x04)
         }
+        // Decode the remaining data as a string, which contains the actual revert message
         return abi.decode(_returnData, (string));
     }
 }
