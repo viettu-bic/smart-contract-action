@@ -219,9 +219,9 @@ describe('ControllerWithForwarder', function () {
 
             await expect(requestTx)
                 .to.emit(handlesController, "CreateAuction").withArgs(nextAuctionId)
-                // .to.emit(testMarketplace, "NewBid")
-                // .to.emit(bic, "Transfer").withArgs(wallet4.address, testMarketplace.target, price)
-                // .to.emit(bicForwarder, "Requested").withArgs(handlesController.target, wallet4.address, testMarketplace.target, bidInAuctionData, 0n)
+            // .to.emit(testMarketplace, "NewBid")
+            // .to.emit(bic, "Transfer").withArgs(wallet4.address, testMarketplace.target, price)
+            // .to.emit(bicForwarder, "Requested").withArgs(handlesController.target, wallet4.address, testMarketplace.target, bidInAuctionData, 0n)
 
 
             const tokenId = await usernameHandles.getTokenId(mintName);
