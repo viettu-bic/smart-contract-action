@@ -12,12 +12,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @dev This contract uses OpenZeppelin's Initializable and ReentrancyGuard to provide initialization and reentrancy protection
 contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @notice Emitted when tokens are released to the beneficiary
+    /// @param from The address of the account that executed the release
     /// @param beneficiary The address of the beneficiary who received the tokens
     /// @param amount The amount of tokens released
     /// @param currentRewardStacks The current stack count of rewards released
     /// @param stacks The total number of stacks that will be released
     /// @param timestamp The block timestamp when the release occurred
-    event ERC20Released(address beneficiary, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
+    event ERC20Released(address from, address beneficiary, uint256 amount, uint256 currentRewardStacks, uint256 stacks, uint64 timestamp);
 
     /// @notice The denominator used for calculating percentages, 100% = 10_000, 10% = 1_000, 1% = 100, 0.1% = 10, 0.01% = 1
     /// @dev This is used to calculate the redeem rate
@@ -158,7 +159,7 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
         _released += amount;
         _currentRewardStacks += uint64(counter);
         SafeERC20.safeTransfer(IERC20(_erc20), _beneficiary, amount);
-        emit ERC20Released(_beneficiary, amount, _currentRewardStacks, counter, uint64(block.timestamp));
+        emit ERC20Released(msg.sender, _beneficiary, amount, _currentRewardStacks, counter, uint64(block.timestamp));
     }
 
     /// @dev Internal function to calculate the vesting schedule and determine releasable amount and reward stacks
