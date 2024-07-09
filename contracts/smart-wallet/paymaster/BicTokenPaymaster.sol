@@ -41,6 +41,8 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     event BlockPlaced(address indexed _user);
 
     event BlockReleased(address indexed _user);
+
+    event ChargeFee(address sender, uint256 _fee);
     /*
      * @param accountFactory the factory that creates accounts. used to validate account creation.
      * @param _entryPoint the entry point contract to use.
@@ -147,6 +149,8 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
         uint256 charge = getTokenValueOfEth(actualGasCost + COST_OF_POST);
         //actualGasCost is known to be no larger than the above requiredPreFund, so the transfer should succeed.
         _transfer(sender, address(this), charge);
+
+        emit ChargeFee(sender, charge);
     }
 
     function addToBlockedList (address _user) public onlyOwner {
