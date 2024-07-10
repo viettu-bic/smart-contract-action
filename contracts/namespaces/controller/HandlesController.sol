@@ -78,6 +78,12 @@ contract HandlesController is ReentrancyGuard {
         uint256 endTimestamp,
         bool isClaimed
     );
+    /// @dev Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price.
+    event ShareRevenue(
+        address from,
+        address to,
+        uint256 amount
+    );
     /// @dev Emitted when the verifier address is updated.
     event SetVerifier(address indexed verifier);
     /// @dev Emitted when the forwarder address is updated.
@@ -432,6 +438,7 @@ contract HandlesController is ReentrancyGuard {
             uint256 collect = (amount * collects[i]) / collectsDenominator;
             IERC20(bic).transfer(beneficiaries[i], collect);
             totalCollects += collect;
+            emit ShareRevenue(msg.sender, beneficiaries[i], collect);
         }
         if (totalCollects < amount) {
             IERC20(bic).transfer(collector, amount - totalCollects);
