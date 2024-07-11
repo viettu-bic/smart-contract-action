@@ -3,7 +3,7 @@ import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers, upgrades } from "hardhat";
 
 import { expect } from "chai";
-import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20 } from "../../../typechain-types";
+import { BicAccount, EntryPoint, BicAccountFactory, BicAccount2, TestERC20 } from "../../../typechain-types";
 import { contractFixture } from "../util/fixtures";
 
 describe("BicAccountUUPS", function () {
@@ -18,7 +18,6 @@ describe("BicAccountUUPS", function () {
   let beneficiary: SignerWithAddress;
   let operator: SignerWithAddress;
   let entryPoint: EntryPoint;
-  let bicPermissionsEnumerable: BicPermissions;
   let bicAccountFactory: BicAccountFactory;
   let bicAccountV2: BicAccount2;
   let testERC20: TestERC20;
@@ -36,7 +35,6 @@ describe("BicAccountUUPS", function () {
       beneficiarySigner,
       operatorSigner,
       entryPointContract,
-      bicPermissionsEnumerableContract,
       bicAccountFactoryContract,
       bicAccountV2Contract,
       testERC20Contract,
@@ -49,7 +47,6 @@ describe("BicAccountUUPS", function () {
     operator = operatorSigner;
 
     entryPoint = entryPointContract;
-    bicPermissionsEnumerable = bicPermissionsEnumerableContract;
     bicAccountFactory = bicAccountFactoryContract;
     bicAccountV2 = bicAccountV2Contract;
     testERC20 = testERC20Contract;
@@ -97,7 +94,7 @@ describe("BicAccountUUPS", function () {
   };
 
   describe("BicAccount should work properly", () => {
-    
+
     it("Jack should create account properly", async () => {
       // Prepare for create account uer operation
       const smartWalletAddress = await bicAccountFactory.getFunction("getAddress")(Jack.address, salt);
@@ -304,11 +301,6 @@ describe("BicAccountUUPS", function () {
     it("only owner or operator can do upgrade", async () => {
       // Expectation
       await expect(smartWalletForLily.connect(Jack).upgradeTo(bicAccountV2.target)).to.be.reverted;
-      await expect(smartWalletForLily.connect(operator).upgradeTo(bicAccountV2.target)).to.be.reverted;
-
-      // Grant operator role for operator
-      const OPERATOR_ROLE = await bicPermissionsEnumerable.OPERATOR_ROLE();
-      await bicPermissionsEnumerable.connect(deployer).grantRole(OPERATOR_ROLE, operator);
 
       expect(await smartWalletForLily.version()).equal(1n);
       await smartWalletForLily.connect(operator).upgradeTo(bicAccountV2.target);
@@ -327,13 +319,10 @@ describe("BicAccountUUPS", function () {
       await entryPoint.waitForDeployment();
       const entryPointAddress = await entryPoint.getAddress();
 
-      const bicPermissionsEnumerableContract = await ethers.deployContract("BicPermissions");
-      await bicPermissionsEnumerableContract.waitForDeployment();
-
       const BicAccountFactory = await ethers.getContractFactory("BicAccountFactory");
       const bicAccountFactory = await BicAccountFactory.deploy(
         entryPointAddress,
-        bicPermissionsEnumerableContract.target
+        operator.address
       );
       await bicAccountFactory.waitForDeployment();
       const bicAccountFactoryAddress = bicAccountFactory.target;

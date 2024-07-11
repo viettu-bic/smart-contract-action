@@ -41,6 +41,7 @@ describe("BicForwarder With 3rd Marketplace", function () {
         const approveTx = await testERC20.connect(wallet1).approve(testMarketplace.target, bidAmount);
         await approveTx.wait();
 
+        await bicForwarder.addController(deployer.address);
 
         const bidData = testMarketplace.interface.encodeFunctionData("bidInAuction", [auctionId, bidAmount]);
         const bidAuctionByFW = await bicForwarder.connect(deployer).forwardRequest({

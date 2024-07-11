@@ -2,7 +2,7 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { BicAccount, EntryPoint, BicPermissions, BicAccountFactory, BicAccount2, TestERC20, TestERC721 } from "../../../typechain-types";
+import { BicAccount, EntryPoint, BicAccountFactory, BicAccount2, TestERC20, TestERC721 } from "../../../typechain-types";
 import { contractFixture } from "../util/fixtures";
 
 describe("BicAccount", function() {
@@ -17,7 +17,6 @@ describe("BicAccount", function() {
     let beneficiary: SignerWithAddress;
     let operator: SignerWithAddress;
     let entryPoint: EntryPoint;
-    let bicPermissionsEnumerable: BicPermissions;
     let bicAccountFactory: BicAccountFactory;
     let bicAccountV2: BicAccount2;
     let testERC20: TestERC20;
@@ -51,7 +50,6 @@ describe("BicAccount", function() {
           beneficiarySigner,
           operatorSigner,
           entryPointContract,
-          bicPermissionsEnumerableContract,
           bicAccountFactoryContract,
           bicAccountV2Contract,
           testERC20Contract,
@@ -64,7 +62,6 @@ describe("BicAccount", function() {
         operator = operatorSigner;
 
         entryPoint = entryPointContract;
-        bicPermissionsEnumerable = bicPermissionsEnumerableContract;
         bicAccountFactory = bicAccountFactoryContract;
         bicAccountV2 = bicAccountV2Contract;
         testERC20 = testERC20Contract;
@@ -160,7 +157,8 @@ describe("BicAccount", function() {
     });
 
     it("An smart wallet can not initialize more than one", async () => {
-      await expect(smartWalletForJack.initialize(Lily.address, bicPermissionsEnumerable.target)).to.be.reverted;
+        const randomWallet = ethers.Wallet.createRandom()
+      await expect(smartWalletForJack.initialize(Lily.address as any, randomWallet.address as any)).to.be.reverted;
     })
 
 });

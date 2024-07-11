@@ -3,7 +3,6 @@ pragma solidity ^0.8.23;
 
 import "../../contracts/smart-wallet/BicAccount.sol";
 import "../../contracts/smart-wallet/BicAccountFactory.sol";
-import "../../contracts/management/BicPermissions.sol";
 import "forge-std/Test.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@account-abstraction/contracts/core/EntryPoint.sol";
@@ -11,7 +10,6 @@ import "@account-abstraction/contracts/core/EntryPoint.sol";
 contract BicAccountFactoryTest is Test {
     BicAccountFactory public accountFactory;
     EntryPoint public entrypoint;
-    BicPermissions public permissions;
     uint256 public user1PKey = 0x1;
     address public user1 = vm.addr(user1PKey);
     uint256 public user2PKey = 0x2;
@@ -19,8 +17,7 @@ contract BicAccountFactoryTest is Test {
     address public randomExecuteer = address(0x3);
     function setUp() public {
         entrypoint = new EntryPoint();
-        permissions = new BicPermissions();
-        accountFactory = new BicAccountFactory(entrypoint, permissions);
+        accountFactory = new BicAccountFactory(entrypoint, randomExecuteer);
     }
 
 
