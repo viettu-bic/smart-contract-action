@@ -2,7 +2,6 @@
 pragma solidity ^0.8.23;
 
 import {BicAccount} from "../smart-wallet/BicAccount.sol";
-import {BicPermissions} from "./../management/BicPermissions.sol";
 
 import {IEntryPoint} from "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 

@@ -6,28 +6,23 @@ import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // Internal
-import {BicPermissions} from "../../management/BicPermissions.sol";
 import {IHandleTokenURI} from "../interfaces/IHandleTokenURI.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title Handle Token URI Generator
-/// @dev This contract is responsible for generating a token URI based on metadata elements associated with namespaces. It uses permission controls to manage who can set these metadata elements.
-/// @notice The contract leverages the BicPermissions contract to check for operator permissions.
-contract HandleTokenURI is IHandleTokenURI {
+/// @dev This contract is responsible for generating a token URI based on metadata elements associated with namespaces. It uses owner controls to manage who can set these metadata elements.
+contract HandleTokenURI is IHandleTokenURI, Ownable {
     /**
      * @notice using strings library for uint256
      */
     using Strings for uint256;
 
-    /// @notice The permissions contract used to manage operator roles.
-    BicPermissions public immutable permissions;
-    
     struct NameElement {
         string imageDescription; // Description of the image
         string imageURI; // URI for the image
     }
     mapping(string => NameElement) nameElements;
 
-    
     /// @notice Emitted when a name element is set
     /// @param imageDescription the description of the name (aka Beincom - Earning Username)
     /// @param imageURI the uri for svg background name image
@@ -36,21 +31,6 @@ contract HandleTokenURI is IHandleTokenURI {
         string imageDescription,
         string imageURI
     );
-
-    /// @notice Initializes the contract with the given permissions contract.
-    /// @param _permissions management
-    constructor(BicPermissions _permissions) {
-        permissions = _permissions;
-    }
-
-    /// @notice Ensures that the function is called only by the operator.
-    modifier onlyOperator() {
-        require(
-            permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender),
-            "only operator"
-        );
-        _;
-    }
 
     /// @notice Sets the metadata elements for a given namespace.
     /// @dev This function is accessible only to operators.
@@ -61,7 +41,7 @@ contract HandleTokenURI is IHandleTokenURI {
         string memory namespace,
         string memory imageDescription,
         string memory imageURI
-    ) external onlyOperator {
+    ) external onlyOwner {
         nameElements[namespace] = NameElement(imageDescription, imageURI);
         emit SetNameElement(namespace, imageDescription, imageURI);
     }

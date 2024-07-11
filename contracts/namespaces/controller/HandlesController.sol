@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.23;
 
-import {IBicPermissions} from "../../management/interfaces/IBicPermissions.sol";
 import {IMarketplace} from "../../marketplace/interfaces/IMarketplace.sol";
 import {IHandles} from "../interfaces/IHandles.sol";
 import {IBicForwarder} from "../../forwarder/BicForwarder.sol";
@@ -9,13 +8,14 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title HandlesController
  * @dev Manages operations related to handle auctions and direct handle requests, including minting and claim payouts.
  * Uses ECDSA for signature verification and integrates with a marketplace for auction functionalities.
  */
-contract HandlesController is ReentrancyGuard {
+contract HandlesController is ReentrancyGuard, Ownable {
     /**
      * @notice Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
      * @dev Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
@@ -44,8 +44,6 @@ contract HandlesController is ReentrancyGuard {
     address public verifier;
     /// @dev The BIC token contract address.
     IERC20 public bic;
-    /// @dev The permissions contract used to manage operator roles.
-    IBicPermissions public immutable _bicPermissions;
     /// @dev Mapping of commitments to their respective expiration timestamps. Used to manage the timing of commitments and auctions.
     mapping(bytes32 => uint256) public commitments;
     /// @dev The marketplace contract used for handling auctions.
@@ -102,10 +100,9 @@ contract HandlesController is ReentrancyGuard {
     );
 
     /**
-     * @notice Initializes the HandlesController contract with the given permissions contract and BIC token.
+     * @notice Initializes the HandlesController contract with the given BIC token address.
      */
-    constructor(IBicPermissions _bp, IERC20 _bic) {
-        _bicPermissions = _bp;
+    constructor(IERC20 _bic) {
         bic = _bic;
 
         auctionConfig = AuctionConfig({
@@ -116,25 +113,11 @@ contract HandlesController is ReentrancyGuard {
     }
 
     /**
-     * @notice Ensures that the function is called only by the operator.
-     */
-    modifier onlyOperator() {
-        require(
-            _bicPermissions.hasRole(
-                _bicPermissions.OPERATOR_ROLE(),
-                msg.sender
-            ),
-            "HandlesController: caller is not an operator"
-        );
-        _;
-    }
-
-    /**
      * @notice Sets a new verifier address authorized to validate signatures.
      * @dev Can only be set by an operator. Emits a SetVerifier event upon success.
      * @param _verifier The new verifier address.
      */
-    function setVerifier(address _verifier) external onlyOperator {
+    function setVerifier(address _verifier) external onlyOwner {
         verifier = _verifier;
         emit SetVerifier(_verifier);
     }
@@ -144,7 +127,7 @@ contract HandlesController is ReentrancyGuard {
      * @dev Can only be set by an operator. Emits a SetMarketplace event upon success.
      * @param _marketplace The address of the Thirdweb Marketplace contract.
      */
-    function setMarketplace(address _marketplace) external onlyOperator {
+    function setMarketplace(address _marketplace) external onlyOwner {
         marketplace = IMarketplace(_marketplace);
         emit SetMarketplace(_marketplace);
     }
@@ -156,7 +139,7 @@ contract HandlesController is ReentrancyGuard {
      */
     function setAuctionMarketplaceConfig(
         AuctionConfig memory _newConfig
-    ) external onlyOperator {
+    ) external onlyOwner {
         require(
             _newConfig.timeBufferInSeconds > 0,
             "HandlesController: timeBufferInSeconds must be greater than 0"
@@ -181,7 +164,7 @@ contract HandlesController is ReentrancyGuard {
      */
     function updateCollectsDenominator(
         uint256 _collectsDenominator
-    ) external onlyOperator {
+    ) external onlyOwner {
         collectsDenominator = _collectsDenominator;
     }
 
@@ -190,11 +173,11 @@ contract HandlesController is ReentrancyGuard {
      * @dev Can only be performed by an operator. This address acts as a fallback for undistributed funds.
      * @param _collector The address of the collector.
      */
-    function setCollector(address _collector) external onlyOperator {
+    function setCollector(address _collector) external onlyOwner {
         collector = _collector;
     }
 
-    function setForwarder(address _forwarder) external onlyOperator {
+    function setForwarder(address _forwarder) external onlyOwner {
         forwarder = IBicForwarder(_forwarder);
         emit SetForwarder(_forwarder);
     }
@@ -489,7 +472,7 @@ contract HandlesController is ReentrancyGuard {
         address token,
         address to,
         uint256 amount
-    ) external onlyOperator {
+    ) external onlyOwner {
         if (token == address(0)) {
             payable(to).transfer(amount);
         } else {
@@ -597,7 +580,7 @@ contract HandlesController is ReentrancyGuard {
     function burnHandleMintedButAuctionFailed(
         address handle,
         string calldata name
-    ) external onlyOperator {
+    ) external onlyOwner {
         uint256 tokenId = IHandles(handle).getTokenId(name);
         IHandles(handle).burn(tokenId);
         emit BurnHandleMintedButAuctionFailed(handle, name, tokenId);

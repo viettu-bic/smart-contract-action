@@ -46,7 +46,6 @@ contract Handles is ERC721Upgradeable, ERC2981, IHandles {
         }
         _;
     }
-
     /// @notice Ensures that the function is called only by the controller.
     modifier onlyController() {
         if (msg.sender != CONTROLLER) {
