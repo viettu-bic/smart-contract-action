@@ -14,3 +14,9 @@ function RECOVERY_ROLE() external pure returns (bytes32)
 function OPERATOR_ROLE() external pure returns (bytes32)
 ```
 
+### CONTROLLER_ROLE
+
+```solidity
+function CONTROLLER_ROLE() external pure returns (bytes32)
+```
+

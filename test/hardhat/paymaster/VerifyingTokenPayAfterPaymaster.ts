@@ -44,7 +44,7 @@ describe.skip('VerifyingTokenPayAfterPaymaster', () => {
         bicAccountFactoryAddress = await bicAccountFactory.getAddress();
 
         const BicTokenPaymaster = await ethers.getContractFactory("BicTokenPaymaster");
-        bicTokenPaymaster = await BicTokenPaymaster.deploy(bicAccountFactoryAddress, entryPointAddress);
+        bicTokenPaymaster = await BicTokenPaymaster.deploy(entryPointAddress);
         await bicTokenPaymaster.waitForDeployment();
         legacyTokenPaymasterAddress = await bicTokenPaymaster.getAddress();
 

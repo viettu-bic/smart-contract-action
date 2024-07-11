@@ -39,7 +39,7 @@ describe('Controller', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(ethers.ZeroAddress, entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
         handlesController = await HandlesController.deploy(bic.target);

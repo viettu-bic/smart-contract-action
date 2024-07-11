@@ -2,17 +2,7 @@
 
 ## HandleTokenURI
 
-The contract leverages the BicPermissions contract to check for operator permissions.
-
-_This contract is responsible for generating a token URI based on metadata elements associated with namespaces. It uses permission controls to manage who can set these metadata elements._
-
-### permissions
-
-```solidity
-contract BicPermissions permissions
-```
-
-The permissions contract used to manage operator roles.
+_This contract is responsible for generating a token URI based on metadata elements associated with namespaces. It uses owner controls to manage who can set these metadata elements._
 
 ### NameElement
 
@@ -44,28 +34,6 @@ Emitted when a name element is set
 | namespace | string |  |
 | imageDescription | string | the description of the name (aka Beincom - Earning Username) |
 | imageURI | string | the uri for svg background name image |
-
-### constructor
-
-```solidity
-constructor(contract BicPermissions _permissions) public
-```
-
-Initializes the contract with the given permissions contract.
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| _permissions | contract BicPermissions | management |
-
-### onlyOperator
-
-```solidity
-modifier onlyOperator()
-```
-
-Ensures that the function is called only by the operator.
 
 ### setNameElement
 

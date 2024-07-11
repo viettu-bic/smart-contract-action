@@ -33,12 +33,13 @@ describe("BicTokenPaymaster", () => {
         bicAccountFactoryAddress = await bicAccountFactory.getAddress();
 
         const BicTokenPaymaster = await ethers.getContractFactory("BicTokenPaymaster");
-        bicTokenPaymaster = await BicTokenPaymaster.deploy(bicAccountFactoryAddress, entryPointAddress);
+        bicTokenPaymaster = await BicTokenPaymaster.deploy(entryPointAddress);
         await bicTokenPaymaster.waitForDeployment();
         legacyTokenPaymasterAddress = await bicTokenPaymaster.getAddress();
 
         await entryPoint.depositTo(legacyTokenPaymasterAddress as any, { value: parseEther('1000') } as any)
         await bicTokenPaymaster.mint(admin.address, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.addFactory(bicAccountFactoryAddress as any);
     });
 
     it('should be able to use to create account', async () => {

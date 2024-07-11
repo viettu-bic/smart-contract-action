@@ -8,6 +8,12 @@
 error NotOwner()
 ```
 
+### NotOperator
+
+```solidity
+error NotOperator()
+```
+
 ### NotController
 
 ```solidity

@@ -16,18 +16,16 @@ contract BicAccount accountImplementation
 
 the account implementation contract
 
-### permissions
+### operator
 
 ```solidity
-contract BicPermissions permissions
+address operator
 ```
-
-the permissions contract
 
 ### constructor
 
 ```solidity
-constructor(contract IEntryPoint _entryPoint, contract BicPermissions _permissions) public
+constructor(contract IEntryPoint _entryPoint, address _operator) public
 ```
 
 BicAccountFactory constructor
@@ -37,7 +35,7 @@ BicAccountFactory constructor
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | _entryPoint | contract IEntryPoint | the entryPoint contract |
-| _permissions | contract BicPermissions | the permissions contract |
+| _operator | address | the operator address that can upgrade the account or recover owner |
 
 ### createAccount
 

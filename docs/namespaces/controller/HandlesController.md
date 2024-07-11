@@ -5,17 +5,17 @@
 _Manages operations related to handle auctions and direct handle requests, including minting and claim payouts.
 Uses ECDSA for signature verification and integrates with a marketplace for auction functionalities._
 
-### AuctionRequest
+### AuctionConfig
 
-Represents a request for an auction, including the ability to claim the handle, the beneficiaries, and their respective shares of the proceeds.
+Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer.
 
-_Represents a request for an auction, including the ability to claim the handle, the beneficiaries, and their respective shares of the proceeds._
+_Represents the configuration of an auction marketplace, including the buyout bid amount, time buffer, and bid buffer._
 
 ```solidity
-struct AuctionRequest {
-  bool canClaim;
-  address[] beneficiaries;
-  uint256[] collects;
+struct AuctionConfig {
+  uint256 buyoutBidAmount;
+  uint64 timeBufferInSeconds;
+  uint64 bidBufferBps;
 }
 ```
 
@@ -52,14 +52,6 @@ contract IERC20 bic
 
 _The BIC token contract address._
 
-### _bicPermissions
-
-```solidity
-contract IBicPermissions _bicPermissions
-```
-
-_The permissions contract used to manage operator roles._
-
 ### commitments
 
 ```solidity
@@ -75,6 +67,14 @@ contract IMarketplace marketplace
 ```
 
 _The marketplace contract used for handling auctions._
+
+### forwarder
+
+```solidity
+contract IBicForwarder forwarder
+```
+
+_The forwarder contract used for handling interactions with the BIC token._
 
 ### collectsDenominator
 
@@ -92,13 +92,21 @@ address collector
 
 _The address of the collector, who receives any residual funds not distributed to beneficiaries._
 
-### nameToAuctionRequest
+### auctionConfig
 
 ```solidity
-mapping(string => struct HandlesController.AuctionRequest) nameToAuctionRequest
+struct HandlesController.AuctionConfig auctionConfig
 ```
 
-_Mapping from handle names to their corresponding auction requests, managing the state and distribution of auctioned handles._
+_The configuration of the auction marketplace._
+
+### auctionCanClaim
+
+```solidity
+mapping(uint256 => bool) auctionCanClaim
+```
+
+_Mapping of auctionId to status isClaimed._
 
 ### MintHandle
 
@@ -111,10 +119,18 @@ _Emitted when a handle is minted, providing details of the transaction including
 ### Commitment
 
 ```solidity
-event Commitment(bytes32 commitment, uint256 endTimestamp)
+event Commitment(bytes32 commitment, address from, address collection, string name, uint256 tokenId, uint256 price, uint256 endTimestamp, bool isClaimed)
 ```
 
 _Emitted when a commitment is made, providing details of the commitment and its expiration timestamp._
+
+### ShareRevenue
+
+```solidity
+event ShareRevenue(address from, address to, uint256 amount)
+```
+
+_Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price._
 
 ### SetVerifier
 
@@ -124,6 +140,14 @@ event SetVerifier(address verifier)
 
 _Emitted when the verifier address is updated._
 
+### SetForwarder
+
+```solidity
+event SetForwarder(address forwarder)
+```
+
+_Emitted when the forwarder address is updated._
+
 ### SetMarketplace
 
 ```solidity
@@ -131,6 +155,14 @@ event SetMarketplace(address marketplace)
 ```
 
 _Emitted when the marketplace address is updated._
+
+### SetAuctionMarketplace
+
+```solidity
+event SetAuctionMarketplace(struct HandlesController.AuctionConfig _newConfig)
+```
+
+_Emmitted when the auction marketplace configuration is updated._
 
 ### CreateAuction
 
@@ -140,21 +172,21 @@ event CreateAuction(uint256 auctionId)
 
 _Emitted when an auction is created, providing details of the auction ID._
 
+### BurnHandleMintedButAuctionFailed
+
+```solidity
+event BurnHandleMintedButAuctionFailed(address handle, string name, uint256 tokenId)
+```
+
+_Emitted when a handle is minted but the auction fails due none bid._
+
 ### constructor
 
 ```solidity
-constructor(contract IBicPermissions _bp, contract IERC20 _bic) public
+constructor(contract IERC20 _bic) public
 ```
 
-Initializes the HandlesController contract with the given permissions contract and BIC token.
-
-### onlyOperator
-
-```solidity
-modifier onlyOperator()
-```
-
-Ensures that the function is called only by the operator.
+Initializes the HandlesController contract with the given BIC token address.
 
 ### setVerifier
 
@@ -188,6 +220,22 @@ _Can only be set by an operator. Emits a SetMarketplace event upon success._
 | ---- | ---- | ----------- |
 | _marketplace | address | The address of the Thirdweb Marketplace contract. |
 
+### setAuctionMarketplaceConfig
+
+```solidity
+function setAuctionMarketplaceConfig(struct HandlesController.AuctionConfig _newConfig) external
+```
+
+Sets the configuration of the auction marketplace.
+
+_Can only be set by an operator. Emits a SetMarketplace event upon success._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _newConfig | struct HandlesController.AuctionConfig | configuration of the auction marketplace |
+
 ### updateCollectsDenominator
 
 ```solidity
@@ -220,6 +268,12 @@ _Can only be performed by an operator. This address acts as a fallback for undis
 | ---- | ---- | ----------- |
 | _collector | address | The address of the collector. |
 
+### setForwarder
+
+```solidity
+function setForwarder(address _forwarder) external
+```
+
 ### requestHandle
 
 ```solidity
@@ -243,7 +297,7 @@ Handles are minted directly or auctioned based on the request parameters._
 ### collectAuctionPayout
 
 ```solidity
-function collectAuctionPayout(string name, uint256 amount, bytes signature) external
+function collectAuctionPayout(uint256 auctionId, uint256 amount, address[] beneficiaries, uint256[] collects, bytes signature) external
 ```
 
 Collects the auction payouts after an auction concludes in the Thirdweb Marketplace. [LINK]: https://github.com/thirdweb-dev/contracts/tree/main/contracts/prebuilts/marketplace/english-auctions
@@ -269,9 +323,30 @@ _This function is called after a successful auction on the Thirdweb Marketplace 
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| name | string | The name of the handle associated with the auction. |
+| auctionId | uint256 | The ID of the auction in the Thirdweb Marketplace contract. |
 | amount | uint256 | The total amount of Ether or tokens to be distributed to the beneficiaries. |
+| beneficiaries | address[] |  |
+| collects | uint256[] |  |
 | signature | bytes | The signature from the authorized verifier to validate the claim operation. |
+
+### _emitCommitment
+
+```solidity
+function _emitCommitment(struct HandlesController.HandleRequest rq, bytes32 _dataHash, uint256 endTime, bool _isClaimed) internal
+```
+
+Handles commitments for minting handles with a delay.
+
+_Internal function to handle commitments for minting handles with a delay._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| rq | struct HandlesController.HandleRequest | The handle request details including receiver, price, and auction settings. |
+| _dataHash | bytes32 | The hash committment |
+| endTime | uint256 |  |
+| _isClaimed | bool | The status of claim |
 
 ### withdraw
 
@@ -297,7 +372,8 @@ function getRequestHandleOp(struct HandlesController.HandleRequest rq, uint256 v
 
 Allows the operator to claim tokens sent to the contract by mistake.
 
-_Generates a unique hash for a handle request operation based on multiple parameters._
+_Generates a unique hash for a handle request operation based on multiple parameters.
+if tx is commit, its require commit duration > validUntil - validAfter because requirement can flexibly collects and beneficiaries_
 
 #### Parameters
 
@@ -316,10 +392,25 @@ _Generates a unique hash for a handle request operation based on multiple parame
 ### getCollectAuctionPayoutOp
 
 ```solidity
-function getCollectAuctionPayoutOp(string name, uint256 amount) public view returns (bytes32)
+function getCollectAuctionPayoutOp(uint256 auctionId, uint256 amount, address[] beneficiaries, uint256[] collects) public view returns (bytes32)
 ```
 
 Generates a unique hash for a collect auction payout operation.
 
 _Generates a unique hash for a collect auction payout operation._
+
+### burnHandleMintedButAuctionFailed
+
+```solidity
+function burnHandleMintedButAuctionFailed(address handle, string name) external
+```
+
+Allows the operator to burn a handle that was minted when case the auction failed (none bid).
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| handle | address | The address of the handle contract. |
+| name | string | The name of the handle. |
 

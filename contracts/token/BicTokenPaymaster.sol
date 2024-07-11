@@ -24,18 +24,19 @@ import "@openzeppelin/contracts/security/Pausable.sol";
    *   to whitelist the account and the called method ids.
  */
 contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
-
     /// calculated cost of the postOp
     uint256 constant public COST_OF_POST = 15000;
 
     /// the factory that creates accounts. used to validate account creation.
-    address public immutable theFactory;
+    mapping(address => bool) public factories;
 
     /// the oracle to use for token exchange rate.
     address public oracle;
 
+    /// the blocked users
     mapping (address => bool) public isBlocked;
 
+    /// the cap on the token's total supply.
     uint256 private immutable _cap;
 
     event BlockPlaced(address indexed _user);
@@ -47,9 +48,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      * @param accountFactory the factory that creates accounts. used to validate account creation.
      * @param _entryPoint the entry point contract to use.
      */
-    constructor(address accountFactory, IEntryPoint _entryPoint) ERC20("Testing Beincom", "TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
-        theFactory = accountFactory;
-
+    constructor(IEntryPoint _entryPoint) ERC20("Testing Beincom", "TBIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         _cap = 6339777879 * 1e18;
         //owner is allowed to withdraw tokens from the paymaster's balance
         _approve(address(this), msg.sender, type(uint).max);
@@ -61,6 +60,10 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
+    }
+
+    function addFactory(address _factory) external onlyOwner {
+        factories[_factory] = true;
     }
 
     /**
@@ -128,7 +131,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
         */
     function _validateConstructor(UserOperation calldata userOp) internal virtual view {
         address factory = address(bytes20(userOp.initCode[0 : 20]));
-        require(factory == theFactory, "BicTokenPaymaster: wrong account factory");
+        require(factories[factory], "BicTokenPaymaster: wrong account factory");
     }
 
     /**
