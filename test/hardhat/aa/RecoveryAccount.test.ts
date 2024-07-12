@@ -1,9 +1,8 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
+import { BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
 
 describe("RecoveryAccount", function () {
-  let bicPermissionsEnumerable: BicPermissions;
   let bicFactory: BicAccountFactory;
   let entryPoint: EntryPoint;
 
@@ -17,16 +16,14 @@ describe("RecoveryAccount", function () {
   }
 
   before(async () => {
-    const BicPermissionsEnumerable = await ethers.getContractFactory("BicPermissions");
+    const { deployer: recoverer } = await getEOAAccounts();
     const BicAccountFactory = await ethers.getContractFactory("BicAccountFactory");
     const EntryPoint = await ethers.getContractFactory("EntryPoint");
-    bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-    await bicPermissionsEnumerable.waitForDeployment();
 
     entryPoint = await EntryPoint.deploy();
     await entryPoint.waitForDeployment();
 
-    bicFactory = await BicAccountFactory.deploy(entryPoint.target, bicPermissionsEnumerable.target);
+    bicFactory = await BicAccountFactory.deploy(entryPoint.target, recoverer.address);
     await bicFactory.waitForDeployment();
 
 
@@ -45,8 +42,6 @@ describe("RecoveryAccount", function () {
     const account1 = await ethers.getContractAt("BicAccount", accountAddress1);
 
     expect((await account1.owner()).toLowerCase()).to.be.eq(wallet1.address.toLowerCase());
-    expect((await account1.permissions()).toLowerCase()).to.be.eq(bicPermissionsEnumerable.target.toString().toLowerCase());
-
 
     const preOwner = await account1.owner();
     expect(preOwner.toLowerCase()).to.be.eq(wallet1.address.toLowerCase());
@@ -70,7 +65,6 @@ describe("RecoveryAccount", function () {
     const account1 = await ethers.getContractAt("BicAccount", accountAddress1);
 
     expect((await account1.owner()).toLowerCase()).to.be.eq(wallet1.address.toLowerCase());
-    expect((await account1.permissions()).toLowerCase()).to.be.eq(bicPermissionsEnumerable.target.toString().toLowerCase());
 
 
     const preOwner = await account1.owner();
@@ -94,13 +88,12 @@ describe("RecoveryAccount", function () {
 
     const account2 = await ethers.getContractAt("BicAccount", accountAddress2);
     expect((await account2.owner()).toLowerCase()).to.be.eq(wallet2.address.toLowerCase());
-    expect((await account2.permissions()).toLowerCase()).to.be.eq(bicPermissionsEnumerable.target.toString().toLowerCase());
 
     const preOwner = await account2.owner();
     expect(preOwner.toLowerCase()).to.be.eq(wallet2.address.toLowerCase());
 
     const changeTx = account2.connect(notRecoverer).changeOwner(wallet2.address);
 
-    await expect(changeTx).to.be.revertedWith("only owner or recovery role");
+    await expect(changeTx).to.be.revertedWith("only owner or operator role");
   });
 });

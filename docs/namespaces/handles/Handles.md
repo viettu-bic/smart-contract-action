@@ -216,6 +216,16 @@ _Burns a handle with a specified token ID._
 | ---- | ---- | ----------- |
 | tokenId | uint256 | The ID of the handle to burn. |
 
+### setTokenRoyalty
+
+```solidity
+function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) external
+```
+
+ERC2981 royalty information for a given token ID and sale price.
+
+_ERC2981 royalty information for a given token ID and sale price._
+
 ### exists
 
 ```solidity

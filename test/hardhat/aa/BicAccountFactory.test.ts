@@ -1,10 +1,9 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { time } from "@nomicfoundation/hardhat-network-helpers";
-import { BicPermissions, BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
+import { BicAccountFactory, BicAccount, EntryPoint } from "../../../typechain-types";
 
 describe("BicAccountFactory", function () {
-  let bicPermissionsEnumerable: BicPermissions;
   let bicFactory: BicAccountFactory;
   let entryPoint: EntryPoint;
 
@@ -18,24 +17,15 @@ describe("BicAccountFactory", function () {
   }
 
   before(async () => {
-    const BicPermissionsEnumerable = await ethers.getContractFactory("BicPermissions");
+    const {deployer} = await getEOAAccounts()
     const BicAccountFactory = await ethers.getContractFactory("BicAccountFactory");
     const EntryPoint = await ethers.getContractFactory("EntryPoint");
-    bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-    await bicPermissionsEnumerable.waitForDeployment();
 
     entryPoint = await EntryPoint.deploy();
     await entryPoint.waitForDeployment();
 
-    bicFactory = await BicAccountFactory.deploy(entryPoint.target, bicPermissionsEnumerable.target);
+    bicFactory = await BicAccountFactory.deploy(entryPoint.target, deployer.address as any);
     await bicFactory.waitForDeployment();
-
-    // const accountImplementation = await bicFactory.accountImplementation();
-    const permissions = await bicFactory.permissions();
-
-    // expect(accountImplementation.toLowerCase()).be.eq(bicPermissionsEnumerable.target.toString().toLowerCase());
-    expect(permissions.toLowerCase()).be.eq(bicPermissionsEnumerable.target.toString().toLowerCase());
-
   });
 
 
@@ -49,9 +39,6 @@ describe("BicAccountFactory", function () {
     expect(createReceipt?.to?.toLowerCase()).be.eq(bicAddressComputed.toLowerCase());
 
     const bicAccount = await ethers.getContractAt("BicAccount", bicAddressComputed);
-
-    const permissions = await bicFactory.permissions();
-    expect((await bicAccount.permissions()).toLowerCase()).be.eq(permissions.toLowerCase());
   });
 
   it("Should BIC Account return current account when tried to creatAccount more than one", async() => {

@@ -22,6 +22,14 @@ bytes32 OPERATOR_ROLE
 
 the role that can operate the contract. Using this role on HandlesController, HandlesTokenURI and BicAccount
 
+### CONTROLLER_ROLE
+
+```solidity
+bytes32 CONTROLLER_ROLE
+```
+
+the role that can control the contract. Using this role on BicForwarder
+
 ### constructor
 
 ```solidity

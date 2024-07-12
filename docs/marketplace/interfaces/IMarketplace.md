@@ -2,6 +2,14 @@
 
 ## IMarketplace
 
+### NewBid
+
+```solidity
+event NewBid(uint256 auctionId, address bidder, address assetContract, uint256 bidAmount)
+```
+
+_Emitted when a new bid is made in an auction._
+
 ### AuctionParameters
 
 ```solidity
@@ -23,6 +31,12 @@ struct AuctionParameters {
 
 ```solidity
 function createAuction(struct IMarketplace.AuctionParameters _params) external returns (uint256 auctionId)
+```
+
+### bidInAuction
+
+```solidity
+function bidInAuction(uint256 _auctionId, uint256 _bidAmount) external payable
 ```
 
 ### Status

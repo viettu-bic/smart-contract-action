@@ -1,9 +1,9 @@
 import {ethers} from "hardhat";
 import {BigNumberish, BytesLike, parseEther, Wallet} from "ethers";
-import {BicAccount, BicAccountFactory, EntryPoint, BicTokenPaymaster, BicPermissions} from "../../typechain-types";
 import {expect} from "chai";
 import {createOp} from "../util/createOp";
-import {paymaster} from "../../../typechain-types/contracts/smart-wallet";
+import {BicAccountFactory} from "../../../typechain-types";
+import {BicTokenPaymaster, EntryPoint} from "../../../typechain-types";
 
 describe("BicTokenPaymaster", () => {
     const {provider} = ethers;
@@ -17,8 +17,6 @@ describe("BicTokenPaymaster", () => {
     let beneficiary: string;
     let bicTokenPaymaster: BicTokenPaymaster;
     let legacyTokenPaymasterAddress: string;
-    let bicPermissions: BicPermissions;
-    let bicPermissionsAddress: string;
     let walletToTestBlacklist;
 
     beforeEach(async () => {
@@ -29,23 +27,19 @@ describe("BicTokenPaymaster", () => {
         await entryPoint.waitForDeployment();
         entryPointAddress = await entryPoint.getAddress();
 
-        const BicPermissions = await ethers.getContractFactory("BicPermissions");
-        bicPermissions = await BicPermissions.deploy();
-        await bicPermissions.waitForDeployment();
-        bicPermissionsAddress = await bicPermissions.getAddress();
-
         const BicAccountFactory = await ethers.getContractFactory("BicAccountFactory");
-        bicAccountFactory = await BicAccountFactory.deploy(entryPointAddress, bicPermissionsAddress);
+        bicAccountFactory = await BicAccountFactory.deploy(entryPointAddress, admin.address as any);
         await bicAccountFactory.waitForDeployment();
         bicAccountFactoryAddress = await bicAccountFactory.getAddress();
 
         const BicTokenPaymaster = await ethers.getContractFactory("BicTokenPaymaster");
-        bicTokenPaymaster = await BicTokenPaymaster.deploy(bicAccountFactoryAddress, entryPointAddress);
+        bicTokenPaymaster = await BicTokenPaymaster.deploy(entryPointAddress);
         await bicTokenPaymaster.waitForDeployment();
         legacyTokenPaymasterAddress = await bicTokenPaymaster.getAddress();
 
         await entryPoint.depositTo(legacyTokenPaymasterAddress as any, { value: parseEther('1000') } as any)
         await bicTokenPaymaster.mint(admin.address, ethers.parseEther('1000') as any);
+        await bicTokenPaymaster.addFactory(bicAccountFactoryAddress as any);
     });
 
     it('should be able to use to create account', async () => {

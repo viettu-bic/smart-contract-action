@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 import "./BicAccount.sol";
-import "./../management/BicPermissions.sol";
 
 /**
  * @title A BIC account abstraction factory contract for BicAccount
@@ -18,17 +17,17 @@ import "./../management/BicPermissions.sol";
 contract BicAccountFactory {
     /// @notice the account implementation contract
     BicAccount public immutable accountImplementation;
-    /// @notice the permissions contract
-    BicPermissions public immutable permissions;
+
+    address public immutable operator;
 
     /**
      * @notice BicAccountFactory constructor
      * @param _entryPoint the entryPoint contract
-     * @param _permissions the permissions contract
+     * @param _operator the operator address that can upgrade the account or recover owner
      */
-    constructor(IEntryPoint _entryPoint, BicPermissions _permissions) {
+    constructor(IEntryPoint _entryPoint, address _operator) {
         accountImplementation = new BicAccount(_entryPoint);
-        permissions = _permissions;
+        operator = _operator;
     }
 
     /**
@@ -47,7 +46,7 @@ contract BicAccountFactory {
         }
         ret = BicAccount(payable(new ERC1967Proxy{salt : bytes32(salt)}(
                 address(accountImplementation),
-                abi.encodeCall(BicAccount.initialize, (owner, permissions))
+                abi.encodeCall(BicAccount.initialize, (owner, operator))
             )));
     }
 
@@ -62,7 +61,7 @@ contract BicAccountFactory {
                 type(ERC1967Proxy).creationCode,
                 abi.encode(
                     address(accountImplementation),
-                    abi.encodeCall(BicAccount.initialize, (owner, permissions))
+                    abi.encodeCall(BicAccount.initialize, (owner, operator))
                 )
             )));
     }

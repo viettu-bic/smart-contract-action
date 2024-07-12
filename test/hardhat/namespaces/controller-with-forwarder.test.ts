@@ -3,13 +3,12 @@ import { getEOAAccounts } from "../util/getEoaAccount";
 import { expect } from "chai";
 import { controller } from "../../../typechain-types/contracts/namespaces";
 import { parseEther } from "ethers";
-import { BicForwarder, BicPermissions, BicTokenPaymaster, Handles, HandlesController, TestMarketplace } from "../../../typechain-types";
+import { BicForwarder, BicTokenPaymaster, Handles, HandlesController, TestMarketplace } from "../../../typechain-types";
 
 
 describe('ControllerWithForwarder', function () {
     let randomWalletAddress;
 
-    let bicPermissionsEnumerable: BicPermissions;
     let usernameHandles: Handles;
     let handlesController: HandlesController;
     let bic: BicTokenPaymaster;
@@ -30,10 +29,6 @@ describe('ControllerWithForwarder', function () {
         const txCloneHandle = await bicFactory.deployProxyByImplementation(handle.target as any, '0x' as any, ethers.ZeroHash as any);
         const txCloneHandleReceipt = await txCloneHandle.wait();
 
-        const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-        await bicPermissionsEnumerable.waitForDeployment();
-
         const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
         usernameHandles = await ethers.getContractAt('Handles', cloneAddress as any);
         usernameHandles.initialize('bic', 'bic', 'bic', deployer.address);
@@ -42,10 +37,10 @@ describe('ControllerWithForwarder', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(ethers.ZeroAddress, entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
-        handlesController = await HandlesController.deploy(bicPermissionsEnumerable.target, bic.target);
+        handlesController = await HandlesController.deploy(bic.target);``
         await handlesController.waitForDeployment();
         await usernameHandles.setController(handlesController.target);
 
@@ -59,7 +54,7 @@ describe('ControllerWithForwarder', function () {
 
         const BicForwarder = await ethers.getContractFactory("BicForwarder");
 
-        bicForwarder = await BicForwarder.deploy(bicPermissionsEnumerable.target);
+        bicForwarder = await BicForwarder.deploy();
         await bicForwarder.waitForDeployment();
         testMarketplace = await TestMarketplace.deploy(bic.target, [bicForwarder.target]);
 
@@ -71,9 +66,6 @@ describe('ControllerWithForwarder', function () {
 
         const mintBicTx = await bic.mint(wallet4.address, ethers.parseUnits(1e5.toString(), 18));
         await mintBicTx.wait();
-
-        const grantRoleTx = await bicPermissionsEnumerable.grantRole(await bicPermissionsEnumerable.CONTROLLER_ROLE(), handlesController.target);
-        await grantRoleTx.wait();
         const newConfig = [100n, 200n, 300n];
         const updateTx = await handlesController.setAuctionMarketplaceConfig({
             buyoutBidAmount: newConfig[0],
@@ -83,6 +75,8 @@ describe('ControllerWithForwarder', function () {
         await expect(updateTx)
             .to.emit(handlesController, "SetAuctionMarketplace")
             .withArgs(newConfig);
+
+        await bicForwarder.addController(handlesController.target as any);
 
     });
 

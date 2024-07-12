@@ -38,15 +38,11 @@ describe("Handles", function () {
   beforeEach(async () => {
     ({ deployer, wallet1, wallet2, wallet3 } = await getEOAAccounts());
 
-    // BicPermission
-    const BicPermission = await ethers.getContractFactory("BicPermissions");
-    const bicPermission = await BicPermission.deploy();
-
     const Handles = await ethers.getContractFactory("Handles");
     const HandleTokenURI = await ethers.getContractFactory("HandleTokenURI");
     const handle = await Handles.deploy();
     await handle.waitForDeployment();
-    handleTokenURI = await HandleTokenURI.deploy(bicPermission.target);
+    handleTokenURI = await HandleTokenURI.deploy();
     await handleTokenURI.waitForDeployment();
 
     const BicFactory = await ethers.getContractFactory("BicFactory");
@@ -130,7 +126,7 @@ describe("Handles", function () {
     // Expect 0% and address(0)
     expect(royaltyPrev[0]).to.equal(ethers.ZeroAddress);
     expect(royaltyPrev[1]).to.equal(0);
-   
+
     const feeNumerator = BigInt(1000);
     const feeDenominator = BigInt(10000);
     const setRoyaltyTx = await bicHandles.connect(deployer).setTokenRoyalty(tokenId, deployer.address, feeNumerator);

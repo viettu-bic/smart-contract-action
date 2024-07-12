@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import {IBicPermissions} from "../management/interfaces/IBicPermissions.sol";
+
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IBicForwarder {
     event Requested(address indexed controller, address indexed from, address indexed to, bytes data, uint256 value);
@@ -14,28 +15,22 @@ interface IBicForwarder {
     function forwardRequest(RequestData memory requestData) external;
 }
 
-contract BicForwarder is IBicForwarder {
+contract BicForwarder is IBicForwarder, Ownable {
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
-    IBicPermissions public immutable bicPermissions;
-
-
-    constructor(IBicPermissions _bp) {
-        bicPermissions = _bp;
-    }
-
+    mapping(address => bool) public isController;
     /**
      * @notice Ensures that the function is called only by the controller.
      */
     modifier onController() {
         require(
-            bicPermissions.hasRole(
-                // bicPermissions.CONTROLLER_ROLE(),
-                CONTROLLER_ROLE,
-                msg.sender
-            ),
+            isController[msg.sender],
             "HandlesController: caller is not a controller"
         );
         _;
+    }
+
+    function addController(address _controller) external onlyOwner {
+        isController[_controller] = true;
     }
 
     function forwardRequest(RequestData memory requestData) external onController override {
@@ -70,4 +65,3 @@ contract BicForwarder is IBicForwarder {
         return abi.decode(_returnData, (string));
     }
 }
-    

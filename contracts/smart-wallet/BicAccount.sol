@@ -11,8 +11,6 @@ import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 import "@account-abstraction/contracts/core/BaseAccount.sol";
 import "@account-abstraction/contracts/samples/callback/TokenCallbackHandler.sol";
 
-import "./../management/BicPermissions.sol";
-
 /**
   * @title account abstraction smart contract BIC version
   * @notice BicAccount is a simple account abstraction contract, with owner and operator roles.
@@ -29,18 +27,17 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     /// @notice the owner of the account (an EOA)
     address public owner;
 
-    /// @notice the permissions contract, using recovery and operator roles
-    BicPermissions public permissions;
-
     /// @notice the entryPoint contract
     IEntryPoint private immutable _entryPoint;
+
+    address public operator;
 
     /*
      * @dev Emitted when the account is initialized
      * @param entryPoint the entryPoint contract
      * @param owner the owner of the account
      */
-    event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner);
+    event BicAccountInitialized(IEntryPoint indexed entryPoint, address indexed owner, address indexed operator);
 
     /*
      * @dev Emitted when the owner is changed
@@ -48,6 +45,8 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * @param newOwner the new owner of the account
      */
     event NewOwner(address oldOwner, address newOwner);
+
+    event NewOperator(address oldOperator, address newOperator);
 
     /**
      * @notice Modifier to restrict access to the owner
@@ -82,17 +81,10 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * check if the caller is the owner or has the recovery role
-     */
-    function _onlyOwnerOrHasRecoveryRole() internal view {
-        require(msg.sender == owner || permissions.hasRole(permissions.RECOVERY_ROLE(), msg.sender), "only owner or recovery role");
-    }
-
-    /**
      * check if the caller is the owner or has the operator role
      */
     function _onlyOwnerOrHasOperatorRole() internal view {
-        require(msg.sender == owner || permissions.hasRole(permissions.OPERATOR_ROLE(), msg.sender), "only owner or operator role");
+        require(msg.sender == owner || msg.sender == operator, "only owner or operator role");
     }
 
     /**
@@ -100,11 +92,19 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      */
     function changeOwner(address _newOwner) external {
         // Require: ower or has recovery role
-        _onlyOwnerOrHasRecoveryRole();
+        _onlyOwnerOrHasOperatorRole();
 
         address _oldOwner = owner;
         owner = _newOwner;
         emit NewOwner(_oldOwner, _newOwner);
+    }
+
+    function changeOperator(address _newOperator) external {
+        _onlyOwnerOrHasOperatorRole();
+
+        address _oldOperator = operator;
+        operator = _newOperator;
+        emit NewOperator(_oldOperator, _newOperator);
     }
 
     /**
@@ -146,14 +146,14 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * the implementation by calling `upgradeTo()`
      * @param anOwner the owner (signer) of this account
      */
-    function initialize(address anOwner, BicPermissions _permissions) public virtual initializer {
-        _initialize(anOwner, _permissions);
+    function initialize(address anOwner, address anOperator) public virtual initializer {
+        _initialize(anOwner, anOperator);
     }
 
-    function _initialize(address anOwner, BicPermissions _permissions) internal virtual {
+    function _initialize(address anOwner, address anOperator) internal virtual {
         owner = anOwner;
-        permissions = _permissions;
-        emit BicAccountInitialized(_entryPoint, owner);
+        operator = anOperator;
+        emit BicAccountInitialized(_entryPoint, owner, operator);
     }
 
     /// Require the function call went through EntryPoint or owner

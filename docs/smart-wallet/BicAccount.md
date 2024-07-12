@@ -20,24 +20,28 @@ address owner
 
 the owner of the account (an EOA)
 
-### permissions
+### operator
 
 ```solidity
-contract BicPermissions permissions
+address operator
 ```
-
-the permissions contract, using recovery and operator roles
 
 ### BicAccountInitialized
 
 ```solidity
-event BicAccountInitialized(contract IEntryPoint entryPoint, address owner)
+event BicAccountInitialized(contract IEntryPoint entryPoint, address owner, address operator)
 ```
 
 ### NewOwner
 
 ```solidity
 event NewOwner(address oldOwner, address newOwner)
+```
+
+### NewOperator
+
+```solidity
+event NewOperator(address oldOperator, address newOperator)
 ```
 
 ### onlyOwner
@@ -85,14 +89,6 @@ function _onlyOwner() internal view
 
 check if the caller is the owner
 
-### _onlyOwnerOrHasRecoveryRole
-
-```solidity
-function _onlyOwnerOrHasRecoveryRole() internal view
-```
-
-check if the caller is the owner or has the recovery role
-
 ### _onlyOwnerOrHasOperatorRole
 
 ```solidity
@@ -108,6 +104,12 @@ function changeOwner(address _newOwner) external
 ```
 
 Change owner or recovery the other owner (called directly from owner, or by entryPoint)
+
+### changeOperator
+
+```solidity
+function changeOperator(address _newOperator) external
+```
 
 ### execute
 
@@ -146,7 +148,7 @@ _to reduce gas consumption for trivial case (no value), use a zero-length array 
 ### initialize
 
 ```solidity
-function initialize(address anOwner, contract BicPermissions _permissions) public virtual
+function initialize(address anOwner, address anOperator) public virtual
 ```
 
 _The _entryPoint member is immutable, to reduce gas consumption.  To upgrade EntryPoint,
@@ -158,12 +160,12 @@ the implementation by calling `upgradeTo()`_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | anOwner | address | the owner (signer) of this account |
-| _permissions | contract BicPermissions |  |
+| anOperator | address |  |
 
 ### _initialize
 
 ```solidity
-function _initialize(address anOwner, contract BicPermissions _permissions) internal virtual
+function _initialize(address anOwner, address anOperator) internal virtual
 ```
 
 ### _requireFromEntryPointOrOwner

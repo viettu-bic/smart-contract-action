@@ -13,7 +13,6 @@ describe('Controller', function () {
     let wallet4; // Test for create auction and bid in once transaction
     let randomWalletAddress;
 
-    let bicPermissionsEnumerable;
     let usernameHandles;
     let handlesController;
     let bic;
@@ -32,10 +31,6 @@ describe('Controller', function () {
         const txCloneHandle = await bicFactory.deployProxyByImplementation(handle.target as any, '0x' as any, ethers.ZeroHash as any);
         const txCloneHandleReceipt = await txCloneHandle.wait();
 
-        const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-        bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-        await bicPermissionsEnumerable.waitForDeployment();
-
         const cloneAddress = txCloneHandleReceipt.logs[0].args[1];
         usernameHandles = await ethers.getContractAt('Handles', cloneAddress as any);
         usernameHandles.initialize('bic', 'bic', 'bic', deployer.address);
@@ -44,10 +39,10 @@ describe('Controller', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(ethers.ZeroAddress, entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
-        handlesController = await HandlesController.deploy(bicPermissionsEnumerable.target, bic.target);
+        handlesController = await HandlesController.deploy(bic.target);
         await handlesController.waitForDeployment();
         await usernameHandles.setController(handlesController.target);
 

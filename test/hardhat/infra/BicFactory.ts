@@ -34,15 +34,4 @@ describe('BicFactory', function () {
         expect(await token1.contractName()).to.equal(await clone.contractName());
     });
 
-    // it('BicFactory: can deploy Handles and Set Controller at once', async function () {
-    //     const BicPermissionsEnumerable = await ethers.getContractFactory('BicPermissions');
-    //     const bicPermissionsEnumerable = await BicPermissionsEnumerable.deploy();
-    //     await bicPermissionsEnumerable.waitForDeployment();
-    //
-    //     const Handles = await ethers.getContractFactory('Handles');
-    //     const handle = await Handles.deploy(bicPermissionsEnumerable.target, 'bic', 'bic', 'bic');
-    //     await handle.waitForDeployment();
-    //
-    //
-    // });
 })
