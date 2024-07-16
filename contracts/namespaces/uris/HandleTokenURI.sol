@@ -61,17 +61,17 @@ contract HandleTokenURI is IHandleTokenURI, Ownable {
 
     /// @dev Internal function to concatenate the base image URI with the local name query parameter.
     /// @param namespace The namespace used to retrieve the base URI.
-    /// @param localName The local name used as a query parameter.
+    /// @param tokenId The local name used as a query parameter.
     /// @return The full image URI including the query parameter.
     function getImageURI(
         string memory namespace,
-        string memory localName
+        uint256 tokenId
     ) internal view returns (string memory) {
         return
             string.concat(
                 nameElements[namespace].imageURI,
-                "?name=",
-                localName
+                "/",
+                Strings.toString(tokenId)
             );
     }
 
@@ -113,7 +113,7 @@ contract HandleTokenURI is IHandleTokenURI, Ownable {
                             '","description":',
                             getImageDescription(namespace, localName),
                             ',"image":"',
-                            getImageURI(namespace, localName),
+                            getImageURI(namespace, tokenId),
                             '","attributes":[{"display_type":"number","trait_type":"ID","value":"',
                             tokenId.toString(),
                             '"},{"trait_type":"NAMESPACE","value":"',
