@@ -12,7 +12,7 @@ contract BicRedeemFactory {
     /// @param redeem Address of the new redeem contract
     /// @param erc20 Address of the ERC20 token
     /// @param totalAmount Total amount of tokens to be redeemed over time
-    /// @param beneficiaryAddress Address of the beneficiary who is receivied the redeemed tokens
+    /// @param beneficiaryAddress Address of the beneficiary who is received the redeemed tokens
     /// @param durationSeconds Duration of the redeem in seconds
     /// @param redeemRate Percentage of the total amount that is redeemed per duration
     event RedeemInitialized(

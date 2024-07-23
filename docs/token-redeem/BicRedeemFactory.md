@@ -19,7 +19,7 @@ Emitted when a new redeem contract is initialized
 | redeem | address | Address of the new redeem contract |
 | erc20 | address | Address of the ERC20 token |
 | totalAmount | uint256 | Total amount of tokens to be redeemed over time |
-| beneficiaryAddress | address | Address of the beneficiary who is receivied the redeemed tokens |
+| beneficiaryAddress | address | Address of the beneficiary who is received the redeemed tokens |
 | durationSeconds | uint64 | Duration of the redeem in seconds |
 | redeemRate | uint64 | Percentage of the total amount that is redeemed per duration |
 

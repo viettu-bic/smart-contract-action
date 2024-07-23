@@ -103,13 +103,27 @@ check if the caller is the owner or has the operator role
 function changeOwner(address _newOwner) external
 ```
 
-Change owner or recovery the other owner (called directly from owner, or by entryPoint)
+Change owner or recovery the other owner
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _newOwner | address | the new owner |
 
 ### changeOperator
 
 ```solidity
 function changeOperator(address _newOperator) external
 ```
+
+Change operator
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _newOperator | address | the new operator |
 
 ### execute
 
@@ -160,7 +174,7 @@ the implementation by calling `upgradeTo()`_
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | anOwner | address | the owner (signer) of this account |
-| anOperator | address |  |
+| anOperator | address | the operator, default is BIC operator using to support upgrade and recovery in case of lost key |
 
 ### _initialize
 
@@ -265,5 +279,5 @@ Upgrade the implementation of the account
 function version() external pure virtual returns (uint256)
 ```
 
-Version for BicAccount
+Version for BicAccount using for upgrade if needed
 

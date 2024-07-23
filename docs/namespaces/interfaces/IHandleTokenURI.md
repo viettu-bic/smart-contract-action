@@ -2,6 +2,8 @@
 
 ## IHandleTokenURI
 
+_Details about token URIs can be found in the HandleTokenURI contract_
+
 ### getTokenURI
 
 ```solidity

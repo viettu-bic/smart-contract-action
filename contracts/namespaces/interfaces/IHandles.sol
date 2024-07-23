@@ -3,6 +3,8 @@ pragma solidity ^0.8.23;
 
 import {IERC721Upgradeable} from '@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol';
 
+/// @title A Handles interface for creating and interacting with handles
+/// @dev Details about handles can be found in the Handles contract
 interface IHandles is IERC721Upgradeable {
 
     function mintHandle(address to, string calldata localName) external returns (uint256);

@@ -2,13 +2,8 @@
 
 ## IMarketplace
 
-### NewBid
-
-```solidity
-event NewBid(uint256 auctionId, address bidder, address assetContract, uint256 bidAmount)
-```
-
-_Emitted when a new bid is made in an auction._
+_It using to interactive ThirdWeb marketplace v3:
+https://github.com/thirdweb-dev/contracts/blob/main/contracts/prebuilts/marketplace-legacy/Marketplace.sol_
 
 ### AuctionParameters
 

@@ -2,6 +2,8 @@
 
 ## IHandles
 
+_Details about handles can be found in the Handles contract_
+
 ### mintHandle
 
 ```solidity

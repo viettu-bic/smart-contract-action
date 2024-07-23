@@ -77,7 +77,7 @@ Retrieves the metadata elements associated with a specific namespace.
 ### getImageURI
 
 ```solidity
-function getImageURI(string namespace, string localName) internal view returns (string)
+function getImageURI(string namespace, uint256 tokenId) internal view returns (string)
 ```
 
 _Internal function to concatenate the base image URI with the local name query parameter._
@@ -87,7 +87,7 @@ _Internal function to concatenate the base image URI with the local name query p
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | namespace | string | The namespace used to retrieve the base URI. |
-| localName | string | The local name used as a query parameter. |
+| tokenId | uint256 | The local name used as a query parameter. |
 
 #### Return Values
 
