@@ -3,16 +3,10 @@ pragma solidity ^0.8.23;
 
 import {IERC721} from '@openzeppelin/contracts/token/ERC721/IERC721.sol';
 
+/// @title A marketplace interface for creating and interacting with auctions
+/// @dev It using to interactive ThirdWeb marketplace v3:
+/// https://github.com/thirdweb-dev/contracts/blob/main/contracts/prebuilts/marketplace-legacy/Marketplace.sol
 interface IMarketplace {
-    /// @dev Emitted when a new bid is made in an auction.
-    event NewBid(
-        uint256 indexed auctionId,
-        address indexed bidder,
-        address indexed assetContract,
-        uint256 bidAmount
-        // Auction auction
-    );
-    
     struct AuctionParameters {
         address assetContract;
         uint256 tokenId;

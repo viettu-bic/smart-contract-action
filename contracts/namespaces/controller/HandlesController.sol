@@ -177,6 +177,12 @@ contract HandlesController is ReentrancyGuard, Ownable {
         collector = _collector;
     }
 
+    /**
+     * @notice Sets the forwarder contract address used for handling interactions with the BIC token.
+     * @dev Can only be set by an operator. Emits a SetForwarder event upon success.
+     * @dev Using to help controller can bid in auction on behalf of a user want to mint handle but end up in case auction.
+     * @param _forwarder The address of the BIC forwarder contract.
+     */
     function setForwarder(address _forwarder) external onlyOwner {
         forwarder = IBicForwarder(_forwarder);
         emit SetForwarder(_forwarder);
@@ -355,6 +361,10 @@ contract HandlesController is ReentrancyGuard, Ownable {
     /**
      * @notice Handles commitments for minting handles with a delay.
      * @dev Internal function to handle commitments for minting handles with a delay.
+     * @dev Three cases, decision to mint handle is based on user's request and BIC back-end logic:
+        *      1. User want a NFT and can mint directly buy using BIC
+        *      2. User want a NFT but cannot mint directly, so user commit to mint NFT
+        *      3. User want a NFT but cannot mint directly, and nether can commit it. So controller mint NFT and put it in auction
      * @param rq The handle request details including receiver, price, and auction settings.
      * @param _dataHash The hash committment
      * @param _isClaimed The status of claim

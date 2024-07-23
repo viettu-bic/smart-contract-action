@@ -274,6 +274,17 @@ _Can only be performed by an operator. This address acts as a fallback for undis
 function setForwarder(address _forwarder) external
 ```
 
+Sets the forwarder contract address used for handling interactions with the BIC token.
+
+_Can only be set by an operator. Emits a SetForwarder event upon success.
+Using to help controller can bid in auction on behalf of a user want to mint handle but end up in case auction._
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _forwarder | address | The address of the BIC forwarder contract. |
+
 ### requestHandle
 
 ```solidity
@@ -337,7 +348,11 @@ function _emitCommitment(struct HandlesController.HandleRequest rq, bytes32 _dat
 
 Handles commitments for minting handles with a delay.
 
-_Internal function to handle commitments for minting handles with a delay._
+_Internal function to handle commitments for minting handles with a delay.
+Three cases, decision to mint handle is based on user's request and BIC back-end logic:
+     1. User want a NFT and can mint directly buy using BIC
+     2. User want a NFT but cannot mint directly, so user commit to mint NFT
+     3. User want a NFT but cannot mint directly, and nether can commit it. So controller mint NFT and put it in auction_
 
 #### Parameters
 

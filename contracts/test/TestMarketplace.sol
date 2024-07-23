@@ -8,6 +8,15 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ERC2771Context} from "./ERC2771Context.sol";
 
 contract TestMarketplace is IMarketplace, ERC2771Context {
+    /// @dev Emitted when a new bid is made in an auction. Using for testing purpose
+    event NewBid(
+        uint256 indexed auctionId,
+        address indexed bidder,
+        address indexed assetContract,
+        uint256 bidAmount
+    // Auction auction
+    );
+
     struct MockAuction {
         address assetContract;
         uint256 tokenId;
@@ -25,7 +34,7 @@ contract TestMarketplace is IMarketplace, ERC2771Context {
         IERC20 _bic,
         address[] memory trustedForwarders
     ) ERC2771Context(trustedForwarders) {
-        bic = _bic; 
+        bic = _bic;
     }
 
     function createAuction(

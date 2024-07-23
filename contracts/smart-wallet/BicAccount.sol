@@ -88,7 +88,8 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * Change owner or recovery the other owner (called directly from owner, or by entryPoint)
+     * Change owner or recovery the other owner
+     * @param _newOwner the new owner
      */
     function changeOwner(address _newOwner) external {
         // Require: ower or has recovery role
@@ -99,6 +100,10 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
         emit NewOwner(_oldOwner, _newOwner);
     }
 
+    /**
+     * Change operator
+     * @param _newOperator the new operator
+     */
     function changeOperator(address _newOperator) external {
         _onlyOwnerOrHasOperatorRole();
 
@@ -145,6 +150,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
      * a new implementation of SimpleAccount must be deployed with the new EntryPoint address, then upgrading
      * the implementation by calling `upgradeTo()`
      * @param anOwner the owner (signer) of this account
+     * @param anOperator the operator, default is BIC operator using to support upgrade and recovery in case of lost key
      */
     function initialize(address anOwner, address anOperator) public virtual initializer {
         _initialize(anOwner, anOperator);
@@ -224,7 +230,7 @@ contract BicAccount is BaseAccount, TokenCallbackHandler, UUPSUpgradeable, Initi
     }
 
     /**
-     * @notice Version for BicAccount
+     * @notice Version for BicAccount using for upgrade if needed
      */
     function version() external pure virtual returns (uint256) {
         return 1;
