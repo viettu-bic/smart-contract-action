@@ -92,7 +92,11 @@ const config: HardhatUserConfig = {
   docgen: {
     pages: "files",
     exclude: ["test"],
-  }
+  },
+  defender: {
+    apiKey: env.DEFENDER_KEY as string,
+    apiSecret: env.DEFENDER_SECRET as string,
+  },
 };
 
 export default config;
