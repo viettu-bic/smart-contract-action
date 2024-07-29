@@ -10,7 +10,6 @@ import env from "./env";
 
 // Extend hardhat env
 import "./configs";
-import fs from "fs";
 
 const config: HardhatUserConfig = {
   solidity: {
