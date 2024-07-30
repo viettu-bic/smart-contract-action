@@ -67,6 +67,18 @@ _Emitted when a user is charged, using for indexing on subgraph_
 constructor(contract IEntryPoint _entryPoint, address _owner) public
 ```
 
+Constructor that make this contract become ERC20 Paymaster and also Permit
+
+_BIC token required permit because of Account Abstraction feature
+Using ERC20Permit because it is require for forwarder from Entrypoint_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _entryPoint | contract IEntryPoint | the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789 |
+| _owner | address | is the owner of the paymaster. Using this param to set Safe wallet as default owner |
+
 ### setOracle
 
 ```solidity
@@ -244,6 +256,6 @@ Unpause transfers using this token.
 function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual
 ```
 
-_Hook that is called before any transfer of tokens. This includes minting.
+_Hook that is called before any transfer of tokens.
 Override existing hook to add additional checks: paused and blocked users._
 
