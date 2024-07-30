@@ -45,10 +45,11 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      * @param _entryPoint the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789
      * @dev BIC token required permit because of Account Abstraction feature
      */
-    constructor(IEntryPoint _entryPoint) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
-        _cap = 6339777879 * 1e18;
+    constructor(IEntryPoint _entryPoint, address _owner) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         //owner is allowed to withdraw tokens from the paymaster's balance
-        _approve(address(this), msg.sender, type(uint).max);
+        _approve(address(this), _owner, type(uint).max);
+        _transferOwnership(_owner);
+        _mint(_owner, 5000000000 * 1e18);
     }
 
     /**
@@ -194,24 +195,5 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
         require(!paused(), "BicTokenPaymaster: token transfer while paused");
         require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
-    }
-
-    /**
-     * @dev Returns the cap on the token's total supply.
-     * Cannot mint more tokens if cap is reached.
-     */
-    function cap() public view virtual returns (uint256) {
-        return _cap;
-    }
-
-    /**
-     * @notice Mint new tokens
-     * @param to the address to mint the tokens to
-     * @param amount the amount of tokens to mint
-     * @dev Cannot mint more tokens if cap is reached
-     */
-    function mint(address to, uint256 amount) public onlyOwner {
-        require(totalSupply() + amount <= cap(), "BicTokenPaymaster: cap exceeded");
-        _mint(to, amount);
     }
 }
