@@ -43,6 +43,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
     /*
      * @param _entryPoint the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789
+     * @param _owner is the owner of the paymaster. Using this param to set Safe wallet as default owner
      * @dev BIC token required permit because of Account Abstraction feature
      */
     constructor(IEntryPoint _entryPoint, address _owner) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {

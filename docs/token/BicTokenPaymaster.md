@@ -64,7 +64,7 @@ _Emitted when a user is charged, using for indexing on subgraph_
 ### constructor
 
 ```solidity
-constructor(contract IEntryPoint _entryPoint) public
+constructor(contract IEntryPoint _entryPoint, address _owner) public
 ```
 
 ### setOracle
@@ -246,30 +246,4 @@ function _beforeTokenTransfer(address from, address to, uint256 amount) internal
 
 _Hook that is called before any transfer of tokens. This includes minting.
 Override existing hook to add additional checks: paused and blocked users._
-
-### cap
-
-```solidity
-function cap() public view virtual returns (uint256)
-```
-
-_Returns the cap on the token's total supply.
-Cannot mint more tokens if cap is reached._
-
-### mint
-
-```solidity
-function mint(address to, uint256 amount) public
-```
-
-Mint new tokens
-
-_Cannot mint more tokens if cap is reached_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | the address to mint the tokens to |
-| amount | uint256 | the amount of tokens to mint |
 
