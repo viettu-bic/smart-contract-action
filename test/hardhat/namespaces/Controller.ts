@@ -39,7 +39,7 @@ describe('Controller', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target, deployer);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
         handlesController = await HandlesController.deploy(bic.target);
@@ -73,7 +73,7 @@ describe('Controller', function () {
     });
 
     it('Controller: create nft directly', async function () {
-        await bic.mint(wallet1.address, ethers.parseEther('1') as any);
+        await bic.transfer(wallet1.address, ethers.parseEther('1') as any);
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
@@ -111,7 +111,7 @@ describe('Controller', function () {
     });
 
     it('Controller: commit to mint nft', async function () {
-        await bic.mint(wallet1.address, ethers.parseEther('1'));
+        await bic.transfer(wallet1.address, ethers.parseEther('1'));
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         const currentTime = Math.floor(Date.now() / 1000);
@@ -228,7 +228,7 @@ describe('Controller', function () {
         expect(auctionId).to.equal(1n);
 
         // let assume that auction result is 1 BIC
-        await bic.mint(handlesController.target, ethers.parseEther('1'));
+        await bic.transfer(handlesController.target, ethers.parseEther('1'));
         const collectDataHash = await handlesController.getCollectAuctionPayoutOp(auctionId, ethers.parseEther('1'), [wallet3.address], [1000]);
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
         await handlesController.connect(wallet1).collectAuctionPayout(auctionId, ethers.parseEther('1'), [wallet3.address], [1000], collectSignature);
