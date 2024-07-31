@@ -18,7 +18,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
  */
 contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     /// Calculated cost of the postOp, minimum value that need verificationGasLimit to be higher than
-    uint256 constant public COST_OF_POST = 15000;
+    uint256 constant public COST_OF_POST = 60000;
 
     /// The factory that creates accounts. used to validate account creation. Just to make sure not have any unexpected account creation trying to bug the system
     mapping(address => bool) public factories;
@@ -30,13 +30,19 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     mapping (address => bool) public isBlocked;
 
     /// @dev Emitted when a user is blocked
-    event BlockPlaced(address indexed _user);
+    event BlockPlaced(address indexed _user, address indexed _operator);
 
     /// @dev Emitted when a user is unblocked
-    event BlockReleased(address indexed _user);
+    event BlockReleased(address indexed _user, address indexed _operator);
 
     /// @dev Emitted when a user is charged, using for indexing on subgraph
-    event ChargeFee(address sender, uint256 _fee);
+    event ChargeFee(address sender, uint256 fee);
+
+    /// @dev Emitted when the oracle is set
+    event SetOracle(address oldOracle, address newOracle, address indexed _operator);
+
+    /// @dev Emitted when a factory is added
+    event AddFactory(address factory, address indexed _operator);
 
     /**
      * @notice Constructor that make this contract become ERC20 Paymaster and also Permit
@@ -58,6 +64,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function setOracle(address _oracle) external onlyOwner {
         oracle = _oracle;
+        emit SetOracle(oracle, _oracle, msg.sender);
     }
 
     /**
@@ -66,6 +73,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function addFactory(address _factory) external onlyOwner {
         factories[_factory] = true;
+        emit AddFactory(_factory, msg.sender);
     }
 
     /**
@@ -160,7 +168,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function addToBlockedList (address _user) public onlyOwner {
         isBlocked[_user] = true;
-        emit BlockPlaced(_user);
+        emit BlockPlaced(_user, msg.sender);
     }
 
     /**
@@ -169,11 +177,12 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function removeFromBlockedList (address _user) public onlyOwner {
         isBlocked[_user] = false;
-        emit BlockReleased(_user);
+        emit BlockReleased(_user, msg.sender);
     }
 
     /**
      * @notice Pause transfers using this token. For emergency use.
+     * @dev Event already defined and emitted in Pausable.sol
      */
     function pause() public onlyOwner {
         _pause();
@@ -181,6 +190,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
     /**
      * @notice Unpause transfers using this token.
+     * @dev Event already defined and emitted in Pausable.sol
      */
     function unpause() public onlyOwner {
         _unpause();

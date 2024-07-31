@@ -40,7 +40,7 @@ The blocked users
 ### BlockPlaced
 
 ```solidity
-event BlockPlaced(address _user)
+event BlockPlaced(address _user, address _operator)
 ```
 
 _Emitted when a user is blocked_
@@ -48,7 +48,7 @@ _Emitted when a user is blocked_
 ### BlockReleased
 
 ```solidity
-event BlockReleased(address _user)
+event BlockReleased(address _user, address _operator)
 ```
 
 _Emitted when a user is unblocked_
@@ -56,10 +56,26 @@ _Emitted when a user is unblocked_
 ### ChargeFee
 
 ```solidity
-event ChargeFee(address sender, uint256 _fee)
+event ChargeFee(address sender, uint256 fee)
 ```
 
 _Emitted when a user is charged, using for indexing on subgraph_
+
+### SetOracle
+
+```solidity
+event SetOracle(address oldOracle, address newOracle, address _operator)
+```
+
+_Emitted when the oracle is set_
+
+### AddFactory
+
+```solidity
+event AddFactory(address factory, address _operator)
+```
+
+_Emitted when a factory is added_
 
 ### constructor
 
@@ -242,6 +258,8 @@ function pause() public
 
 Pause transfers using this token. For emergency use.
 
+_Event already defined and emitted in Pausable.sol_
+
 ### unpause
 
 ```solidity
@@ -249,6 +267,8 @@ function unpause() public
 ```
 
 Unpause transfers using this token.
+
+_Event already defined and emitted in Pausable.sol_
 
 ### _beforeTokenTransfer
 
