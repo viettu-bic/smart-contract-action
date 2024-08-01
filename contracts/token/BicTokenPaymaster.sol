@@ -63,8 +63,8 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      * @param _oracle the oracle to use.
      */
     function setOracle(address _oracle) external onlyOwner {
-        oracle = _oracle;
         emit SetOracle(oracle, _oracle, msg.sender);
+        oracle = _oracle;
     }
 
     /**
