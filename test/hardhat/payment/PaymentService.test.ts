@@ -145,7 +145,6 @@ describe("PaymentService", function () {
         .filter((e) => e !== null)
         .find((e) => e.name === "TipWithBytesMessage");
       const messageEvent = tipEvent?.args.message;
-      console.log("🚀 ~ it ~ messageEvent:", ethers.toUtf8String(messageEvent))
       expect(ethers.toUtf8String(messageEvent)).to.equal(JSON.stringify(message));
     });
 
