@@ -63,7 +63,7 @@ describe("PaymentService", function () {
     it("User string: Should charge service successfully", async () => {
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "Enable the Extend Community",
+        msg: "Enable the Extend Community".repeat(10),
         serviceId: "456456",
       };
 
@@ -151,7 +151,7 @@ describe("PaymentService", function () {
     it("User bytes: Should charge service successfully", async () => {
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "Enable the Extend Community",
+        msg: "Enable the Extend Community".repeat(10),
         serviceId: "456456",
       };
 

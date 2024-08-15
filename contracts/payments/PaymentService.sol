@@ -55,7 +55,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 _amount,
         string memory _message
     ) external {
-        require(_amount > 0, "Amount must be greater than zero");
+        require(_amount > 0, "PMS:Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, _to, _amount);
 
@@ -68,7 +68,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 _amount,
         bytes memory _message
     ) external {
-        require(_amount > 0, "Amount must be greater than zero");
+        require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, _to, _amount);
 
@@ -80,7 +80,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 _amount,
         string memory _message
     ) external {
-        require(_amount > 0, "Amount must be greater than zero");
+        require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, address(this), _amount);
         emit Charge(_token, sender, address(this), _amount, _message);
@@ -91,7 +91,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 _amount,
         bytes memory _message
     ) external {
-        require(_amount > 0, "Amount must be greater than zero");
+        require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, address(this), _amount);
         emit ChargeWithBytesMessage(_token, sender, address(this), _amount, _message);
@@ -102,7 +102,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         address _to,
         uint256 _amount
     ) external onlyOwner {
-        require(_amount > 0, "Amount must be greater than zero");
+        require(_amount > 0, "PMS: Amount must be greater than zero");
         _token.safeTransfer(_to, _amount);
 
         emit WithdrawToken(_token, msg.sender, _to, _amount);
