@@ -32,13 +32,6 @@ describe("BicRedeemToken Test", function () {
     const TestERC20 = await ethers.getContractFactory("TestERC20");
     testERC20 = await TestERC20.deploy();
     await testERC20.waitForDeployment();
-
-    // approve Admin's token for Factory
-    const approveTx = await testERC20.approve(
-      bicRedeemFactory.target,
-      ethers.MaxUint256
-    );
-    await approveTx.wait();
   });
 
   describe("Bic Redeem factory", () => {
@@ -50,6 +43,7 @@ describe("BicRedeemToken Test", function () {
 
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
+      await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -105,6 +99,7 @@ describe("BicRedeemToken Test", function () {
       );
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("2000", 18);
+      await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -163,6 +158,7 @@ describe("BicRedeemToken Test", function () {
       );
       const totalAmount = "3000";
       const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
+
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -171,6 +167,8 @@ describe("BicRedeemToken Test", function () {
         BigInt(duration);
 
       before(async () => {
+        await testERC20.transfer(bicRedeemFactory.target as any ,totalAmountInDecimal as any);
+
         const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,
@@ -420,6 +418,7 @@ describe("BicRedeemToken Test", function () {
         BigInt(duration);
 
       before(async () => {
+        await testERC20.transfer(bicRedeemFactory.target as any ,totalAmountInDecimal as any);
         const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,

@@ -44,12 +44,14 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @param erc20Address The ERC20 token address to be locked in the contract
     /// @param totalAmount The total amount of tokens that will be locked
     /// @param beneficiaryAddress The address of the beneficiary who will receive the tokens after vesting
+    /// @param startTime The start time of the vesting period if it is in the future then released amount will be 0
     /// @param durationSeconds The duration of the vesting period in seconds
     /// @param redeemRateNumber The rate at which the tokens will be released per duration
     function initialize(
         address erc20Address,
         uint256 totalAmount,
         address beneficiaryAddress,
+        uint64 startTime,
         uint64 durationSeconds,
         uint64 redeemRateNumber
     ) public virtual initializer {
@@ -60,7 +62,7 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
         require(erc20Address != address(0), "VestingWallet: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
-        _start = uint64(block.timestamp);
+        _start = startTime;
         _duration = durationSeconds;
         _erc20 = erc20Address;
         _totalAmount = totalAmount;

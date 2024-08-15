@@ -65,10 +65,10 @@ contract BicRedeemFactory {
 
 
         ret = BicRedeemToken(Clones.cloneDeterministic(address(bicRedeemImplementation), salthash));
-        ret.initialize(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
+        ret.initialize(erc20, totalAmount, beneficiaryAddress, uint64(block.timestamp), durationSeconds, redeemRate);
 
         // Transfer from BIC to Account
-        SafeERC20.safeTransferFrom(IERC20(erc20), msg.sender, address(ret), totalAmount);
+        SafeERC20.safeTransfer(IERC20(erc20), address(ret), totalAmount);
 
         redeemAddress[beneficiaryAddress] = address(ret);
         emit RedeemInitialized(address(ret), erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
