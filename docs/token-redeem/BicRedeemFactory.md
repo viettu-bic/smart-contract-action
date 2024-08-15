@@ -41,7 +41,8 @@ mapping(address => address) redeemAddress
 
 Mapping of beneficiary addresses to their redeem contract addresses
 
-_This is used to prevent multiple redeem contracts from being created for the same beneficiary_
+_This is used to prevent multiple redeem contracts from being created for the same beneficiary
+Each beneficiary can only have one redeem contract for only one type of token_
 
 ### constructor
 

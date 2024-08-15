@@ -4,7 +4,8 @@
 
 Manages the locked tokens, allowing beneficiaries to claim their tokens after a vesting period
 
-_This contract uses OpenZeppelin's Initializable and ReentrancyGuard to provide initialization and reentrancy protection_
+_This contract uses OpenZeppelin's Initializable and ReentrancyGuard to provide initialization and reentrancy protection
+Based on VestingWallet from OpenZeppelin Contracts_
 
 ### ERC20Released
 
@@ -46,7 +47,7 @@ _Constructor is empty and payment is disabled by default_
 ### initialize
 
 ```solidity
-function initialize(address erc20Address, uint256 totalAmount, address beneficiaryAddress, uint64 durationSeconds, uint64 redeemRateNumber) public virtual
+function initialize(address erc20Address, uint256 totalAmount, address beneficiaryAddress, uint64 startTime, uint64 durationSeconds, uint64 redeemRateNumber) public virtual
 ```
 
 Initializes the contract with necessary parameters to start the vesting process
@@ -60,6 +61,7 @@ _Ensure all parameters are valid, particularly that addresses are not zero and a
 | erc20Address | address | The ERC20 token address to be locked in the contract |
 | totalAmount | uint256 | The total amount of tokens that will be locked |
 | beneficiaryAddress | address | The address of the beneficiary who will receive the tokens after vesting |
+| startTime | uint64 | The start time of the vesting period if it is in the future then released amount will be 0 |
 | durationSeconds | uint64 | The duration of the vesting period in seconds |
 | redeemRateNumber | uint64 | The rate at which the tokens will be released per duration |
 
