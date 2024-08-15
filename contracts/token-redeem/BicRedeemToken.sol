@@ -6,10 +6,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "hardhat/console.sol";
 
 /// @title BicRedeemToken Contract
 /// @notice Manages the locked tokens, allowing beneficiaries to claim their tokens after a vesting period
 /// @dev This contract uses OpenZeppelin's Initializable and ReentrancyGuard to provide initialization and reentrancy protection
+/// @dev Based on VestingWallet from OpenZeppelin Contracts
 contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @notice Emitted when tokens are released to the beneficiary
     /// @param from The address of the account that executed the release
@@ -55,11 +57,11 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
         uint64 durationSeconds,
         uint64 redeemRateNumber
     ) public virtual initializer {
-        require(beneficiaryAddress != address(0), "VestingWallet: beneficiary is zero address");
-        require(totalAmount > 0, "VestingWallet: total amount invalid");
-        require(durationSeconds > 0, "VestingWallet: duration invalid");
-        require(redeemRateNumber > 0 && redeemRateNumber <= DENOMINATOR, "VestingWallet: redeem rate invalid");
-        require(erc20Address != address(0), "VestingWallet: erc20 invalid");
+        require(beneficiaryAddress != address(0), "BicRedeemToken: beneficiary is zero address");
+        require(totalAmount > 0, "BicRedeemToken: total amount invalid");
+        require(durationSeconds > 0, "BicRedeemToken: duration invalid");
+        require(redeemRateNumber > 0 && redeemRateNumber <= DENOMINATOR, "BicRedeemToken: redeem rate invalid");
+        require(erc20Address != address(0), "BicRedeemToken: erc20 invalid");
 
         _beneficiary = beneficiaryAddress;
         _start = startTime;
@@ -156,7 +158,7 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @dev This function includes checks for the amount of tokens available for release token and updates internal states
     function release() public virtual nonReentrant {
         (uint256 amount, uint256 counter) = releasable();
-        require(amount > 0, "VestingWallet: no tokens to release");
+        require(amount > 0, "BicRedeemToken: no tokens to release");
 
         _released += amount;
         _currentRewardStacks += uint64(counter);
@@ -170,8 +172,10 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @return counter The number of reward stacks that have been released at this timestamp
     function _vestingSchedule(uint64 timestamp) internal view virtual returns (uint256, uint256) {
         if (timestamp < _start) {
+            console.log("timestamp < _start");
             return (0, 0);
         } else if (timestamp > _end) {
+            console.log("timestamp > _end");
             return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
             // check for the latest stack, if _currentRewardStacks < _maxRewardStacks => amount is _amountPerDuration

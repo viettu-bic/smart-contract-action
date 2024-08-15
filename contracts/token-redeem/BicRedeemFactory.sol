@@ -4,10 +4,11 @@ pragma solidity ^0.8.23;
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./BicRedeemToken.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @title BicRedeemFactory for creating and managing ERC20 token redeems
 /// @notice This contract allows users to create time-locked token redeem contracts
-contract BicRedeemFactory {
+contract BicRedeemFactory is Ownable {
     /// @notice Emitted when a new redeem contract is initialized
     /// @param redeem Address of the new redeem contract
     /// @param erc20 Address of the ERC20 token
@@ -30,6 +31,7 @@ contract BicRedeemFactory {
 
     /// @notice Mapping of beneficiary addresses to their redeem contract addresses
     /// @dev This is used to prevent multiple redeem contracts from being created for the same beneficiary
+    /// @dev Each beneficiary can only have one redeem contract for only one type of token
     mapping(address => address) public redeemAddress;
 
     /// @notice Initializes the BicRedeemFactory contract
@@ -52,17 +54,10 @@ contract BicRedeemFactory {
         address beneficiaryAddress,
         uint64 durationSeconds,
         uint64 redeemRate
-    ) public returns (BicRedeemToken ret) {
+    ) public onlyOwner returns (BicRedeemToken ret) {
         require(redeemAddress[beneficiaryAddress] == address(0), "Redeem contract already deploy");
 
         bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
-
-        address addr = Clones.predictDeterministicAddress(address(bicRedeemImplementation), salthash);
-        uint256 codeSize = addr.code.length;
-        if (codeSize > 0) {
-            return BicRedeemToken(payable(addr));
-        }
-
 
         ret = BicRedeemToken(Clones.cloneDeterministic(address(bicRedeemImplementation), salthash));
         ret.initialize(erc20, totalAmount, beneficiaryAddress, uint64(block.timestamp), durationSeconds, redeemRate);
