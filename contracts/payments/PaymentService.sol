@@ -18,14 +18,6 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 amount,
         string message
     );
-
-    event TipWithBytesMessage(
-        IERC20 indexed token,
-        address indexed from,
-        address indexed to,
-        uint256 amount,
-        bytes message
-    );
     event Charge(
         IERC20 indexed token,
         address indexed from,
@@ -33,18 +25,29 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 amount,
         string message
     );
-    event ChargeWithBytesMessage(
+    event WithdrawToken(
+        IERC20 indexed token,
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
+
+
+    // @deprecated
+    event TipWithBytesMessage(
         IERC20 indexed token,
         address indexed from,
         address indexed to,
         uint256 amount,
         bytes message
     );
-    event WithdrawToken(
+    // @deprecated
+    event ChargeWithBytesMessage(
         IERC20 indexed token,
         address indexed from,
         address indexed to,
-        uint256 amount
+        uint256 amount,
+        bytes message
     );
 
     constructor() {}
@@ -62,6 +65,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         emit Tip(_token, sender, _to, _amount, _message);
     }
 
+    // @deprecated
     function tipWithBytesMessage(
         IERC20 _token,
         address _to,
@@ -86,6 +90,8 @@ contract PaymentService is ReentrancyGuard, Ownable {
         emit Charge(_token, sender, address(this), _amount, _message);
     }
 
+
+    // @deprecated
     function chargeWithBytesMessage(
         IERC20 _token,
         uint256 _amount,
