@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "hardhat/console.sol";
 
 /// @title BicRedeemToken Contract
 /// @notice Manages the locked tokens, allowing beneficiaries to claim their tokens after a vesting period
@@ -172,13 +171,12 @@ contract BicRedeemToken is Initializable, ReentrancyGuard {
     /// @return counter The number of reward stacks that have been released at this timestamp
     function _vestingSchedule(uint64 timestamp) internal view virtual returns (uint256, uint256) {
         if (timestamp < _start) {
-            console.log("timestamp < _start");
             return (0, 0);
         } else if (timestamp > _end) {
-            console.log("timestamp > _end");
             return (IERC20(_erc20).balanceOf(address(this)), _maxRewardStacks - _currentRewardStacks);
         } else {
             // check for the latest stack, if _currentRewardStacks < _maxRewardStacks => amount is _amountPerDuration
+            // for odd left-over in the last stack, wait for the end of the duration
             if (_currentRewardStacks >= _maxRewardStacks) return (0, 0);
 
             uint256 elapsedTime = uint256(timestamp) - _lastAtCurrentStack();

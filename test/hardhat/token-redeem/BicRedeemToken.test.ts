@@ -745,12 +745,13 @@ describe("BicRedeemToken Test", function () {
     it('can be deploy by BicFactory', async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const speedRateNumber = ethers.toBigInt(
-          ethers.parseUnits("1.43".toString(), 3)
+          ethers.parseUnits("3".toString(), 3)
       );
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("2000", 18);
       const salt = ethers.keccak256(beneficiary.address);
       const redeemAddress = await bicFactory.computeProxyAddress(bicRedeemImplementation as any, salt as any);
+      await testERC20.transfer(redeemAddress as any ,totalAmount as any);
       console.log('🚀 ~ it ~ redeemAddress', redeemAddress)
       const bicRedeemToken = await ethers.getContractAt('BicRedeemToken', redeemAddress);
       const currentBlock = await ethers.provider.getBlock('latest');
@@ -773,14 +774,23 @@ describe("BicRedeemToken Test", function () {
         expect(await bicRedeemToken.start()).to.be.eq(startTime);
         expect(await bicRedeemToken.duration()).to.be.eq(duration);
         expect(await bicRedeemToken.released()).to.be.eq(0n);
+        expect(await bicRedeemToken.maxRewardStacks()).to.be.eq(3);
         const releasable = await bicRedeemToken.releasable();
         expect(releasable[0]).to.be.eq(0n);
         expect(releasable[1]).to.be.eq(0n);
         const lastAtCurrentRewardStacksPrev = await bicRedeemToken.lastAtCurrentStack();
-        await helpers.time.increaseTo(lastAtCurrentRewardStacksPrev + 3n);
+      const end = await bicRedeemToken.end();
+
+        await helpers.time.increaseTo(end - 1000n);
+        await bicRedeemToken.release();
         const releasableAfter = await bicRedeemToken.releasable();
-        expect(releasableAfter[0]).to.be.eq(0n);
-        expect(releasableAfter[1]).to.be.eq(0n);
+      expect(releasableAfter[0]).to.be.eq(0n);
+      expect(releasableAfter[1]).to.be.eq(0n);
+      await helpers.time.increaseTo(end + 10n);
+      const releasableAfter2 = await bicRedeemToken.releasable();
+      expect(releasableAfter2[0]).to.be.eq(200000000000000000000n); // 1800 BIC be claimed
+      expect(releasableAfter2[1]).to.be.eq(0n);
+
     })
   })
 });
