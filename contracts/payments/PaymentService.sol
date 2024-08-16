@@ -38,7 +38,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 _amount,
         string memory _message
     ) external {
-        require(_amount > 0, "PMS:Amount must be greater than zero");
+        require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, _to, _amount);
 
