@@ -30,24 +30,6 @@ contract PaymentService is ReentrancyGuard, Ownable {
         uint256 amount
     );
 
-
-    // @deprecated
-    event TipWithBytesMessage(
-        IERC20 indexed token,
-        address indexed from,
-        address indexed to,
-        uint256 amount,
-        bytes message
-    );
-    // @deprecated
-    event ChargeWithBytesMessage(
-        IERC20 indexed token,
-        address indexed from,
-        address indexed to,
-        uint256 amount,
-        bytes message
-    );
-
     constructor() {}
 
     function tip(
@@ -63,20 +45,6 @@ contract PaymentService is ReentrancyGuard, Ownable {
         emit Tip(_token, sender, _to, _amount, _message);
     }
 
-    // @deprecated
-    function tipWithBytesMessage(
-        IERC20 _token,
-        address _to,
-        uint256 _amount,
-        bytes memory _message
-    ) external {
-        require(_amount > 0, "PMS: Amount must be greater than zero");
-        address sender = msg.sender;
-        _token.safeTransferFrom(sender, _to, _amount);
-
-        emit TipWithBytesMessage(_token, sender, _to, _amount, _message);
-    }
-
     function charge(
         IERC20 _token,
         uint256 _amount,
@@ -86,19 +54,6 @@ contract PaymentService is ReentrancyGuard, Ownable {
         address sender = msg.sender;
         _token.safeTransferFrom(sender, address(this), _amount);
         emit Charge(_token, sender, address(this), _amount, _message);
-    }
-
-
-    // @deprecated
-    function chargeWithBytesMessage(
-        IERC20 _token,
-        uint256 _amount,
-        bytes memory _message
-    ) external {
-        require(_amount > 0, "PMS: Amount must be greater than zero");
-        address sender = msg.sender;
-        _token.safeTransferFrom(sender, address(this), _amount);
-        emit ChargeWithBytesMessage(_token, sender, address(this), _amount, _message);
     }
 
     function withdrawToken(

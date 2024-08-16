@@ -63,7 +63,7 @@ describe("PaymentService", function () {
     it("User string: Should charge service successfully", async () => {
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "Enable the Extend Community \xf0\x28\x8c\x28".repeat(10000),
+        msg: "Enable the Extend Community 你好你好你好你好你好 \xf0 你好你好你好你好你好\x28\x8c\x28".repeat(5000),
         serviceId: "456456",
       };
 
@@ -109,83 +109,83 @@ describe("PaymentService", function () {
     });
   });
 
-  describe("Use bytes", async () => {
-    it("User bytes: Should tip for other user successfully", async () => {
-      const { wallet1 } = await getEOAAccounts();
-      const amount = ethers.parseUnits("10", 18);
-      const message = {
-        msg: "The post is great 你好你好你好你好你好".repeat(100),
-        postId: "123123",
-      };
+  // describe("Use bytes", async () => {
+  //   it("User bytes: Should tip for other user successfully", async () => {
+  //     const { wallet1 } = await getEOAAccounts();
+  //     const amount = ethers.parseUnits("10", 18);
+  //     const message = {
+  //       msg: "The post is great 你好你好你好你好你好".repeat(100),
+  //       postId: "123123",
+  //     };
 
-      const approveTx = await testERC20.approve(paymentService.target, amount);
-      await approveTx.wait();
+  //     const approveTx = await testERC20.approve(paymentService.target, amount);
+  //     await approveTx.wait();
 
-      const tipTx = await paymentService.tipWithBytesMessage(
-        testERC20.target,
-        wallet1.address,
-        ethers.parseUnits("10", 18),
-        ethers.toUtf8Bytes(JSON.stringify(message))
-      );
+  //     const tipTx = await paymentService.tipWithBytesMessage(
+  //       testERC20.target,
+  //       wallet1.address,
+  //       ethers.parseUnits("10", 18),
+  //       ethers.toUtf8Bytes(JSON.stringify(message))
+  //     );
 
-      await tipTx.wait();
-      await expect(tipTx)
-        .to.emit(paymentService, "TipWithBytesMessage")
-        .to.emit(testERC20, "Transfer");
-      const tipReceipt = await tipTx.wait();
-      const tipEvent = tipReceipt!.logs
-        .map((e) => {
-          try {
-            const event = paymentService.interface.parseLog(e as any);
-            return event;
-          } catch (error) {
-            return null;
-          }
-        })
-        .filter((e) => e !== null)
-        .find((e) => e.name === "TipWithBytesMessage");
-      const messageEvent = tipEvent?.args.message;
-      expect(ethers.toUtf8String(messageEvent)).to.equal(
-        JSON.stringify(message)
-      );
-    });
+  //     await tipTx.wait();
+  //     await expect(tipTx)
+  //       .to.emit(paymentService, "TipWithBytesMessage")
+  //       .to.emit(testERC20, "Transfer");
+  //     const tipReceipt = await tipTx.wait();
+  //     const tipEvent = tipReceipt!.logs
+  //       .map((e) => {
+  //         try {
+  //           const event = paymentService.interface.parseLog(e as any);
+  //           return event;
+  //         } catch (error) {
+  //           return null;
+  //         }
+  //       })
+  //       .filter((e) => e !== null)
+  //       .find((e) => e.name === "TipWithBytesMessage");
+  //     const messageEvent = tipEvent?.args.message;
+  //     expect(ethers.toUtf8String(messageEvent)).to.equal(
+  //       JSON.stringify(message)
+  //     );
+  //   });
 
-    it("User bytes: Should charge service successfully", async () => {
-      const amount = ethers.parseUnits("10", 18);
-      const message = {
-        msg: "Enable the Extend Community \xf0\x28\x8c\x28".repeat(10000),
-        serviceId: "456456",
-      };
+  //   it("User bytes: Should charge service successfully", async () => {
+  //     const amount = ethers.parseUnits("10", 18);
+  //     const message = {
+  //       msg: "Enable the Extend Community 你好你好你好你好你好 \xf0 你好你好你好你好你好\x28\x8c\x28".repeat(10000),
+  //       serviceId: "456456",
+  //     };
 
-      const approveTx = await testERC20.approve(paymentService.target, amount);
-      await approveTx.wait();
+  //     const approveTx = await testERC20.approve(paymentService.target, amount);
+  //     await approveTx.wait();
 
-      const chargeTx = await paymentService.chargeWithBytesMessage(
-        testERC20.target,
-        ethers.parseUnits("10", 18),
-        ethers.toUtf8Bytes(JSON.stringify(message))
-      );
+  //     const chargeTx = await paymentService.chargeWithBytesMessage(
+  //       testERC20.target,
+  //       ethers.parseUnits("10", 18),
+  //       ethers.toUtf8Bytes(JSON.stringify(message))
+  //     );
 
-      await chargeTx.wait();
-      await expect(chargeTx)
-        .to.emit(paymentService, "ChargeWithBytesMessage")
-        .to.emit(testERC20, "Transfer");
-      const chargeReceipt = await chargeTx.wait();
-      const chargeEvent = chargeReceipt!.logs
-        .map((e) => {
-          try {
-            const event = paymentService.interface.parseLog(e as any);
-            return event;
-          } catch (error) {
-            return null;
-          }
-        })
-        .filter((e) => e !== null)
-        .find((e) => e.name === "ChargeWithBytesMessage");
-      const messageEvent = chargeEvent?.args.message;
-      expect(ethers.toUtf8String(messageEvent)).to.equal(
-        JSON.stringify(message)
-      );
-    });
-  });
+  //     await chargeTx.wait();
+  //     await expect(chargeTx)
+  //       .to.emit(paymentService, "ChargeWithBytesMessage")
+  //       .to.emit(testERC20, "Transfer");
+  //     const chargeReceipt = await chargeTx.wait();
+  //     const chargeEvent = chargeReceipt!.logs
+  //       .map((e) => {
+  //         try {
+  //           const event = paymentService.interface.parseLog(e as any);
+  //           return event;
+  //         } catch (error) {
+  //           return null;
+  //         }
+  //       })
+  //       .filter((e) => e !== null)
+  //       .find((e) => e.name === "ChargeWithBytesMessage");
+  //     const messageEvent = chargeEvent?.args.message;
+  //     expect(ethers.toUtf8String(messageEvent)).to.equal(
+  //       JSON.stringify(message)
+  //     );
+  //   });
+  // });
 });
