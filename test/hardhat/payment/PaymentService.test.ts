@@ -26,7 +26,7 @@ describe("PaymentService", function () {
       const { wallet1 } = await getEOAAccounts();
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "The post is great",
+        msg: "The post is great 你好你好你好你好你好".repeat(100),
         postId: "123123",
       };
 
@@ -63,7 +63,7 @@ describe("PaymentService", function () {
     it("User string: Should charge service successfully", async () => {
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "Enable the Extend Community".repeat(10),
+        msg: "Enable the Extend Community \xf0\x28\x8c\x28".repeat(10000),
         serviceId: "456456",
       };
 
@@ -114,7 +114,7 @@ describe("PaymentService", function () {
       const { wallet1 } = await getEOAAccounts();
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "The post is great",
+        msg: "The post is great 你好你好你好你好你好".repeat(100),
         postId: "123123",
       };
 
@@ -153,7 +153,7 @@ describe("PaymentService", function () {
     it("User bytes: Should charge service successfully", async () => {
       const amount = ethers.parseUnits("10", 18);
       const message = {
-        msg: "Enable the Extend Community".repeat(10),
+        msg: "Enable the Extend Community \xf0\x28\x8c\x28".repeat(10000),
         serviceId: "456456",
       };
 
@@ -186,92 +186,6 @@ describe("PaymentService", function () {
       expect(ethers.toUtf8String(messageEvent)).to.equal(
         JSON.stringify(message)
       );
-    });
-
-    describe("Try to bad string or bytes", async () => {
-      it("Use string", async () => {
-        const { wallet1 } = await getEOAAccounts();
-        const amount = ethers.parseUnits("10", 18);
-        const message = {
-          msg: "\xf0\x28\x8c\x28",
-          postId: "123123",
-        };
-        console.log("🚀 ~ it ~ message:", JSON.stringify(message))
-
-        const approveTx = await testERC20.approve(
-          paymentService.target,
-          amount
-        );
-        await approveTx.wait();
-
-        const tipTx = await paymentService.tip(
-          testERC20.target,
-          wallet1.address,
-          ethers.parseUnits("10", 18),
-          JSON.stringify(message)
-        );
-
-        await tipTx.wait();
-        await expect(tipTx)
-          .to.emit(paymentService, "Tip")
-          .to.emit(testERC20, "Transfer");
-        const tipReceipt = await tipTx.wait();
-        const tipEvent = tipReceipt!.logs
-          .map((e) => {
-            try {
-              const event = paymentService.interface.parseLog(e as any);
-              return event;
-            } catch (error) {
-              return null;
-            }
-          })
-          .filter((e) => e !== null)
-          .find((e) => e.name === "Tip");
-        const messageEvent = tipEvent?.args.message;
-        console.log("🚀 ~ it ~ messageEvent:", messageEvent)
-        expect(messageEvent).to.equal(JSON.stringify(message));
-      });
-      it("Use bytes", async () => {
-        const { wallet1 } = await getEOAAccounts();
-        const amount = ethers.parseUnits("10", 18);
-        const message = {
-          msg: `\xf0\x28\x8c\x28`,
-          postId: "123123",
-        };
-
-        const approveTx = await testERC20.approve(
-          paymentService.target,
-          amount
-        );
-        await approveTx.wait();
-
-        const tipTx = await paymentService.tipWithBytesMessage(
-          testERC20.target,
-          wallet1.address,
-          ethers.parseUnits("10", 18),
-          ethers.toUtf8Bytes(JSON.stringify(message))
-        );
-
-        await tipTx.wait();
-        await expect(tipTx)
-          .to.emit(paymentService, "TipWithBytesMessage")
-          .to.emit(testERC20, "Transfer");
-        const tipReceipt = await tipTx.wait();
-        const tipEvent = tipReceipt!.logs
-          .map((e) => {
-            try {
-              const event = paymentService.interface.parseLog(e as any);
-              return event;
-            } catch (error) {
-              return null;
-            }
-          })
-          .filter((e) => e !== null)
-          .find((e) => e.name === "TipWithBytesMessage");
-        const messageEvent = tipEvent?.args.message;
-        console.log("🚀 ~ it ~ messageEvent:", ethers.toUtf8String(messageEvent))
-        expect(ethers.toUtf8String(messageEvent)).to.equal(JSON.stringify(message));
-      });
     });
   });
 });

@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract PaymentService is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
-    address public collector;
-
     event Tip(
         IERC20 indexed token,
         address indexed from,
