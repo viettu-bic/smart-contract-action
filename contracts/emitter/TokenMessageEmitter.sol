@@ -6,10 +6,10 @@ import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract PaymentService is ReentrancyGuard, Ownable {
+contract TokenMessageEmitter is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
-    event Tip(
+    event TransferToken(
         IERC20 indexed token,
         address indexed from,
         address indexed to,
@@ -32,7 +32,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
 
     constructor() {}
 
-    function tip(
+    function transferToken(
         IERC20 _token,
         address _to,
         uint256 _amount,
@@ -42,7 +42,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         address sender = msg.sender;
         _token.safeTransferFrom(sender, _to, _amount);
 
-        emit Tip(_token, sender, _to, _amount, _message);
+        emit TransferToken(_token, sender, _to, _amount, _message);
     }
 
     function charge(
