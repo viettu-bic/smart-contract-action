@@ -33,7 +33,7 @@ describe("TokenMessageEmitter", function () {
       const approveTx = await testERC20.approve(tokenMessageEmitter.target, amount);
       await approveTx.wait();
 
-      const tipTx = await tokenMessageEmitter.transferToken(
+      const tipTx = await tokenMessageEmitter.transferERC20(
         testERC20.target,
         wallet1.address,
         ethers.parseUnits("10", 18),
@@ -121,7 +121,7 @@ describe("TokenMessageEmitter", function () {
   //     const approveTx = await testERC20.approve(tokenMessageEmitter.target, amount);
   //     await approveTx.wait();
 
-  //     const tipTx = await tokenMessageEmitter.transferTokenWithBytesMessage(
+  //     const tipTx = await tokenMessageEmitter.transferERC20WithBytesMessage(
   //       testERC20.target,
   //       wallet1.address,
   //       ethers.parseUnits("10", 18),

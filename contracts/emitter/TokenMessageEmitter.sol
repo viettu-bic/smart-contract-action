@@ -41,10 +41,8 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
         string calldata _message
     ) external {
         require(_amount > 0, "PMS: Amount must be greater than zero");
-        address sender = _msgSender();
-        _token.safeTransferFrom(sender, _to, _amount);
-
-        emit ERC20Message(_token, sender, _to, _amount, _message);
+        _token.safeTransferFrom(_msgSender(), _to, _amount);
+        emit ERC20Message(_token, _msgSender(), _to, _amount, _message);
     }
 
     function charge(
@@ -53,9 +51,8 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
         string calldata _message
     ) external {
         require(_amount > 0, "PMS: Amount must be greater than zero");
-        address sender = _msgSender();
-        _token.safeTransferFrom(sender, address(this), _amount);
-        emit ERC20Charge(_token, sender, address(this), _amount, _message);
+        _token.safeTransferFrom(_msgSender(), address(this), _amount);
+        emit ERC20Charge(_token, _msgSender(), address(this), _amount, _message);
     }
 
     function withdrawToken(
@@ -65,7 +62,6 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
     ) external onlyOwner {
         require(_amount > 0, "PMS: Amount must be greater than zero");
         _token.safeTransfer(_to, _amount);
-
         emit WithdrawToken(_token, _msgSender(), _to, _amount);
     }
 }
