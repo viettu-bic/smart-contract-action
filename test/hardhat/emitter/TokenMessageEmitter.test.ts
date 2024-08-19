@@ -42,7 +42,7 @@ describe("TokenMessageEmitter", function () {
 
       await tipTx.wait();
       await expect(tipTx)
-        .to.emit(tokenMessageEmitter, "TransferToken")
+        .to.emit(tokenMessageEmitter, "ERC20Message")
         .to.emit(testERC20, "Transfer");
       const tipReceipt = await tipTx.wait();
       const tipEvent = tipReceipt!.logs
@@ -78,7 +78,7 @@ describe("TokenMessageEmitter", function () {
 
       await chargeTx.wait();
       await expect(chargeTx)
-        .to.emit(tokenMessageEmitter, "Charge")
+        .to.emit(tokenMessageEmitter, "ERC20Charge")
         .to.emit(testERC20, "Transfer");
       const chargeReceipt = await chargeTx.wait();
       const chargeEvent = chargeReceipt!.logs

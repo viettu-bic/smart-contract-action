@@ -9,20 +9,22 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TokenMessageEmitter is ReentrancyGuard, Ownable {
     using SafeERC20 for IERC20;
 
-    event TransferToken(
+    event ERC20Message(
         IERC20 indexed token,
         address indexed from,
         address indexed to,
         uint256 amount,
         string message
     );
-    event Charge(
+
+     event ERC20Charge(
         IERC20 indexed token,
         address indexed from,
         address indexed to,
         uint256 amount,
         string message
     );
+    
     event WithdrawToken(
         IERC20 indexed token,
         address indexed from,
@@ -32,7 +34,7 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
 
     constructor() {}
 
-    function transferToken(
+    function transferERC20(
         IERC20 _token,
         address _to,
         uint256 _amount,
@@ -42,7 +44,7 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
         address sender = msg.sender;
         _token.safeTransferFrom(sender, _to, _amount);
 
-        emit TransferToken(_token, sender, _to, _amount, _message);
+        emit ERC20Message(_token, sender, _to, _amount, _message);
     }
 
     function charge(
@@ -53,7 +55,7 @@ contract TokenMessageEmitter is ReentrancyGuard, Ownable {
         require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
         _token.safeTransferFrom(sender, address(this), _amount);
-        emit Charge(_token, sender, address(this), _amount, _message);
+        emit ERC20Charge(_token, sender, address(this), _amount, _message);
     }
 
     function withdrawToken(
