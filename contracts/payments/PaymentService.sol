@@ -36,7 +36,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
         IERC20 _token,
         address _to,
         uint256 _amount,
-        string memory _message
+        string calldata _message
     ) external {
         require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
@@ -48,7 +48,7 @@ contract PaymentService is ReentrancyGuard, Ownable {
     function charge(
         IERC20 _token,
         uint256 _amount,
-        string memory _message
+        string calldata _message
     ) external {
         require(_amount > 0, "PMS: Amount must be greater than zero");
         address sender = msg.sender;
