@@ -5,13 +5,13 @@ async function main() {
   console.log("🚀 ~ file: deploy.ts:5 ~ main ~ deployer:", deployer.address);
 
 
-  const paymentService = await ethers.deployContract("PaymentService", []);
-  await paymentService.waitForDeployment();
+  const tokenMessageEmitter = await ethers.deployContract("TokenMessageEmitter", []);
+  await tokenMessageEmitter.waitForDeployment();
 
-  console.log("🚀 paymentService :", paymentService.target);
+  console.log("🚀 paymentService :", tokenMessageEmitter.target);
 
   await run("verify:verify", {
-    address: paymentService.target,
+    address: tokenMessageEmitter.target,
     constructorArguments: [],
 });
 
