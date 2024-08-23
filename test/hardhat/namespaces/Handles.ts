@@ -199,10 +199,20 @@ describe("Handles", function () {
       expect(await bicHandles.OPERATOR()).to.equal(deployer.address);
     });
 
+    it("Handles: should not set operator if not operator", async function () {
+      await expect(bicHandles.connect(wallet2).setOperator(wallet3.address)).to.be.revertedWithCustomError(bicHandles, "NotOperator");
+    });
+
   it('view functions', async function () {
     expect(await bicHandles.totalSupply()).to.equal(0);
     expect(await bicHandles.getHandleTokenURIContract()).to.equal(handleTokenURI.target);
-    // expect(await bicHandles.getNamespaceHash()).to.equal(ethers.solidityPackedKeccak256(['bytes32'], ['bic']));
-    // expect(await bicHandles.supportsInterface()).to.equal('bic');
+    expect(await bicHandles.getNamespace()).to.equal('ocnft');
+    expect(await bicHandles.getNamespaceHash()).to.equal(ethers.keccak256(ethers.toUtf8Bytes('ocnft')));
+    const randomAddress = ethers.Wallet.createRandom().address;
+    const IHandle = await ethers.getContractAt("IHandles", randomAddress);
+    const IHandleInterface = IHandle.interface;
+    const interfaceId = IHandleInterface
+        .getFunction("supportsInterface").selector;
+    expect(await bicHandles.supportsInterface(interfaceId)).to.equal(true);
   });
 });

@@ -279,4 +279,8 @@ describe('Controller', function () {
         expect(await usernameHandles.exists(tokenId)).to.equal(false);
 
     });
+
+    describe('Controller: getRequestHandleOp', async function () {
+
+    });
 });

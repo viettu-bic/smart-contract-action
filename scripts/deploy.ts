@@ -2,7 +2,7 @@ import hre, {ethers} from "hardhat";
 
 import HandleModule from "../ignition/modules/Handles";
 import Infra from "../ignition/modules/Infra";
-import TokenRedeem from "../ignition/modules/TokenRedeem";
+import TokenRedeem from "../ignition/modules/BicRedeemFactory";
 
 const nameNftList = [
     {
