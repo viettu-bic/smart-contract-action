@@ -474,20 +474,17 @@ contract HandlesController is ReentrancyGuard, Ownable {
 
     /**
      * @notice Allows withdrawal of funds or tokens from the contract.
-     * @param token The address of the token to withdraw, or address(0) for native Ether.
+     * @param token The address of the token to withdraw
      * @param to The recipient of the funds or tokens.
      * @param amount The amount to withdraw.
+     * @dev no need to withdraw ETH because this contract not have fallback or receive function
      */
     function withdraw(
         address token,
         address to,
         uint256 amount
     ) external onlyOwner {
-        if (token == address(0)) {
-            payable(to).transfer(amount);
-        } else {
-            IERC20(token).transfer(to, amount);
-        }
+        IERC20(token).transfer(to, amount);
     }
 
     /**
