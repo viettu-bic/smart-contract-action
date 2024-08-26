@@ -24,7 +24,7 @@ contract BicForwarder is IBicForwarder, Ownable {
     modifier onController() {
         require(
             isController[msg.sender],
-            "HandlesController: caller is not a controller"
+            "BicForwarder: caller is not a controller"
         );
         _;
     }

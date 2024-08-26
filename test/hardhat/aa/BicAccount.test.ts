@@ -161,4 +161,11 @@ describe("BicAccount", function() {
       await expect(smartWalletForJack.initialize(Lily.address as any, randomWallet.address as any)).to.be.reverted;
     })
 
+    it("changeOperator should be working as expected", async () => {
+        await smartWalletForJack.connect(Jack).changeOperator(Lily.address as any);
+        expect(await smartWalletForJack.operator()).equal(Lily.address);
+        await smartWalletForJack.connect(Lily).changeOperator(operator.address as any);
+        expect(await smartWalletForJack.operator()).equal(operator.address);
+    });
+
 });

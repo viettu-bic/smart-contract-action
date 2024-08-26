@@ -1,8 +1,6 @@
 import { ethers } from "hardhat";
 import { getEOAAccounts } from "../util/getEoaAccount";
 import { expect } from "chai";
-import { controller } from "../../../typechain-types/contracts/namespaces";
-import { parseEther } from "ethers";
 import { BicForwarder, BicTokenPaymaster, Handles, HandlesController, TestMarketplace } from "../../../typechain-types";
 
 

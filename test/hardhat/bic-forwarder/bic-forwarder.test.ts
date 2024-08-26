@@ -80,4 +80,51 @@ describe("BicForwarder With 3rd Marketplace", function () {
         expect(auction.highestBidder).to.be.equal(wallet2.address);
         expect(auction.bidAmount).to.be.equal(bidAmount);
     });
+
+    it('Should revert when bid amount equals to 0', async () => {
+        const { deployer, wallet1 } = await getEOAAccounts();
+        const bidAmount = 0n;
+        const auctionId = 0;
+
+        const approveTx = await testERC20.connect(wallet1).approve(testMarketplace.target as any, bidAmount as any);
+        await approveTx.wait();
+
+        await bicForwarder.addController(deployer.address as any);
+
+        const bidData = testMarketplace.interface.encodeFunctionData("bidInAuction", [auctionId, bidAmount]);
+        await expect(bicForwarder.connect(deployer).forwardRequest({
+            from: wallet1.address,
+            to: testMarketplace.target,
+            value: 0,
+            data: bidData
+        } as any)).to.be.revertedWith("Marketplace: Bid amount must be greater than 0");
+    })
+
+    it('Should return Forwarding request failed when call revert zero data', async () => {
+        const { deployer, wallet1 } = await getEOAAccounts();
+
+        await bicForwarder.addController(deployer.address as any);
+
+        const bidData = testMarketplace.interface.encodeFunctionData("testRevertWithoutAnyData", []);
+        await expect(bicForwarder.connect(deployer).forwardRequest({
+            from: wallet1.address,
+            to: testMarketplace.target,
+            value: 0,
+            data: bidData
+        } as any)).to.be.revertedWith("Forwarding request failed");
+    })
+
+    it('Should return empty string when call revert zero message', async () => {
+        const { deployer, wallet1 } = await getEOAAccounts();
+
+        await bicForwarder.addController(deployer.address as any);
+
+        const bidData = testMarketplace.interface.encodeFunctionData("testRevertZeroInfo", []);
+        await expect(bicForwarder.connect(deployer).forwardRequest({
+            from: wallet1.address,
+            to: testMarketplace.target,
+            value: 0,
+            data: bidData
+        } as any)).to.be.revertedWith("");
+    })
 });

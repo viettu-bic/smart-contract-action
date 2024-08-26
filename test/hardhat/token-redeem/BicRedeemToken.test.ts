@@ -10,7 +10,6 @@ import {
   BicRedeemToken,
   TestERC20,
 } from "../../../typechain-types";
-import {toBigInt} from "@nomicfoundation/hardhat-network-helpers/dist/src/utils";
 
 describe("BicRedeemToken Test", function () {
   let bicRedeemToken: BicRedeemToken;
