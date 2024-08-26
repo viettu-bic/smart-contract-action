@@ -317,7 +317,7 @@ describe('Controller', function () {
     describe('Controller: withdraw', async function () {
         it('Controller: should withdraw bic successfully', async function () {
             const randomWalletAddress = ethers.Wallet.createRandom().address;
-            await bic.mint(handlesController.target, ethers.parseEther('1'));
+            await bic.transfer(handlesController.target, ethers.parseEther('1'));
             const initialBicBalance = await bic.balanceOf(handlesController.target);
             expect(initialBicBalance).to.equal(ethers.parseEther('1'));
             const bicRandomWalletBalance = await bic.balanceOf(randomWalletAddress);
