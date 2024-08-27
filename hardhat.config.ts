@@ -5,6 +5,7 @@ import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 // import "@nomicfoundation/hardhat-foundry";
 import "solidity-docgen";
+import "hardhat-gas-reporter";
 
 import env from "./env";
 
@@ -20,6 +21,10 @@ const config: HardhatUserConfig = {
         runs: 1000000,
       },
     },
+  },
+  gasReporter: {
+    enabled: (process.env.REPORT_GAS) ? true : false,
+    L2:"arbitrum"
   },
   networks: {
     hardhat: {

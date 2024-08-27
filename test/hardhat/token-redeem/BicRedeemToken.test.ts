@@ -5,6 +5,7 @@ import dayDurationPlugin from "dayjs/plugin/duration";
 dayjs.extend(dayDurationPlugin);
 import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 import {
+  BicFactory,
   BicRedeemFactory,
   BicRedeemToken,
   TestERC20,
@@ -14,6 +15,7 @@ describe("BicRedeemToken Test", function () {
   let bicRedeemToken: BicRedeemToken;
   let bicRedeemFactory: BicRedeemFactory;
   let testERC20: TestERC20;
+  let bicRedeemImplementation: string;
 
   const DENOMINATOR = 10_000;
   const bufferStack = (p: number) => {
@@ -26,19 +28,12 @@ describe("BicRedeemToken Test", function () {
     );
     bicRedeemFactory = await BicRedeemFactory.deploy();
     await bicRedeemFactory.waitForDeployment();
-    const bicRedeemImplementation =
+    bicRedeemImplementation =
       await bicRedeemFactory.bicRedeemImplementation();
 
     const TestERC20 = await ethers.getContractFactory("TestERC20");
     testERC20 = await TestERC20.deploy();
     await testERC20.waitForDeployment();
-
-    // approve Admin's token for Factory
-    const approveTx = await testERC20.approve(
-      bicRedeemFactory.target,
-      ethers.MaxUint256
-    );
-    await approveTx.wait();
   });
 
   describe("Bic Redeem factory", () => {
@@ -50,6 +45,7 @@ describe("BicRedeemToken Test", function () {
 
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("4000", 18);
+      await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -105,6 +101,7 @@ describe("BicRedeemToken Test", function () {
       );
       const duration = dayjs.duration(1, "weeks").asSeconds();
       const totalAmount = ethers.parseUnits("2000", 18);
+      await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -152,9 +149,98 @@ describe("BicRedeemToken Test", function () {
       );
       expect(balanceOfRedeemContract).to.lessThanOrEqual(totalAmount);
     });
+
+    it("should not create redeem twice", async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const speedRateNumber = ethers.toBigInt(
+          ethers.parseUnits("1.43".toString(), 3)
+      );
+      const duration = dayjs.duration(1, "weeks").asSeconds();
+      const totalAmount = ethers.parseUnits("100", 18);
+        await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
+      const redeemAddress = await bicRedeemFactory.computeRedeem(
+            testERC20.target as any,
+            totalAmount as any,
+            beneficiary.address as any,
+            duration as any,
+            speedRateNumber as any,
+        );
+
+      const txCreateRedeem1 = await bicRedeemFactory.createRedeem(
+          testERC20.target as any,
+          totalAmount as any,
+          beneficiary.address as any,
+          duration as any,
+          speedRateNumber as any,
+      );
+        await txCreateRedeem1.wait();
+        expect(txCreateRedeem1).to.emit(bicRedeemFactory, "RedeemCreated");
+
+        await expect(bicRedeemFactory.createRedeem(
+            testERC20.target as any,
+            totalAmount as any,
+            beneficiary.address as any,
+            duration as any,
+            speedRateNumber as any,
+        )).to.be.revertedWith("Redeem contract already deploy");
+    });
+
+    it('should predict to same address when same beneficiary but different other params', async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const speedRateNumber = ethers.toBigInt(
+          ethers.parseUnits("1.43".toString(), 3)
+      );
+      const duration = dayjs.duration(1, "weeks").asSeconds();
+      const totalAmount = ethers.parseUnits("100", 18);
+      await testERC20.transfer(bicRedeemFactory.target as any ,totalAmount as any);
+      const redeemAddress = await bicRedeemFactory.computeRedeem(
+          testERC20.target as any,
+          totalAmount as any,
+          beneficiary.address as any,
+          duration as any,
+          speedRateNumber as any,
+      );
+      await bicRedeemFactory.createRedeem(
+          testERC20.target as any,
+          totalAmount as any,
+          beneficiary.address as any,
+          duration as any,
+          speedRateNumber as any
+      )
+      const speedRateNumber2 = ethers.toBigInt(
+            ethers.parseUnits("1.5".toString(), 3)
+        );
+      const duration2 = dayjs.duration(2, "weeks").asSeconds();
+        const totalAmount2 = ethers.parseUnits("200", 18);
+      const redeemAddress2 = await bicRedeemFactory.computeRedeem(
+          testERC20.target as any,
+          totalAmount as any,
+          beneficiary.address as any,
+          duration as any,
+          speedRateNumber as any,
+      );
+        expect(redeemAddress).to.be.eq(redeemAddress2)
+    });
   });
 
   describe("Bic Redeem contract", () => {
+    it("should throw error if redeem have zero amount", async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const speedRateNumber = ethers.toBigInt(
+          ethers.parseUnits("1.43".toString(), 3)
+      );
+      const duration = dayjs.duration(1, "weeks").asSeconds();
+      const totalAmount = ethers.parseUnits("0", 18);
+
+      await expect(bicRedeemFactory.createRedeem(
+          testERC20.target as any,
+          totalAmount as any,
+          beneficiary.address as any,
+          duration as any,
+          speedRateNumber as any,
+      )).to.be.revertedWith("BicRedeemToken: total amount invalid");
+    });
+
     describe("Test with beauty number", async () => {
       const beneficiary = ethers.Wallet.createRandom(ethers.provider);
       const duration = dayjs.duration(1, "weeks").asSeconds();
@@ -163,6 +249,7 @@ describe("BicRedeemToken Test", function () {
       );
       const totalAmount = "3000";
       const totalAmountInDecimal = ethers.parseUnits(totalAmount, 18);
+
       const stacksExpect = BigInt(
         Math.floor(DENOMINATOR / Number(speedRateNumber))
       );
@@ -171,6 +258,8 @@ describe("BicRedeemToken Test", function () {
         BigInt(duration);
 
       before(async () => {
+        await testERC20.transfer(bicRedeemFactory.target as any ,totalAmountInDecimal as any);
+
         const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,
@@ -226,7 +315,7 @@ describe("BicRedeemToken Test", function () {
         expect(releasableData[1]).to.be.eq(BigInt(0));
         const vestTx = bicRedeemToken.release();
         await expect(vestTx).revertedWith(
-          "VestingWallet: no tokens to release"
+          "BicRedeemToken: no tokens to release"
         );
       });
 
@@ -420,6 +509,7 @@ describe("BicRedeemToken Test", function () {
         BigInt(duration);
 
       before(async () => {
+        await testERC20.transfer(bicRedeemFactory.target as any ,totalAmountInDecimal as any);
         const redeemAddress = await bicRedeemFactory.computeRedeem(
           testERC20.target,
           totalAmountInDecimal,
@@ -476,7 +566,7 @@ describe("BicRedeemToken Test", function () {
         expect(releasableData[1]).to.be.eq(BigInt(0));
         const vestTx = bicRedeemToken.release();
         await expect(vestTx).revertedWith(
-          "VestingWallet: no tokens to release"
+          "BicRedeemToken: no tokens to release"
         );
       });
 
@@ -641,4 +731,65 @@ describe("BicRedeemToken Test", function () {
       });
     });
   });
+
+  describe("BIC Redeem without factory", () => {
+    let bicFactory: BicFactory;
+
+    before(async () => {
+      const BicFactory = await ethers.getContractFactory("BicFactory");
+      bicFactory = await BicFactory.deploy();
+      await bicFactory.waitForDeployment();
+    });
+
+    it('can be deploy by BicFactory', async () => {
+      const beneficiary = ethers.Wallet.createRandom(ethers.provider);
+      const speedRateNumber = ethers.toBigInt(
+          ethers.parseUnits("3".toString(), 3)
+      );
+      const duration = dayjs.duration(1, "weeks").asSeconds();
+      const totalAmount = ethers.parseUnits("2000", 18);
+      const salt = ethers.keccak256(beneficiary.address);
+      const redeemAddress = await bicFactory.computeProxyAddress(bicRedeemImplementation as any, salt as any);
+      await testERC20.transfer(redeemAddress as any ,totalAmount as any);
+      console.log('🚀 ~ it ~ redeemAddress', redeemAddress)
+      const bicRedeemToken = await ethers.getContractAt('BicRedeemToken', redeemAddress);
+      const currentBlock = await ethers.provider.getBlock('latest');
+      const startTime = currentBlock?.timestamp + 1000;
+      const initCode = bicRedeemToken.interface.encodeFunctionData('initialize', [
+          testERC20.target,
+        totalAmount,
+        beneficiary.address,
+        startTime,
+        duration,
+        speedRateNumber
+      ]);
+
+        await bicFactory.deployProxyByImplementation(bicRedeemImplementation as any, initCode as any, salt as any);
+
+        expect(await bicRedeemToken.beneficiary()).to.be.eq(beneficiary.address);
+        expect(await bicRedeemToken.erc20()).to.be.eq(testERC20.target);
+        expect(await bicRedeemToken.redeemTotalAmount()).to.be.eq(totalAmount);
+        expect(await bicRedeemToken.redeemRate()).to.be.eq(speedRateNumber);
+        expect(await bicRedeemToken.start()).to.be.eq(startTime);
+        expect(await bicRedeemToken.duration()).to.be.eq(duration);
+        expect(await bicRedeemToken.released()).to.be.eq(0n);
+        expect(await bicRedeemToken.maxRewardStacks()).to.be.eq(3);
+        const releasable = await bicRedeemToken.releasable();
+        expect(releasable[0]).to.be.eq(0n);
+        expect(releasable[1]).to.be.eq(0n);
+        const lastAtCurrentRewardStacksPrev = await bicRedeemToken.lastAtCurrentStack();
+      const end = await bicRedeemToken.end();
+
+        await helpers.time.increaseTo(end - 1000n);
+        await bicRedeemToken.release();
+        const releasableAfter = await bicRedeemToken.releasable();
+      expect(releasableAfter[0]).to.be.eq(0n);
+      expect(releasableAfter[1]).to.be.eq(0n);
+      await helpers.time.increaseTo(end + 10n);
+      const releasableAfter2 = await bicRedeemToken.releasable();
+      expect(releasableAfter2[0]).to.be.eq(200000000000000000000n); // 1800 BIC be claimed
+      expect(releasableAfter2[1]).to.be.eq(0n);
+
+    })
+  })
 });

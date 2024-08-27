@@ -62,7 +62,7 @@ describe.skip('VerifyingTokenPayAfterPaymaster', () => {
         tree = StandardMerkleTree.of(values, ["uint256", "address", "uint256"])
         const SimpleClaim = await ethers.getContractFactory('SimpleClaim');
         simpleClaim = await SimpleClaim.deploy(tree.root, legacyTokenPaymasterAddress);
-        await bicTokenPaymaster.mint(simpleClaim.target, parseEther('1000'));
+        await bicTokenPaymaster.transfer(simpleClaim.target, parseEther('1000'));
         expect(await bicTokenPaymaster.balanceOf(simpleClaim.target)).to.equal(parseEther('1000'));
         await simpleClaim.waitForDeployment();
         const VerifyingTokenPayAfterPaymaster = await ethers.getContractFactory('VerifyingTokenPayAfterPaymaster');
@@ -140,7 +140,7 @@ describe.skip('VerifyingTokenPayAfterPaymaster', () => {
         expect(await bicTokenPaymaster.balanceOf(smartWalletUser2Address)).to.equal(0);
         await usdt.transfer(smartWalletUser2Address, parseEther('1000') as any);
         expect(await usdt.balanceOf(smartWalletUser2Address)).to.equal(parseEther('1000'));
-        await bicTokenPaymaster.mint(testUniswap.target, parseEther('10000'));
+        await bicTokenPaymaster.transfer(testUniswap.target, parseEther('10000'));
         const swapParams = {
             tokenIn: usdt.target,
             tokenOut: legacyTokenPaymasterAddress,
@@ -187,7 +187,7 @@ describe.skip('VerifyingTokenPayAfterPaymaster', () => {
     });
 
     it('withdrawTokensTo', async () => {
-        await bicTokenPaymaster.mint(verifyingTokenPayAfterPaymasterAddress, parseEther('1000'));
+        await bicTokenPaymaster.transfer(verifyingTokenPayAfterPaymasterAddress, parseEther('1000'));
         await verifyingTokenPayAfterPaymaster.withdrawTokensTo(bicTokenPaymaster.target, beneficiary, parseEther('1000'));
         expect(await bicTokenPaymaster.balanceOf(beneficiary)).to.equal(parseEther('1000'));
     })

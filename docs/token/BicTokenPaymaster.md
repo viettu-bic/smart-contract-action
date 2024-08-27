@@ -40,7 +40,7 @@ The blocked users
 ### BlockPlaced
 
 ```solidity
-event BlockPlaced(address _user)
+event BlockPlaced(address _user, address _operator)
 ```
 
 _Emitted when a user is blocked_
@@ -48,7 +48,7 @@ _Emitted when a user is blocked_
 ### BlockReleased
 
 ```solidity
-event BlockReleased(address _user)
+event BlockReleased(address _user, address _operator)
 ```
 
 _Emitted when a user is unblocked_
@@ -56,16 +56,44 @@ _Emitted when a user is unblocked_
 ### ChargeFee
 
 ```solidity
-event ChargeFee(address sender, uint256 _fee)
+event ChargeFee(address sender, uint256 fee)
 ```
 
 _Emitted when a user is charged, using for indexing on subgraph_
 
+### SetOracle
+
+```solidity
+event SetOracle(address oldOracle, address newOracle, address _operator)
+```
+
+_Emitted when the oracle is set_
+
+### AddFactory
+
+```solidity
+event AddFactory(address factory, address _operator)
+```
+
+_Emitted when a factory is added_
+
 ### constructor
 
 ```solidity
-constructor(contract IEntryPoint _entryPoint) public
+constructor(contract IEntryPoint _entryPoint, address _owner) public
 ```
+
+Constructor that make this contract become ERC20 Paymaster and also Permit
+
+_BIC token required permit because of Account Abstraction feature
+Using ERC20Permit because it is require for forwarder from Entrypoint_
+
+#### Parameters
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _entryPoint | contract IEntryPoint | the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789 |
+| _owner | address | is the owner of the paymaster. Using this param to set Safe wallet as default owner |
 
 ### setOracle
 
@@ -230,6 +258,8 @@ function pause() public
 
 Pause transfers using this token. For emergency use.
 
+_Event already defined and emitted in Pausable.sol_
+
 ### unpause
 
 ```solidity
@@ -238,38 +268,14 @@ function unpause() public
 
 Unpause transfers using this token.
 
+_Event already defined and emitted in Pausable.sol_
+
 ### _beforeTokenTransfer
 
 ```solidity
 function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual
 ```
 
-_Hook that is called before any transfer of tokens. This includes minting.
+_Hook that is called before any transfer of tokens.
 Override existing hook to add additional checks: paused and blocked users._
-
-### cap
-
-```solidity
-function cap() public view virtual returns (uint256)
-```
-
-_Returns the cap on the token's total supply.
-Cannot mint more tokens if cap is reached._
-
-### mint
-
-```solidity
-function mint(address to, uint256 amount) public
-```
-
-Mint new tokens
-
-_Cannot mint more tokens if cap is reached_
-
-#### Parameters
-
-| Name | Type | Description |
-| ---- | ---- | ----------- |
-| to | address | the address to mint the tokens to |
-| amount | uint256 | the amount of tokens to mint |
 

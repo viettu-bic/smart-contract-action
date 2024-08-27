@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
 import { getEOAAccounts } from "../util/getEoaAccount";
 import { expect } from "chai";
-import { controller } from "../../../typechain-types/contracts/namespaces";
 import { parseEther } from "ethers";
+import * as helpers from "@nomicfoundation/hardhat-network-helpers";
 
 
 describe('Controller', function () {
@@ -39,7 +39,7 @@ describe('Controller', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target, deployer);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
         handlesController = await HandlesController.deploy(bic.target);
@@ -73,7 +73,7 @@ describe('Controller', function () {
     });
 
     it('Controller: create nft directly', async function () {
-        await bic.mint(wallet1.address, ethers.parseEther('1') as any);
+        await bic.transfer(wallet1.address, ethers.parseEther('1') as any);
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
@@ -111,7 +111,8 @@ describe('Controller', function () {
     });
 
     it('Controller: commit to mint nft', async function () {
-        await bic.mint(wallet1.address, ethers.parseEther('1'));
+        const snapshot = await helpers.takeSnapshot();
+        await bic.transfer(wallet1.address, ethers.parseEther('1'));
         const initialBicBalance = await bic.balanceOf(wallet1.address);
         expect(initialBicBalance).to.equal(ethers.parseEther('1'));
         const currentTime = Math.floor(Date.now() / 1000);
@@ -154,11 +155,12 @@ describe('Controller', function () {
         } catch (e) {
             expect(e.message).to.contain('ERC721: invalid token ID');
         }
-        await ethers.provider.send('evm_increaseTime', [commitDuration]);
-        console.log('new')
+        await helpers.time.increase(commitDuration);
         await bic.connect(wallet1).approve(handlesController.target, ethers.parseEther('1'));
-        const newCurrentTime = Math.floor(Date.now() / 1000) + commitDuration;
+        const newCurrentTime = await ethers.provider.getBlock('latest').then(block => block!.timestamp);
         const newNextHour = newCurrentTime + 60 * 60;
+        await helpers.time.increase(10);
+
         const newDataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -191,6 +193,8 @@ describe('Controller', function () {
         expect(await bic.balanceOf(wallet2.address)).to.equal(price / 10n);
         expect(await bic.balanceOf(wallet3.address)).to.equal(price / 5n);
         expect(await bic.balanceOf(randomWalletAddress)).to.equal(price * 7n / 10n);
+
+        await snapshot.restore();
     })
 
     it('Controller: mint nft and create auction', async function () {
@@ -199,8 +203,11 @@ describe('Controller', function () {
         await handlesController.setMarketplace(testMarketplace.target as any);
         const mintName = 'testt'
         const price = ethers.parseEther('1');
-        const currentTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+        const currentTime = Math.floor(Date.now() / 1000);
+        // const currentTime = await ethers.provider.getBlock('latest').then(block => block!.timestamp);
         const nextHour = currentTime + 60 * 60;
+        // await helpers.time.increase(10);
+
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -228,7 +235,7 @@ describe('Controller', function () {
         expect(auctionId).to.equal(1n);
 
         // let assume that auction result is 1 BIC
-        await bic.mint(handlesController.target, ethers.parseEther('1'));
+        await bic.transfer(handlesController.target, ethers.parseEther('1'));
         const collectDataHash = await handlesController.getCollectAuctionPayoutOp(auctionId, ethers.parseEther('1'), [wallet3.address], [1000]);
         const collectSignature = await wallet3.signMessage(ethers.getBytes(collectDataHash));
         await handlesController.connect(wallet1).collectAuctionPayout(auctionId, ethers.parseEther('1'), [wallet3.address], [1000], collectSignature);
@@ -244,8 +251,11 @@ describe('Controller', function () {
         await handlesController.setMarketplace(testMarketplace.target as any);
         const mintName = 'testt'
         const price = ethers.parseEther('1');
-        const currentTime = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 30;
+        const currentTime = Math.floor(Date.now() / 1000);
+        // const currentTime = await ethers.provider.getBlock('latest').then(block => block!.timestamp);
         const nextHour = currentTime + 60 * 60;
+        // await helpers.time.increase(10);
+
         const dataHash = await handlesController.getRequestHandleOp({
             receiver: wallet1.address,
             handle: usernameHandles.target,
@@ -278,5 +288,51 @@ describe('Controller', function () {
         await handlesController.burnHandleMintedButAuctionFailed(usernameHandles.target, mintName);
         expect(await usernameHandles.exists(tokenId)).to.equal(false);
 
+    });
+
+    describe('Controller: updateCollectsDenominator', async function () {
+
+        it('Controller: should be update successful CollectsDenominator', async function () {
+            const currentCollectsDenominator = await handlesController.collectsDenominator();
+            expect(currentCollectsDenominator).to.equal(10000n);
+            const newCollectsDenominator = 2000n;
+            await handlesController.updateCollectsDenominator(newCollectsDenominator);
+            const nextCollectsDenominator = await handlesController.collectsDenominator();
+            expect(nextCollectsDenominator).to.equal(newCollectsDenominator);
+            const resetCollectsDenominator = 10000n;
+            await handlesController.updateCollectsDenominator(resetCollectsDenominator);
+            const finalCollectsDenominator = await handlesController.collectsDenominator();
+            expect(finalCollectsDenominator).to.equal(resetCollectsDenominator);
+        })
+
+        it('Controller: should not update CollectsDenominator if not owner', async function () {
+            const newCollectsDenominator = 2000n;
+            await expect(
+                handlesController.connect(wallet2).updateCollectsDenominator(newCollectsDenominator)
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+        })
+
+    });
+
+    describe('Controller: withdraw', async function () {
+        it('Controller: should withdraw bic successfully', async function () {
+            const randomWalletAddress = ethers.Wallet.createRandom().address;
+            await bic.transfer(handlesController.target, ethers.parseEther('1'));
+            const initialBicBalance = await bic.balanceOf(handlesController.target);
+            expect(initialBicBalance).to.equal(ethers.parseEther('1'));
+            const bicRandomWalletBalance = await bic.balanceOf(randomWalletAddress);
+            expect(bicRandomWalletBalance).to.equal(0);
+            await handlesController.withdraw(bic.target, randomWalletAddress, ethers.parseEther('1'));
+            expect(await bic.balanceOf(handlesController.target)).to.equal(0);
+            expect(await bic.balanceOf(randomWalletAddress)).to.equal(ethers.parseEther('1'));
+        });
+
+        it('Controller: should not withdraw if not owner', async function () {
+            const randomWalletAddress = ethers.Wallet.createRandom().address;
+
+            await expect(
+                handlesController.connect(wallet2).withdraw(bic.target, randomWalletAddress, ethers.parseEther('1'))
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
     });
 });

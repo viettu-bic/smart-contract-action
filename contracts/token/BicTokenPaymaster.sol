@@ -14,11 +14,11 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 /**
  * @title A paymaster that defines itself also BIC main token
  * @notice Using this paymaster mechanism for Account Abstraction bundler v0.6,
-   * when need to change to bundler v0.7 or higher, using TokenPaymaster instead
+ * when need to change to bundler v0.7 or higher, using TokenPaymaster instead
  */
 contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     /// Calculated cost of the postOp, minimum value that need verificationGasLimit to be higher than
-    uint256 constant public COST_OF_POST = 15000;
+    uint256 constant public COST_OF_POST = 60000;
 
     /// The factory that creates accounts. used to validate account creation. Just to make sure not have any unexpected account creation trying to bug the system
     mapping(address => bool) public factories;
@@ -29,33 +29,41 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     /// The blocked users
     mapping (address => bool) public isBlocked;
 
-    /// The cap on the token's total supply.
-    uint256 private immutable _cap;
-
     /// @dev Emitted when a user is blocked
-    event BlockPlaced(address indexed _user);
+    event BlockPlaced(address indexed _user, address indexed _operator);
 
     /// @dev Emitted when a user is unblocked
-    event BlockReleased(address indexed _user);
+    event BlockReleased(address indexed _user, address indexed _operator);
 
     /// @dev Emitted when a user is charged, using for indexing on subgraph
-    event ChargeFee(address sender, uint256 _fee);
+    event ChargeFee(address sender, uint256 fee);
 
-    /*
+    /// @dev Emitted when the oracle is set
+    event SetOracle(address oldOracle, address newOracle, address indexed _operator);
+
+    /// @dev Emitted when a factory is added
+    event AddFactory(address factory, address indexed _operator);
+
+    /**
+     * @notice Constructor that make this contract become ERC20 Paymaster and also Permit
      * @param _entryPoint the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789
+     * @param _owner is the owner of the paymaster. Using this param to set Safe wallet as default owner
      * @dev BIC token required permit because of Account Abstraction feature
+     * @dev Using ERC20Permit because it is require for forwarder from Entrypoint
      */
-    constructor(IEntryPoint _entryPoint) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
-        _cap = 6339777879 * 1e18;
+    constructor(IEntryPoint _entryPoint, address _owner) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
         //owner is allowed to withdraw tokens from the paymaster's balance
-        _approve(address(this), msg.sender, type(uint).max);
+        _approve(address(this), _owner, type(uint).max);
+        _transferOwnership(_owner);
+        _mint(_owner, 5000000000 * 1e18);
     }
 
     /**
-     * Set the oracle to use for token exchange rate.
+     * @notice Set the oracle to use for token exchange rate.
      * @param _oracle the oracle to use.
      */
     function setOracle(address _oracle) external onlyOwner {
+        emit SetOracle(oracle, _oracle, msg.sender);
         oracle = _oracle;
     }
 
@@ -65,6 +73,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function addFactory(address _factory) external onlyOwner {
         factories[_factory] = true;
+        emit AddFactory(_factory, msg.sender);
     }
 
     /**
@@ -159,7 +168,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function addToBlockedList (address _user) public onlyOwner {
         isBlocked[_user] = true;
-        emit BlockPlaced(_user);
+        emit BlockPlaced(_user, msg.sender);
     }
 
     /**
@@ -168,11 +177,12 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      */
     function removeFromBlockedList (address _user) public onlyOwner {
         isBlocked[_user] = false;
-        emit BlockReleased(_user);
+        emit BlockReleased(_user, msg.sender);
     }
 
     /**
      * @notice Pause transfers using this token. For emergency use.
+     * @dev Event already defined and emitted in Pausable.sol
      */
     function pause() public onlyOwner {
         _pause();
@@ -180,13 +190,14 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
     /**
      * @notice Unpause transfers using this token.
+     * @dev Event already defined and emitted in Pausable.sol
      */
     function unpause() public onlyOwner {
         _unpause();
     }
 
     /**
-     * @dev Hook that is called before any transfer of tokens. This includes minting.
+     * @dev Hook that is called before any transfer of tokens.
      * Override existing hook to add additional checks: paused and blocked users.
      */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
@@ -194,24 +205,5 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
         require(!paused(), "BicTokenPaymaster: token transfer while paused");
         require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
-    }
-
-    /**
-     * @dev Returns the cap on the token's total supply.
-     * Cannot mint more tokens if cap is reached.
-     */
-    function cap() public view virtual returns (uint256) {
-        return _cap;
-    }
-
-    /**
-     * @notice Mint new tokens
-     * @param to the address to mint the tokens to
-     * @param amount the amount of tokens to mint
-     * @dev Cannot mint more tokens if cap is reached
-     */
-    function mint(address to, uint256 amount) public onlyOwner {
-        require(totalSupply() + amount <= cap(), "BicTokenPaymaster: cap exceeded");
-        _mint(to, amount);
     }
 }

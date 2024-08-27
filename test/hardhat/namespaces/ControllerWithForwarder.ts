@@ -1,8 +1,6 @@
 import { ethers } from "hardhat";
 import { getEOAAccounts } from "../util/getEoaAccount";
 import { expect } from "chai";
-import { controller } from "../../../typechain-types/contracts/namespaces";
-import { parseEther } from "ethers";
 import { BicForwarder, BicTokenPaymaster, Handles, HandlesController, TestMarketplace } from "../../../typechain-types";
 
 
@@ -37,7 +35,7 @@ describe('ControllerWithForwarder', function () {
         const entryPoint = await EntryPoint.deploy();
 
         const BicTokenPaymaster = await ethers.getContractFactory('BicTokenPaymaster');
-        bic = await BicTokenPaymaster.deploy(entryPoint.target);
+        bic = await BicTokenPaymaster.deploy(entryPoint.target, deployer.address);
 
         const HandlesController = await ethers.getContractFactory('HandlesController');
         handlesController = await HandlesController.deploy(bic.target);``
@@ -64,7 +62,7 @@ describe('ControllerWithForwarder', function () {
         const setForwarderTx = await handlesController.setForwarder(bicForwarder.target);
         await setForwarderTx.wait();
 
-        const mintBicTx = await bic.mint(wallet4.address, ethers.parseUnits(1e5.toString(), 18));
+        const mintBicTx = await bic.transfer(wallet4.address, ethers.parseUnits(1e5.toString(), 18));
         await mintBicTx.wait();
         const newConfig = [100n, 200n, 300n];
         const updateTx = await handlesController.setAuctionMarketplaceConfig({

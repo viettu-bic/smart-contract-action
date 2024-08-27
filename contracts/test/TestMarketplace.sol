@@ -73,8 +73,6 @@ contract TestMarketplace is IMarketplace, ERC2771Context {
         emit NewBid(auctionId, sender, address(bic), _bidAmount);
     }
 
-    //    function collectAuctionPayout(uint256 _auctionId) external {
-    //    }
 
     function collectAuctionTokens(uint256 _auctionId) external {
         MockAuction memory auction = auctions[_auctionId];
@@ -83,5 +81,15 @@ contract TestMarketplace is IMarketplace, ERC2771Context {
             auction.highestBidder,
             auction.tokenId
         );
+    }
+
+    function testRevertWithoutAnyData() external {
+        assembly {
+            revert(0, 0) // Revert without any data
+        }
+    }
+
+    function testRevertZeroInfo() external {
+        revert("");
     }
 }
