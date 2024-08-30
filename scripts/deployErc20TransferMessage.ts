@@ -5,7 +5,7 @@ async function main() {
   console.log("🚀 ~ file: deploy.ts:5 ~ main ~ deployer:", deployer.address);
 
 
-  const tokenMessageEmitter = await ethers.deployContract("TokenMessageEmitter", []);
+  const tokenMessageEmitter = await ethers.deployContract("Erc20TransferMessage", []);
   await tokenMessageEmitter.waitForDeployment();
 
   console.log("🚀 paymentService :", tokenMessageEmitter.target);
