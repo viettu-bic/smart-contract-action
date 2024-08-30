@@ -1,9 +1,9 @@
 import {defender, ethers} from "hardhat";
-import {bicTokenPaymaster, defenderOptions} from "./setup";
+import {bicTokenPaymaster, defenderOptions, masterOwner} from "./setup";
 
 async function main() {
     const HandleTokenURI = await ethers.getContractFactory("HandleTokenURI");
-    const handleTokenURI = await defender.deployContract(HandleTokenURI, [], defenderOptions as any);
+    const handleTokenURI = await defender.deployContract(HandleTokenURI, [masterOwner], defenderOptions as any);
     await handleTokenURI.waitForDeployment();
     console.log("HandleTokenURI deployed to:", handleTokenURI.target);
 
@@ -18,7 +18,7 @@ async function main() {
     console.log("BicForwarder deployed to:", bicForwarder.target);
 
     const HandlesController = await ethers.getContractFactory("HandlesController");
-    const handlesController = await defender.deployContract(HandlesController, [bicTokenPaymaster], defenderOptions as any);
+    const handlesController = await defender.deployContract(HandlesController, [bicTokenPaymaster, masterOwner], defenderOptions as any);
     await handlesController.waitForDeployment();
     console.log("HandlesController deployed to:", handlesController.target);
 

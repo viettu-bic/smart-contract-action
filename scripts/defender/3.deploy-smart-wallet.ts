@@ -1,7 +1,7 @@
 import {defender, ethers} from "hardhat";
-import {defenderOptions, entryPoint} from "./setup";
+import {defenderOptions, entryPoint, masterOwner} from "./setup";
 
-const operator = '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789';
+const operator = masterOwner;
 
 async function main() {
     const BicAccountFactory = await ethers.getContractFactory("BicAccountFactory");
