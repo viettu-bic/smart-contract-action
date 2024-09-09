@@ -25,7 +25,7 @@ describe('HandleTokenURI', function () {
 
 
         const HandleTokenURI = await ethers.getContractFactory('HandleTokenURI');
-        handleURI = await HandleTokenURI.deploy();
+        handleURI = await HandleTokenURI.deploy(deployer.address);
         await handleURI.waitForDeployment();
 
 
@@ -35,13 +35,13 @@ describe('HandleTokenURI', function () {
         await handleURI.setNameElement(
             namespace,
             "Beincom - Ownership Username",
-            baseUri, 
+            baseUri,
         )
 
 
     });
 
-    it("should set the token URI", async function () { 
+    it("should set the token URI", async function () {
         const { deployer } = await getEOAAccounts();
 
         const localName = "Local name abc";
@@ -56,5 +56,5 @@ describe('HandleTokenURI', function () {
         expect(decodedData.image).to.equal(`https://api.beincom.app/v1/wallet/uri/ounft/${tokenId.toString()}`);
     });
 
-    
+
 });

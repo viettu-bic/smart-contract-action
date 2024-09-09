@@ -42,7 +42,7 @@ describe("Handles", function () {
     const HandleTokenURI = await ethers.getContractFactory("HandleTokenURI");
     const handle = await Handles.deploy();
     await handle.waitForDeployment();
-    handleTokenURI = await HandleTokenURI.deploy();
+    handleTokenURI = await HandleTokenURI.deploy(deployer.address);
     await handleTokenURI.waitForDeployment();
 
     const BicFactory = await ethers.getContractFactory("BicFactory");

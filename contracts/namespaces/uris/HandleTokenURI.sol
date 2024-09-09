@@ -32,6 +32,11 @@ contract HandleTokenURI is IHandleTokenURI, Ownable {
         string imageURI
     );
 
+    constructor(address _owner) {
+        transferOwnership(_owner);
+    }
+
+
     /// @notice Sets the metadata elements for a given namespace.
     /// @dev This function is accessible only to operators.
     /// @param namespace The namespace to associate with the metadata elements.

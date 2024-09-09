@@ -11,7 +11,6 @@ import env from "./env";
 
 // Extend hardhat env
 import "./configs";
-import fs from "fs";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -97,7 +96,11 @@ const config: HardhatUserConfig = {
   docgen: {
     pages: "files",
     exclude: ["test"],
-  }
+  },
+  defender: {
+    apiKey: env.DEFENDER_KEY as string,
+    apiSecret: env.DEFENDER_SECRET as string,
+  },
 };
 
 export default config;

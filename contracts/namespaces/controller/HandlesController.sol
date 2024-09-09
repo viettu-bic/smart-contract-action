@@ -109,8 +109,9 @@ contract HandlesController is ReentrancyGuard, Ownable {
     /**
      * @notice Initializes the HandlesController contract with the given BIC token address.
      */
-    constructor(IERC20 _bic) {
+    constructor(IERC20 _bic, address _owner) {
         bic = _bic;
+        transferOwnership(_owner);
 
         auctionConfig = AuctionConfig({
             buyoutBidAmount: 0,

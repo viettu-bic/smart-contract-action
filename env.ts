@@ -6,6 +6,8 @@ export type Environment = {
     MNEMONIC: string;
     MNEMONIC_PASSPHRASE: string;
     PRIVATE_KEYS: string[];
+    DEFENDER_KEY: string;
+    DEFENDER_SECRET: string;
 }
 
 const env = (): Environment => {
@@ -16,6 +18,8 @@ const env = (): Environment => {
         PRIVATE_KEY: process.env.PRIVATE_KEY as string,
         MNEMONIC_PASSPHRASE: process.env.MNEMONIC_PASSPHRASE as string,
         PRIVATE_KEYS: privateKeys || [],
+        DEFENDER_KEY: process.env.DEFENDER_KEY as string,
+        DEFENDER_SECRET: process.env.DEFENDER_SECRET as string
     }
 };
 
