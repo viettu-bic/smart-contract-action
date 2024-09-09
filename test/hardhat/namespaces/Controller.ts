@@ -53,12 +53,12 @@ describe("Controller", function () {
     const BicTokenPaymaster = await ethers.getContractFactory(
       "BicTokenPaymaster"
     );
-    bic = await BicTokenPaymaster.deploy(entryPoint.target, deployer);
+    bic = await BicTokenPaymaster.deploy(entryPoint.target, deployer.address);
 
     const HandlesController = await ethers.getContractFactory(
       "HandlesController"
     );
-    handlesController = await HandlesController.deploy(bic.target);
+    handlesController = await HandlesController.deploy(bic.target, deployer.address);
     await handlesController.waitForDeployment();
     await usernameHandles.setController(handlesController.target);
 
