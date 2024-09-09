@@ -1,8 +1,8 @@
 import {buildModule} from "@nomicfoundation/hardhat-ignition/modules";
-import SmartWallet from "./SmartWallet";
+import BicTokenPaymaster from "./BicTokenPaymaster";
 
 const Handles = buildModule('Handles', (m) => {
-    const {bicTokenPaymaster} = m.useModule(SmartWallet);
+    const {bicTokenPaymaster} = m.useModule(BicTokenPaymaster);
 
     const handles = m.contract('Handles', []);
 

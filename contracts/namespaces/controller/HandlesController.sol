@@ -26,6 +26,12 @@ contract HandlesController is ReentrancyGuard, Ownable {
         uint64 bidBufferBps;
     }
 
+    enum MintType {
+        DIRECT,
+        COMMIT,
+        AUCTION
+    }
+
     /**
      * @dev Represents a request to create a handle, either through direct sale or auction.
      */
@@ -63,7 +69,8 @@ contract HandlesController is ReentrancyGuard, Ownable {
         address indexed handle,
         address indexed to,
         string name,
-        uint256 price
+        uint256 price,
+        MintType mintType
     );
     /// @dev Emitted when a commitment is made, providing details of the commitment and its expiration timestamp.
     event Commitment(
@@ -218,7 +225,8 @@ contract HandlesController is ReentrancyGuard, Ownable {
                 rq.name,
                 rq.price,
                 rq.beneficiaries,
-                rq.collects
+                rq.collects,
+                MintType.DIRECT
             );
         } else {
             // auction or commit
@@ -230,7 +238,8 @@ contract HandlesController is ReentrancyGuard, Ownable {
                     rq.name,
                     rq.price,
                     rq.beneficiaries,
-                    rq.collects
+                    rq.collects,
+                    MintType.AUCTION
                 );
                 IHandles(rq.handle).approve(
                     address(marketplace),
@@ -266,7 +275,8 @@ contract HandlesController is ReentrancyGuard, Ownable {
                         rq.name,
                         rq.price,
                         rq.beneficiaries,
-                        rq.collects
+                        rq.collects,
+                        MintType.COMMIT
                     );
                     _emitCommitment(rq, dataHash, 0, true);
                 }
@@ -405,14 +415,15 @@ contract HandlesController is ReentrancyGuard, Ownable {
         string calldata name,
         uint256 price,
         address[] calldata beneficiaries,
-        uint256[] calldata collects
+        uint256[] calldata collects,
+        MintType mintType
     ) private {
         if (to != address(this)) {
             IERC20(bic).transferFrom(msg.sender, address(this), price);
             _payout(price, beneficiaries, collects);
         }
         IHandles(handle).mintHandle(to, name);
-        emit MintHandle(handle, to, name, price);
+        emit MintHandle(handle, to, name, price, mintType);
     }
 
     /**
