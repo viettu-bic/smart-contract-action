@@ -104,10 +104,10 @@ Computes the address of a potential redeem contract for a given set of parameter
 | ---- | ---- | ----------- |
 | [0] | address | predicted The address of the potential redeem contract |
 
-### _getHash
+### getHash
 
 ```solidity
-function _getHash(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 durationSeconds, uint64 redeemRate) public pure returns (bytes32)
+function getHash(address erc20, uint256 totalAmount, address beneficiaryAddress, uint64 durationSeconds, uint64 redeemRate) public pure returns (bytes32)
 ```
 
 Computes a hash of the redeem parameters

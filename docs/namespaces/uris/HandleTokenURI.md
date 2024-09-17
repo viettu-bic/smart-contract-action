@@ -35,6 +35,12 @@ Emitted when a name element is set
 | imageDescription | string | the description of the name (aka Beincom - Earning Username) |
 | imageURI | string | the uri for svg background name image |
 
+### constructor
+
+```solidity
+constructor(address _owner) public
+```
+
 ### setNameElement
 
 ```solidity
