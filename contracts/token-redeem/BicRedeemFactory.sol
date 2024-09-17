@@ -57,7 +57,7 @@ contract BicRedeemFactory is Ownable {
     ) public onlyOwner returns (BicRedeemToken ret) {
         require(redeemAddress[beneficiaryAddress] == address(0), "Redeem contract already deploy");
 
-        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
+        bytes32 salthash = getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
 
         ret = BicRedeemToken(Clones.cloneDeterministic(address(bicRedeemImplementation), salthash));
         ret.initialize(erc20, totalAmount, beneficiaryAddress, uint64(block.timestamp), durationSeconds, redeemRate);
@@ -88,7 +88,7 @@ contract BicRedeemFactory is Ownable {
             return redeemAddress[beneficiaryAddress];
         }
 
-        bytes32 salthash = _getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
+        bytes32 salthash = getHash(erc20, totalAmount, beneficiaryAddress, durationSeconds, redeemRate);
 
         address predicted = Clones.predictDeterministicAddress(address(bicRedeemImplementation), salthash);
 
@@ -103,7 +103,7 @@ contract BicRedeemFactory is Ownable {
     /// @param durationSeconds The duration of the redeem
     /// @param redeemRate The percentage of the total amount to be redeemed per interval
     /// @return hash The computed hash of the parameters
-    function _getHash(
+    function getHash(
         address erc20,
         uint256 totalAmount,
         address beneficiaryAddress,

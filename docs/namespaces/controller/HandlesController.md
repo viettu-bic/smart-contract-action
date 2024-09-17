@@ -19,6 +19,16 @@ struct AuctionConfig {
 }
 ```
 
+### MintType
+
+```solidity
+enum MintType {
+  DIRECT,
+  COMMIT,
+  AUCTION
+}
+```
+
 ### HandleRequest
 
 _Represents a request to create a handle, either through direct sale or auction._
@@ -111,7 +121,7 @@ _Mapping of auctionId to status isClaimed._
 ### MintHandle
 
 ```solidity
-event MintHandle(address handle, address to, string name, uint256 price)
+event MintHandle(address handle, address to, string name, uint256 price, enum HandlesController.MintType mintType)
 ```
 
 _Emitted when a handle is minted, providing details of the transaction including the handle address, recipient, name, and price._
@@ -183,7 +193,7 @@ _Emitted when a handle is minted but the auction fails due none bid._
 ### constructor
 
 ```solidity
-constructor(contract IERC20 _bic) public
+constructor(contract IERC20 _bic, address _owner) public
 ```
 
 Initializes the HandlesController contract with the given BIC token address.
@@ -371,11 +381,13 @@ function withdraw(address token, address to, uint256 amount) external
 
 Allows withdrawal of funds or tokens from the contract.
 
+_no need to withdraw ETH because this contract not have fallback or receive function_
+
 #### Parameters
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
-| token | address | The address of the token to withdraw, or address(0) for native Ether. |
+| token | address | The address of the token to withdraw |
 | to | address | The recipient of the funds or tokens. |
 | amount | uint256 | The amount to withdraw. |
 
