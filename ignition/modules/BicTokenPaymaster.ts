@@ -1,8 +1,8 @@
 import {buildModule} from "@nomicfoundation/hardhat-ignition/modules";
-import {entryPointAddress} from "./constant";
+import {entryPointAddress, operator} from "./constant";
 
 const BicTokenPaymaster = buildModule('BicTokenPaymaster', (m) => {
-    const bicTokenPaymaster = m.contract('BicTokenPaymaster', [entryPointAddress]);
+    const bicTokenPaymaster = m.contract('BicTokenPaymaster', [entryPointAddress, operator]);
     return {bicTokenPaymaster};
 });
 export default BicTokenPaymaster;
