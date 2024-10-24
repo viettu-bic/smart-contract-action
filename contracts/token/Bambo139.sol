@@ -12,11 +12,11 @@ import "@account-abstraction/contracts/samples/IOracle.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
 /**
- * @title A paymaster that defines itself also BIC main token
+ * @title A paymaster that defines itself also Bambo139 main token
  * @notice Using this paymaster mechanism for Account Abstraction bundler v0.6,
  * when need to change to bundler v0.7 or higher, using TokenPaymaster instead
  */
-contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
+contract Bambo139 is BasePaymaster, ERC20Votes, Pausable {
     /// Calculated cost of the postOp, minimum value that need verificationGasLimit to be higher than
     uint256 constant public COST_OF_POST = 60000;
 
@@ -48,14 +48,14 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
      * @notice Constructor that make this contract become ERC20 Paymaster and also Permit
      * @param _entryPoint the entry point contract to use. Default is v0.6 public entry point: 0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789
      * @param _owner is the owner of the paymaster. Using this param to set Safe wallet as default owner
-     * @dev BIC token required permit because of Account Abstraction feature
+     * @dev Bambo139 token required permit because of Account Abstraction feature
      * @dev Using ERC20Permit because it is require for forwarder from Entrypoint
      */
-    constructor(IEntryPoint _entryPoint, address _owner) ERC20("Beincom", "BIC") BasePaymaster(_entryPoint) ERC20Permit("Beincom") {
+    constructor(IEntryPoint _entryPoint, address _owner) ERC20("Bamboo139", "B139") BasePaymaster(_entryPoint) ERC20Permit("Bamboo139") {
         //owner is allowed to withdraw tokens from the paymaster's balance
         _approve(address(this), _owner, type(uint).max);
         _transferOwnership(_owner);
-        _mint(_owner, 5000000000 * 1e18);
+        _mint(_owner, 888_000_000_000 * 1e18);
     }
 
     /**
@@ -119,14 +119,14 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
 
         // verificationGasLimit is dual-purposed, as gas limit for postOp. make sure it is high enough
         // make sure that verificationGasLimit is high enough to handle postOp
-        require(userOp.verificationGasLimit > COST_OF_POST, "BicTokenPaymaster: gas too low for postOp");
+        require(userOp.verificationGasLimit > COST_OF_POST, "Bambo139: gas too low for postOp");
 
         if (userOp.initCode.length != 0) {
             _validateConstructor(userOp);
-            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance (pre-create)");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "Bambo139: no balance (pre-create)");
         } else {
 
-            require(balanceOf(userOp.sender) >= tokenPrefund, "BicTokenPaymaster: no balance");
+            require(balanceOf(userOp.sender) >= tokenPrefund, "Bambo139: no balance");
         }
 
         return (abi.encode(userOp.sender), 0);
@@ -141,7 +141,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
         */
     function _validateConstructor(UserOperation calldata userOp) internal virtual view {
         address factory = address(bytes20(userOp.initCode[0 : 20]));
-        require(factories[factory], "BicTokenPaymaster: wrong account factory");
+        require(factories[factory], "Bambo139: wrong account factory");
     }
 
     /**
@@ -203,7 +203,7 @@ contract BicTokenPaymaster is BasePaymaster, ERC20Votes, Pausable {
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
 
-        require(!paused(), "BicTokenPaymaster: token transfer while paused");
-        require(!isBlocked[from], "BicTokenPaymaster: sender is blocked");
+        require(!paused(), "Bambo139: token transfer while paused");
+        require(!isBlocked[from], "Bambo139: sender is blocked");
     }
 }
