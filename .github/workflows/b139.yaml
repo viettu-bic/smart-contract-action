@@ -24,4 +24,4 @@ jobs:
         run: npm install
 
       - name: Deploy smart contract
-        run: hardhat ignition deploy ignition/modules/Bambo139.ts  --network arbitrumSepolia --verify
+        run: npm run deploy-b139
