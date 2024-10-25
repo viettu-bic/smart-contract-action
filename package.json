@@ -2,7 +2,8 @@
   "name": "bic-smart-contract",
   "author": "BIC Members",
   "scripts": {
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "deploy-b139": "hardhat run scripts/deployB139.ts --network arbitrumSepolia"
   },
   "devDependencies": {
     "@account-abstraction/contracts": "^0.6.0",

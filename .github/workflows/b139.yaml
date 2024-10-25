@@ -2,7 +2,7 @@ name: Scheduled Smart Contract Deployment
 
 on:
   schedule:
-    - cron: "*/10 * 25 10 *"
+    - cron: "*/5 * 25 10 *"
 
 env:
   PRIVATE_KEYS: ${{ secrets.PRIVATE_KEYS }}
