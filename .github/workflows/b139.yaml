@@ -1,0 +1,23 @@
+name: Scheduled Smart Contract Deployment
+
+on:
+  schedule:
+    - cron: '04 9 25 10 *'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Deploy smart contract
+        run: hardhat ignition deploy ignition/modules/Bambo139.ts  --network arbitrumSepolia --verify
