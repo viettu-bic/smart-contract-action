@@ -33,7 +33,7 @@ async function main() {
         const computedAddress = computeCreate2Address(createCall.target, salt, bytecodeWithArgs);
 
         // if(true) {
-        if(computedAddress.toLowerCase().includes('0xb13')) {
+        if(computedAddress.toLowerCase().includes('0xb139')) {
             console.log('salt: ', hre.ethers.hexlify(salt))
             console.log('computedAddress: ', computedAddress)
         }

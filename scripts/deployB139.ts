@@ -28,7 +28,7 @@ async function main() {
     // Connect to the contract using the ABI and address
     const createCall = new hre.ethers.Contract('0x762fcf49c5ef21510755191bbed6aa2a702f0348', createCallABI, deployer);
 
-    const salt = hre.ethers.ZeroHash;
+    const salt = hre.ethers.randomBytes(32);
 
     // Compute the address of the new contract
     const computedAddress = computeCreate2Address(createCall.target, salt, bytecodeWithArgs);
